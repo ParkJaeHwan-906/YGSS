@@ -2,6 +2,7 @@ package com.ygss.backend.auth.controller;
 
 import com.ygss.backend.auth.dto.LoginRequestDto;
 import com.ygss.backend.auth.dto.SignUpRequestDto;
+import com.ygss.backend.auth.service.AuthService;
 import com.ygss.backend.auth.service.AuthServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthServiceImpl authService;
@@ -38,4 +39,5 @@ public class AuthController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
 }
