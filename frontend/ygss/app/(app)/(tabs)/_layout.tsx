@@ -7,6 +7,7 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -27,19 +28,39 @@ export default function TabLayout() {
         }),
       }}>
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarLabel: "홈",
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name="home" size={size} color={focused ? "skyblue" : color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="dc"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          tabBarLabel: "DC",
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name="compass-outline" size={size} color={focused ? "skyblue" : color} />
+          ),
         }}
       />
+      <Tabs.Screen
+        name="irp"
+        options={{
+          tabBarLabel: "IRP",
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name="search" size={size} color={focused ? "skyblue" : color} />
+          ),
+        }} />
+      <Tabs.Screen
+        name="mypage"
+        options={{
+          tabBarLabel: "마이페이지",
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name="person" size={size} color={focused ? "skyblue" : color} />
+          ),
+        }} />
     </Tabs>
   );
 }
