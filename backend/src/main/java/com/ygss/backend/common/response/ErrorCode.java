@@ -12,6 +12,8 @@ public enum ErrorCode {
     BAD_REQUEST(400, HttpStatus.BAD_REQUEST, "잘못된 접근입니다."),
     BAD_LOGIN(400, HttpStatus.BAD_REQUEST, "올바르지 않은 로그인 정보입니다."),
 
+    //401 Unauthorized
+    UNAUTHORIZED(401,HttpStatus.UNAUTHORIZED, "로그인 후 사용해주세요"),
     //404 NOT FOUND
     NOT_FOUND(404, HttpStatus.NOT_FOUND, "해당 API를 찾을 수 없습니다."),
 

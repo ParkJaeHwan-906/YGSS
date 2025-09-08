@@ -40,7 +40,7 @@ public class SecurityExceptionHandlingFilter extends OncePerRequestFilter {
             } else if (e instanceof JwtException) {
                 setErrorResponse(response, HttpStatus.UNAUTHORIZED, "TOKEN_INVALID");
             } else if (e instanceof BadCredentialsException) {
-                setErrorResponse(response, HttpStatus.UNAUTHORIZED, e.getMessage());
+                setErrorResponse(response, HttpStatus.UNAUTHORIZED, "로그인 후 사용해주세요");
             } else {
                 setErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
             }

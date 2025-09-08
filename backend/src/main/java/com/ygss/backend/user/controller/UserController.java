@@ -46,7 +46,7 @@ public class UserController {
 
             return ApiResponseDto.success(SuccessCode.SUCCESS,"JWT 인증 성공! 사용자: " + userEmail);
         } catch (Exception e) {
-            return ApiResponseDto.fail(ErrorCode.INTERNAL_SERVER_ERROR);
+            return ApiResponseDto.fail(ErrorCode.UNAUTHORIZED);
         }
 
     }
