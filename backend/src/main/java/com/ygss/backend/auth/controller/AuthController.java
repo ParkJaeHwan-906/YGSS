@@ -4,6 +4,9 @@ import com.ygss.backend.auth.dto.LoginRequestDto;
 import com.ygss.backend.auth.dto.SignUpRequestDto;
 import com.ygss.backend.auth.service.AuthService;
 import com.ygss.backend.auth.service.AuthServiceImpl;
+import com.ygss.backend.common.response.ApiResponseDto;
+import com.ygss.backend.common.response.ErrorCode;
+import com.ygss.backend.common.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,23 +23,23 @@ public class AuthController {
      * 회원가입
      */
     @PostMapping("/signup")
-    public ResponseEntity<Boolean> signUp(@RequestBody SignUpRequestDto request) {
+    public ApiResponseDto<?> signUp(@RequestBody SignUpRequestDto request) {
         try {
             authService.signUp(request);
-            return ResponseEntity.ok(true);
+            return ApiResponseDto.success(SuccessCode.SIGNUP_SUCCESS);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(false);
+            return ApiResponseDto.fail(ErrorCode.BAD_REQUEST);
         }
     }
     /**
      * 로그인
      */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDto request) {
+    public ApiResponseDto<?> login(@RequestBody LoginRequestDto request) {
         try {
-            return ResponseEntity.ok(authService.login(request));
+            return ApiResponseDto.success(SuccessCode.LOGIN_SUCCESS,authService.login(request));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ApiResponseDto.fail(ErrorCode.BAD_REQUEST);
         }
     }
 
