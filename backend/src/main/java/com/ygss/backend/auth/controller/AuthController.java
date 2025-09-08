@@ -1,6 +1,7 @@
 package com.ygss.backend.auth.controller;
 
 import com.ygss.backend.auth.dto.CheckEmailRequestDto;
+import com.ygss.backend.auth.dto.CheckPasswordRequest;
 import com.ygss.backend.auth.dto.LoginRequestDto;
 import com.ygss.backend.auth.dto.SignUpRequestDto;
 import com.ygss.backend.auth.service.AuthService;
@@ -9,6 +10,7 @@ import com.ygss.backend.common.response.ApiResponseDto;
 import com.ygss.backend.common.response.ErrorCode;
 import com.ygss.backend.common.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -29,7 +32,18 @@ public class AuthController {
         try {
             return ResponseEntity.ok(authService.checkEmail(request));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+    }
+    /**
+     * 비밀번호 유효성 검사
+     */
+    @PostMapping("/check/password")
+    public ResponseEntity<?> checkPassword(@RequestBody CheckPasswordRequest request) {
+        try {
+            return ResponseEntity.ok(authService.isValidPassword(request));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
     /**
@@ -51,7 +65,8 @@ public class AuthController {
         try {
             return ResponseEntity.ok(authService.login(request));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            log.warn("Reason : {}",e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
 }
