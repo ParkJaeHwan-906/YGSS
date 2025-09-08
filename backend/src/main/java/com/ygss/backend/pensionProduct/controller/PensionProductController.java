@@ -1,0 +1,179 @@
+package com.ygss.backend.pensionProduct.controller;
+
+import com.ygss.backend.pensionProduct.dto.entity.Company;
+import com.ygss.backend.pensionProduct.dto.entity.ProductType;
+import com.ygss.backend.pensionProduct.dto.entity.Systype;
+import com.ygss.backend.pensionProduct.dto.request.PensionProductSearchRequest;
+import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
+import com.ygss.backend.pensionProduct.dto.response.PensionProductSearchResponse;
+import com.ygss.backend.pensionProduct.service.PensionProductService;
+import com.ygss.backend.pensionProduct.service.PensionProductServiceImpl;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * 퇴직연금 상품 REST API Controller
+ */
+@RestController
+@RequestMapping("/pension/products")
+@RequiredArgsConstructor
+@Slf4j
+@Tag(name = "퇴직연금 상품 API", description = "ETF/펀드 상품 검색 및 조회 API")
+public class PensionProductController {
+
+    private final PensionProductServiceImpl pensionProductService;
+
+    /**
+     * 상품 검색
+     */
+    @Operation(
+            summary = "상품 검색",
+            description = "다양한 조건으로 ETF/펀드 상품을 검색합니다. 모든 파라미터는 선택사항입니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "검색 성공",
+                    content = @Content(schema = @Schema(implementation = PensionProductSearchResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 요청 파라미터",
+                    content = @Content(
+                            examples = @ExampleObject(
+                                    value = """
+                    {
+                        "error": "INVALID_PARAMETER",
+                        "message": "페이지는 1 이상이어야 합니다. 현재값: 0",
+                        "timestamp": "2024-01-15T10:30:00",
+                        "status": 400
+                    }
+                    """
+                            )
+                    )
+            )
+    })
+    @GetMapping("/search")
+    public ResponseEntity<PensionProductSearchResponse> searchProducts(
+            @Parameter(description = "쉼표로 구분된 상품타입 (ETF,펀드만 가능)", example = "ETF,펀드")
+            @RequestParam(required = false) String productTypes,
+
+            @Parameter(description = "쉼표로 구분된 운용사 ID", example = "1,2,3")
+            @RequestParam(required = false) String companyIds,
+
+            @Parameter(description = "최소 위험등급 (1-5)", example = "1")
+            @RequestParam(required = false) String riskGradeFrom,
+
+            @Parameter(description = "최대 위험등급 (1-5)", example = "5")
+            @RequestParam(required = false) String riskGradeTo,
+
+            @Parameter(description = "쉼표로 구분된 시스템타입 ID 2=원리금 보장, 3=비보장", example = "2,3")
+            @RequestParam(required = false) String systypeIds,
+
+            @Parameter(description = "페이지 번호 (1부터 시작)", example = "1")
+            @RequestParam(defaultValue = "1") String page,
+
+            @Parameter(description = "페이지 크기 (1-50)", example = "10")
+            @RequestParam(defaultValue = "10") String size) {
+
+        // Request 객체 생성
+        PensionProductSearchRequest request = new PensionProductSearchRequest();
+        request.setProductTypes(productTypes);
+        request.setCompanyIds(companyIds);
+        request.setRiskGradeFrom(riskGradeFrom);
+        request.setRiskGradeTo(riskGradeTo);
+        request.setSystypeIds(systypeIds);
+        request.setPage(page);
+        request.setSize(size);
+
+        log.info("상품 검색 요청: {}", request);
+
+        // 요청 검증
+        request.validate();
+
+        // SearchCondition으로 변환
+        SearchCondition condition = request.toSearchCondition();
+
+        // 검색 실행
+        PensionProductSearchResponse response = pensionProductService.searchProducts(condition);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 운용사 목록 조회
+     */
+    @Operation(summary = "운용사 목록 조회", description = "등록된 모든 운용사 목록을 조회합니다")
+    @ApiResponse(
+            responseCode = "200",
+            description = "조회 성공",
+            content = @Content(schema = @Schema(implementation = Company.class))
+    )
+    @GetMapping("/companies")
+    public ResponseEntity<?> getAllCompanies() {
+
+        log.info("운용사 목록 조회 요청");
+        try{
+            List<Company> companies = pensionProductService.getAllCompanies();
+
+            return ResponseEntity.ok(companies);
+        }catch (Exception e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+
+    }
+
+    /**
+     * 상품 타입 목록 조회
+     */
+    @Operation(summary = "상품 타입 목록 조회", description = "지원하는 상품 타입 목록(ETF, 펀드)을 조회합니다")
+    @ApiResponse(
+            responseCode = "200",
+            description = "조회 성공",
+            content = @Content(schema = @Schema(implementation = ProductType.class))
+    )
+    @GetMapping("/product-types")
+    public ResponseEntity<List<ProductType>> getAllProductTypes() {
+
+        log.info("상품 타입 목록 조회 요청");
+
+        List<ProductType> productTypes = pensionProductService.getAllProductTypes();
+
+        return ResponseEntity.ok(productTypes);
+    }
+
+    /**
+     * 시스템 타입 목록 조회
+     */
+    @Operation(summary = "시스템 타입 목록 조회", description = "시스템 타입 목록(원금보장/비보장)을 조회합니다")
+    @ApiResponse(
+            responseCode = "200",
+            description = "조회 성공",
+            content = @Content(schema = @Schema(implementation = Systype.class))
+    )
+    @GetMapping("/systypes")
+    public ResponseEntity<List<Systype>> getAllSystypes() {
+
+        log.info("시스템 타입 목록 조회 요청");
+
+        List<Systype> systypes = pensionProductService.getAllSystypes();
+
+        return ResponseEntity.ok(systypes);
+    }
+}
