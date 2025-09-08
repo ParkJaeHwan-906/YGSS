@@ -1,4 +1,4 @@
-package com.ygss.backend.pensionProduct.dto.request;
+package com.ygss.backend.pensionProduct.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
@@ -19,7 +19,7 @@ public class PensionProductDto {
     private String companyName;
     private String systype;
     private Integer riskGrade;
-    private Integer reserve;
+    private Long reserve;
     private Double nextYearProfitRate;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
