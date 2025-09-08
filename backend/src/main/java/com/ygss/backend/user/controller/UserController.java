@@ -31,7 +31,6 @@ public class UserController {
             return ApiResponseDto.success(SuccessCode.SUCCESS,name);
         } catch (IllegalArgumentException e) {
             return ApiResponseDto.fail(ErrorCode.BAD_REQUEST);
-                    //ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

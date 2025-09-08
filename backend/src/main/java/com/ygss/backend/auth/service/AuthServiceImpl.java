@@ -1,9 +1,6 @@
 package com.ygss.backend.auth.service;
 
-import com.ygss.backend.auth.dto.CheckEmailRequestDto;
-import com.ygss.backend.auth.dto.LoginRequestDto;
-import com.ygss.backend.auth.dto.LoginResponseDto;
-import com.ygss.backend.auth.dto.SignUpRequestDto;
+import com.ygss.backend.auth.dto.*;
 import com.ygss.backend.global.jwt.utility.JwtTokenProvider;
 import com.ygss.backend.global.security.config.SecurityConfig;
 import com.ygss.backend.user.dto.UserAccountsDto;
@@ -14,13 +11,16 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ygss.backend.user.repository.UserAccountsRepository;
 import com.ygss.backend.user.repository.UsersRepository;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 @Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
     private final String[] banKeywords = {"test", "admin", "master"};    // 이메일에 포함되면 안되는 키워드
-
+    private final String passwordRegex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[$@$!%*?&])[A-Za-z\\d$@$!%*?&]{8,}$";
     private final UsersRepository usersRepsitory;
     private final UserAccountsRepository userAccountsRepository;
     private final SecurityConfig securityConfig;
@@ -33,18 +33,35 @@ public class AuthServiceImpl implements AuthService {
         try {
             String lowerCaseEmail = request.getEmail().toLowerCase();
             for(String banKeyword : banKeywords) {
-                if(lowerCaseEmail.contains(banKeyword)) throw new IllegalArgumentException("사용할 수 없는 이메일 입니다.");
+                if(lowerCaseEmail.contains(banKeyword)) throw new IllegalArgumentException("Invalid Email");
             }
-            if(userAccountsRepository.selectByUserEmail(request.getEmail()) != null) throw new IllegalArgumentException("이미 존재하는 이메일 입니다.");
+            if(userAccountsRepository.selectByUserEmail(request.getEmail()) != null) throw new IllegalArgumentException("Already Exist Email");
             return true;
         } catch (IllegalArgumentException e) {
             log.warn("Invalid Email : {}",e.getMessage());
-            throw new IllegalArgumentException(e.getMessage());
+            return false;
         } catch (Exception e) {
             log.error("UnExpected Error : {}", e.getMessage());
-            throw new IllegalArgumentException("예상치 못한 오류가 발생하였습니다.");
+            return false;
         }
     }
+
+    /**
+     * 비밀번호 유효성 검사
+     */
+    @Override
+    public Boolean isValidPassword(CheckPasswordRequest request) {
+        try {
+            Pattern avoidPattern = Pattern.compile(passwordRegex);
+            Matcher matcher = avoidPattern.matcher(request.getPassword());
+            if(!matcher.matches()) throw new IllegalArgumentException("Invalid Password");
+            return true;
+        } catch (IllegalArgumentException e) {
+            log.warn("isValidPassword Failed : {}", e.getMessage());
+            throw e;
+        }
+    }
+
     /**
      * 회원 가입
      */
@@ -69,7 +86,7 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponseDto login(LoginRequestDto request) {
         try {
             UserAccountsDto storedUser = getStoredUser(request.getEmail());
-            if(!decryptoPassword(request.getPassword(), storedUser.getPassword())) throw new Exception();
+            if(!decryptoPassword(request.getPassword(), storedUser.getPassword())) throw new IllegalArgumentException("Password Not Matched");
             String storedUserName = usersRepsitory.getUserNameById(storedUser.getUserId());
             return LoginResponseDto.builder()
                     .accessToken(jwtTokenProvider.generateAccessToken(storedUser.getId(), storedUser.getEmail(), storedUserName))
@@ -77,7 +94,7 @@ public class AuthServiceImpl implements AuthService {
                     .build();
         } catch(Exception e) {
             log.warn("Login Failed");
-            throw new IllegalArgumentException("로그인에 실패하였습니다.");
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
