@@ -12,7 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/user")
 @RequiredArgsConstructor
 /*
 JWT 인증이 필요한 사용자 관련 API
@@ -50,4 +50,11 @@ public class UserController {
         }
 
     }
+
+    /**
+     * Hwannee
+     * --------------------------------------------------------------------------------------------------
+     */
+
+
 }

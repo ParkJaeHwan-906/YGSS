@@ -8,6 +8,7 @@ import com.ygss.backend.common.response.ApiResponseDto;
 import com.ygss.backend.common.response.ErrorCode;
 import com.ygss.backend.common.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthServiceImpl authService;
@@ -23,24 +24,23 @@ public class AuthController {
      * 회원가입
      */
     @PostMapping("/signup")
-    public ApiResponseDto<?> signUp(@RequestBody SignUpRequestDto request) {
+    public ResponseEntity<?> signUp(@RequestBody SignUpRequestDto request) {
         try {
             authService.signUp(request);
-            return ApiResponseDto.success(SuccessCode.SIGNUP_SUCCESS);
+            return ResponseEntity.status(HttpStatus.CREATED).body(true);
         } catch (IllegalArgumentException e) {
-            return ApiResponseDto.fail(ErrorCode.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
     /**
      * 로그인
      */
     @PostMapping("/login")
-    public ApiResponseDto<?> login(@RequestBody LoginRequestDto request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequestDto request) {
         try {
-            return ApiResponseDto.success(SuccessCode.LOGIN_SUCCESS,authService.login(request));
+            return ResponseEntity.ok(authService.login(request));
         } catch (IllegalArgumentException e) {
-            return ApiResponseDto.fail(ErrorCode.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
-
 }
