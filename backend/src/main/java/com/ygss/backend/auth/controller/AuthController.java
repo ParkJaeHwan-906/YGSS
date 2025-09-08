@@ -1,5 +1,6 @@
 package com.ygss.backend.auth.controller;
 
+import com.ygss.backend.auth.dto.CheckEmailRequestDto;
 import com.ygss.backend.auth.dto.LoginRequestDto;
 import com.ygss.backend.auth.dto.SignUpRequestDto;
 import com.ygss.backend.auth.service.AuthService;
@@ -21,13 +22,23 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     private final AuthServiceImpl authService;
     /**
+     * 아이디 중복 확인
+     */
+    @PostMapping("/check/email")
+    public ResponseEntity<?> checkEmail(@RequestBody CheckEmailRequestDto request) {
+        try {
+            return ResponseEntity.ok(authService.checkEmail(request));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+    /**
      * 회원가입
      */
     @PostMapping("/signup")
     public ResponseEntity<?> signUp(@RequestBody SignUpRequestDto request) {
         try {
-            authService.signUp(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(true);
+            return ResponseEntity.status(HttpStatus.CREATED).body(authService.signUp(request));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
