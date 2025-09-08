@@ -1,19 +1,19 @@
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { Link, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    SafeAreaView,
+    Keyboard,
     KeyboardAvoidingView,
     Platform,
-    TouchableWithoutFeedback,
-    Keyboard,
-    View,
+    Pressable,
+    SafeAreaView,
+    StyleSheet,
     Text,
     TextInput,
-    Pressable,
-    StyleSheet,
+    TouchableWithoutFeedback,
+    View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter, Link } from "expo-router";
 // TODO: 실제 로그인 시 Redux signIn 디스패치 연결
 // import { useAppDispatch } from "@/src/store/hooks";
 // import { signIn } from "@/src/store/slices/authSlice";
