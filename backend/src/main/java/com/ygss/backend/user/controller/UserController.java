@@ -1,5 +1,8 @@
 package com.ygss.backend.user.controller;
 
+import com.ygss.backend.common.response.ApiResponseDto;
+import com.ygss.backend.common.response.ErrorCode;
+import com.ygss.backend.common.response.SuccessCode;
 import com.ygss.backend.user.service.UserService;
 import com.ygss.backend.user.service.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -22,12 +25,13 @@ public class UserController {
      * 사용자 이름 조회 (ID로)
      */
     @GetMapping("/name")
-    public ResponseEntity<?> getUserNameById(@RequestParam Long id) {
+    public ApiResponseDto<?> getUserNameById(@RequestParam Long id) {
         try {
             String name = userService.getUserNameById(id);
-            return ResponseEntity.ok(name); // 실제 이름을 반환
+            return ApiResponseDto.success(SuccessCode.SUCCESS,name);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ApiResponseDto.fail(ErrorCode.BAD_REQUEST);
+                    //ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -35,10 +39,15 @@ public class UserController {
      * JWT 토큰 테스트용 단순 엔드포인트
      */
     @GetMapping("/test")
-    public ResponseEntity<String> testJwtAuth() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String userEmail = (String) authentication.getPrincipal();
+    public ApiResponseDto<String> testJwtAuth() {
+        try{
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String userEmail = (String) authentication.getPrincipal();
 
-        return ResponseEntity.ok("JWT 인증 성공! 사용자: " + userEmail);
+            return ApiResponseDto.success(SuccessCode.SUCCESS,"JWT 인증 성공! 사용자: " + userEmail);
+        } catch (Exception e) {
+            return ApiResponseDto.fail(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+
     }
 }
