@@ -105,9 +105,9 @@ public class AuthServiceImpl implements AuthService {
         return securityConfig.passwordEncoder().encode(password);
     }
     /**
-     * 비밀번호 복호회
+     * 비밀번호 복호화
      */
-    private Boolean decryptoPassword(String inputPassword, String originPassword) {
+    public Boolean decryptoPassword(String inputPassword, String originPassword) {
         return securityConfig.passwordEncoder().matches(inputPassword, originPassword);
     }
     private UserAccountsDto getStoredUser(String userEmail) {
