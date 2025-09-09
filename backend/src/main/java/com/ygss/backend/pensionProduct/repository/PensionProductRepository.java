@@ -4,7 +4,9 @@ import com.ygss.backend.pensionProduct.dto.entity.Company;
 import com.ygss.backend.pensionProduct.dto.entity.PensionProduct;
 import com.ygss.backend.pensionProduct.dto.entity.ProductType;
 import com.ygss.backend.pensionProduct.dto.entity.Systype;
+import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
+import com.ygss.backend.pensionProduct.dto.response.BondDto;
 import com.ygss.backend.pensionProduct.dto.response.CompanyResponse;
 import com.ygss.backend.pensionProduct.dto.response.ProductTypeResponse;
 import com.ygss.backend.pensionProduct.dto.response.SystypeResponse;
@@ -209,4 +211,131 @@ public interface PensionProductRepository {
             @Result(property = "systypeName", column = "systype_name")
     })
     Optional<PensionProduct> findById(@Param("id") Long id);
+
+
+    @Select({
+            "<script>",
+            "SELECT",
+            "    b.id AS id,",
+            "    b.product AS productName,",
+            "    prg.grade AS riskGrade,",
+            "    b.publisher_grade AS publisherGrade,",
+            "    b.publisher,",
+            "    b.coupon_rate AS couponRate,",
+            "    b.published_rate AS publishedRate,",
+            "    b.evalution_rate AS evaluationRate,",
+            "    b.maturity_years AS maturityYears,",
+            "    b.expired_day AS expiredDay,",
+            "    b.final_profit_rate AS finalProfitRate",
+            "FROM bond_products b",
+            "INNER JOIN product_risk_grade prg ON b.risk_grade_id = prg.id",
+            "<where>",
+            "    <if test='minMaturityYears != null'>",
+            "        AND b.maturity_years &gt;= #{minMaturityYears}",
+            "    </if>",
+            "    <if test='maxMaturityYears != null'>",
+            "        AND b.maturity_years &lt;= #{maxMaturityYears}",
+            "    </if>",
+            "    <if test='minRiskGrade != null'>",
+            "        AND b.risk_grade_id &gt;= #{minRiskGrade}",
+            "    </if>",
+            "    <if test='minPublisherGrade != null and minPublisherGrade != \"\"'>",
+            "        AND CASE ",
+            "            WHEN b.publisher_grade = 'BBB-' THEN 1",
+            "            WHEN b.publisher_grade = 'BBB' THEN 2",
+            "            WHEN b.publisher_grade = 'BBB+' THEN 3",
+            "            WHEN b.publisher_grade = 'A-' THEN 4",
+            "            WHEN b.publisher_grade = 'A' THEN 5",
+            "            WHEN b.publisher_grade = 'A+' THEN 6",
+            "            WHEN b.publisher_grade = 'AA-' THEN 7",
+            "            WHEN b.publisher_grade = 'AA' THEN 8",
+            "            WHEN b.publisher_grade = 'AA+' THEN 9",
+            "            WHEN b.publisher_grade = 'AAA' THEN 10",
+            "            ELSE 0",
+            "        END >= CASE",
+            "            WHEN #{minPublisherGrade} = 'BBB-' THEN 1",
+            "            WHEN #{minPublisherGrade} = 'BBB' THEN 2",
+            "            WHEN #{minPublisherGrade} = 'BBB+' THEN 3",
+            "            WHEN #{minPublisherGrade} = 'A-' THEN 4",
+            "            WHEN #{minPublisherGrade} = 'A' THEN 5",
+            "            WHEN #{minPublisherGrade} = 'A+' THEN 6",
+            "            WHEN #{minPublisherGrade} = 'AA-' THEN 7",
+            "            WHEN #{minPublisherGrade} = 'AA' THEN 8",
+            "            WHEN #{minPublisherGrade} = 'AA+' THEN 9",
+            "            WHEN #{minPublisherGrade} = 'AAA' THEN 10",
+            "            ELSE 0",
+            "        END",
+            "    </if>",
+            "</where>",
+            "ORDER BY b.final_profit_rate DESC, b.maturity_years ASC",
+            "LIMIT #{size} OFFSET #{offset}",
+            "</script>"
+    })
+    List<BondDto> selectBonds(BondSearchRequest searchRequest);
+
+    @Select({
+            "<script>",
+            "SELECT COUNT(*)",
+            "FROM bond_products b",
+            "INNER JOIN product_risk_grade prg ON b.risk_grade_id = prg.id",
+            "<where>",
+            "    <if test='minMaturityYears != null'>",
+            "        AND b.maturity_years &gt;= #{minMaturityYears}",
+            "    </if>",
+            "    <if test='maxMaturityYears != null'>",
+            "        AND b.maturity_years &lt;= #{maxMaturityYears}",
+            "    </if>",
+            "    <if test='minRiskGrade != null'>",
+            "        AND b.risk_grade_id &gt;= #{minRiskGrade}",
+            "    </if>",
+            "    <if test='minPublisherGrade != null and minPublisherGrade != \"\"'>",
+            "        AND CASE ",
+            "            WHEN b.publisher_grade = 'BBB-' THEN 1",
+            "            WHEN b.publisher_grade = 'BBB' THEN 2",
+            "            WHEN b.publisher_grade = 'BBB+' THEN 3",
+            "            WHEN b.publisher_grade = 'A-' THEN 4",
+            "            WHEN b.publisher_grade = 'A' THEN 5",
+            "            WHEN b.publisher_grade = 'A+' THEN 6",
+            "            WHEN b.publisher_grade = 'AA-' THEN 7",
+            "            WHEN b.publisher_grade = 'AA' THEN 8",
+            "            WHEN b.publisher_grade = 'AA+' THEN 9",
+            "            WHEN b.publisher_grade = 'AAA' THEN 10",
+            "            ELSE 0",
+            "        END &gt;= CASE",
+            "            WHEN #{minPublisherGrade} = 'BBB-' THEN 1",
+            "            WHEN #{minPublisherGrade} = 'BBB' THEN 2",
+            "            WHEN #{minPublisherGrade} = 'BBB+' THEN 3",
+            "            WHEN #{minPublisherGrade} = 'A-' THEN 4",
+            "            WHEN #{minPublisherGrade} = 'A' THEN 5",
+            "            WHEN #{minPublisherGrade} = 'A+' THEN 6",
+            "            WHEN #{minPublisherGrade} = 'AA-' THEN 7",
+            "            WHEN #{minPublisherGrade} = 'AA' THEN 8",
+            "            WHEN #{minPublisherGrade} = 'AA+' THEN 9",
+            "            WHEN #{minPublisherGrade} = 'AAA' THEN 10",
+            "            ELSE 0",
+            "        END",
+            "    </if>",
+            "</where>",
+            "</script>"
+    })
+    long countBonds(BondSearchRequest searchRequest);
+
+    @Select({
+            "SELECT",
+            "    b.id AS id,",
+            "    b.product AS productName,",
+            "    prg.grade AS riskGrade,",
+            "    b.publisher_grade AS publisherGrade,",
+            "    b.publisher,",
+            "    b.coupon_rate AS couponRate,",
+            "    b.published_rate AS publishedRate,",
+            "    b.evalution_rate AS evaluationRate,",
+            "    b.maturity_years AS maturityYears,",
+            "    b.expired_day AS expiredDay,",
+            "    b.final_profit_rate AS finalProfitRate",
+            "FROM bond_products b",
+            "INNER JOIN product_risk_grade prg ON b.risk_grade_id = prg.id",
+            "WHERE b.id = #{bondId}"
+    })
+    Optional<BondDto> selectBondById(@Param("bondId") Long bondId);
 }
