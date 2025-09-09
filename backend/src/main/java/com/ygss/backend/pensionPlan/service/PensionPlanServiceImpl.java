@@ -24,7 +24,7 @@ public class PensionPlanServiceImpl implements PensionPlanService{
         log.info("퇴직연금 수익률 목록 조회 - 검색조건: {}", searchDto);
         List<PensionPlanSearchResponse> result = pensionPlanRepository.selectPensionPlans(searchDto);
 
-        log.info("퇴직연금 수익률 목록 조회 완료 - 조회 건수: {}", result.size());
+        log.info("퇴직연금 수익률 목록 조회 완료 - 조회 건 수: {}", result.size());
         return result;
     }
 
