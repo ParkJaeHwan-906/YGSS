@@ -36,8 +36,8 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         //인증 없이 허용할 엔드포인트들
-                        .requestMatchers("/api/auth/**").permitAll()
-//                        .requestMatchers("/**").permitAll()
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         //비허용 엔드포인트
                         .anyRequest().authenticated()
                 )

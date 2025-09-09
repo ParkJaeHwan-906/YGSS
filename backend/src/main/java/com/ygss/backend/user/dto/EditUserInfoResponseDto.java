@@ -1,16 +1,15 @@
-package com.ygss.backend.auth.dto;
+package com.ygss.backend.user.dto;
 
+import lombok.Builder;
 import lombok.Data;
 
 @Data
-public class SignUpRequestDto {
-    /**
-     * 회원가입 요청 처리를 위한 DTO
-     */
+@Builder
+public class EditUserInfoResponseDto {
     private String name;
     private String email;
     private String password;
-    private Integer workedAt = 0;
+    private Integer workedAt;
     private Integer salary;
     private Integer totalRetirePension;
 }

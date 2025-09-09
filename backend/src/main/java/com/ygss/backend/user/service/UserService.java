@@ -1,8 +1,11 @@
 package com.ygss.backend.user.service;
 
-import org.springframework.stereotype.Service;
-
+import com.ygss.backend.user.dto.EditUserInfoResponseDto;
 
 public interface UserService {
     String getUserNameById(Long userId);
+    Boolean validationPassword(String email, String password);
+    EditUserInfoResponseDto getUserInfoByUserEmail(String userEmail);
+    Boolean updateUserInfo(EditUserInfoResponseDto request);
+    Boolean updateUserExit(String userEmail);
 }

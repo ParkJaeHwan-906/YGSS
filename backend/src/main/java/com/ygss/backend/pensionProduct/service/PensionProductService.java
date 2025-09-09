@@ -1,0 +1,23 @@
+package com.ygss.backend.pensionProduct.service;
+
+import com.ygss.backend.pensionProduct.dto.entity.Company;
+import com.ygss.backend.pensionProduct.dto.entity.ProductType;
+import com.ygss.backend.pensionProduct.dto.entity.Systype;
+import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
+import com.ygss.backend.pensionProduct.dto.response.PensionProductDto;
+import com.ygss.backend.pensionProduct.dto.response.PensionProductSearchResponse;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface PensionProductService {
+    PensionProductSearchResponse searchProducts(SearchCondition condition);
+
+    Optional<PensionProductDto> findById(Long id);
+
+    List<Company> getAllCompanies();
+
+    List<ProductType> getAllProductTypes();
+
+    List<Systype> getAllSystypes();
+}
