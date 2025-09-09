@@ -28,11 +28,11 @@ public class PensionProductDto {
     public String getRiskGradeText() {
         if (riskGrade == null) return "알 수 없음";
         return switch (riskGrade) {
-            case 1 -> "매우 낮음";
-            case 2 -> "낮음";
-            case 3 -> "보통";
-            case 4 -> "높음";
-            case 5 -> "매우 높음";
+            case 1 -> "낮은 위험";
+            case 2 -> "보통 위험";
+            case 3 -> "다소 높은 위험";
+            case 4 -> "높은 위험";
+            case 5 -> "매우 높은 위험";
             default -> "알 수 없음";
         };
     }
