@@ -1,4 +1,6 @@
 import ProgressBar from "@/components/login/ProgressBar";
+import { API_URL } from "@env";
+import axios from "axios";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -13,13 +15,16 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const DOMAINS = ["naver.com", "gmail.com", "hanmail.net", "daum.net", "nate.com", "yahoo.com", "hotmail.com"];
+const DOMAINS: string[] = ["naver.com", "gmail.com", "hanmail.net", "daum.net", "nate.com", "yahoo.com", "hotmail.com"];
 
 export default function SignupEmail() {
     const router = useRouter();
     const ref = useRef<TextInput>(null);
-    const [email, setEmail] = useState("");
     const insets = useSafeAreaInsets();
+
+    const [email, setEmail] = useState<string>("");
+    const [showSuggestions, setShowSuggestions] = useState<boolean>(true);
+    const [message, setMessage] = useState<string>("");
 
     useEffect(() => {
         const t = setTimeout(() => ref.current?.focus(), 60);
@@ -27,17 +32,48 @@ export default function SignupEmail() {
     }, []);
 
     // 이메일 유효성 검사용
-    const canNext = /\S+@\S+\.\S+/.test(email.trim());
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const validFormat = emailRegex.test(email.trim());
 
-    // 이메일을 '@' 기준으로 나누기
-    const [localPart, domainPartRaw] = email.split("@");
-    const domainPart = domainPartRaw ?? "";
-    const [suggestVisible, setSuggestVisible] = useState(true);
-    // 도메인 부분 자동완성용
-    const showSuggestions = email.includes("@") && domainPart.length >= 0;
+    // DB에 이메일 중복 확인 요청 보내기
+    // DB 중복 확인 (디바운스)
+    useEffect(() => {
+        if (!validFormat) {
+            setMessage("");
+            return;
+        }
 
-    const filteredDomains = DOMAINS.filter((domain) =>
-        domain.startsWith(domainPart.toLowerCase()));
+        const delay = setTimeout(() => {
+            checkEmail(email);
+        }, 400);
+
+        return () => clearTimeout(delay);
+    }, [email]);
+
+    const checkEmail = async (email: string) => {
+        try {
+            const res = await axios.post(`${API_URL}/auth/check/email`, { email });
+            console.log(res);
+            if (res.status === 200 && res.data === true) {
+                setMessage("사용 가능한 이메일입니다.");
+            }
+        } catch (err: any) {
+            if (err.response?.status === 400) {
+                setMessage(err.response.data); // 서버에서 주는 메시지
+            } else {
+                setMessage("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            }
+        }
+    };
+
+    // 다음 버튼 활성화 여부
+    const canNext = validFormat && message === "사용 가능한 이메일입니다.";
+
+    //추천 도메인 필터링
+    const filteredDomains: string[] = DOMAINS.filter((domain) =>
+        domain.toLowerCase().startsWith(email.toLowerCase()) ||
+        email.includes("@") // 이미 @ 입력했으면 그대로 둠
+    );
 
     return (
         <View style={{ flex: 1, paddingTop: insets.top + 20, paddingBottom: insets.bottom, backgroundColor: "#fff" }}>
@@ -65,30 +101,50 @@ export default function SignupEmail() {
                             />
 
                             {/* 이메일 형식이 올바르지 않다면 안내문구 */}
-                            {!canNext && email.length > 0 && (
+                            {!validFormat && email.length > 0 && (
                                 <Text style={{ color: "#FF5656", marginTop: 8, fontSize: 12 }}>
                                     올바른 이메일 형식이 아닙니다.
                                 </Text>
                             )}
                             {/* 이메일 형식이 올바르다면 사용 가능한 이메일인지 실시간으로 db에 요청보내서 확인 */}
+                            {message.length > 0 && (
+                                <Text
+                                    style={{
+                                        marginTop: 8,
+                                        fontSize: 12,
+                                        color: message === "사용 가능한 이메일입니다." ? "green" : "red",
+                                    }}
+                                >
+                                    {message}
+                                </Text>
+                            )}
 
                             {/* 추천 이메일 도메인 */}
-                            {showSuggestions && suggestVisible && filteredDomains.length > 0 && (
-                                <FlatList
+                            {email.length > 0 && filteredDomains.length > 0 && (
+                                <FlatList<string>
                                     style={styles.suggestionBox}
                                     data={filteredDomains}
                                     keyExtractor={(item) => item}
                                     renderItem={({ item }) => (
                                         <TouchableOpacity
                                             style={styles.suggestionItem}
-                                            onPress={() => {
-                                                setEmail(`${localPart}@${item}`);
-                                                setSuggestVisible(false);
-                                            }}                                        >
-                                            <Text>{localPart}@{item}</Text>
+                                            onPress={() =>
+                                                setEmail(
+                                                    email.includes("@")
+                                                        ? `${email.split("@")[0]}@${item}`
+                                                        : `${email}@${item}`
+                                                )
+                                            }
+                                        >
+                                            <Text>
+                                                {email.includes("@")
+                                                    ? `${email.split("@")[0]}@${item}`
+                                                    : `${email}@${item}`}
+                                            </Text>
                                         </TouchableOpacity>
                                     )}
                                 />
+
                             )}
 
                         </View>

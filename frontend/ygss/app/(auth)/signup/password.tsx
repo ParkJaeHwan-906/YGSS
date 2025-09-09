@@ -32,9 +32,12 @@ export default function SignupPassword() {
     return () => clearTimeout(t);
   }, []);
 
-  const okLen = pw.length >= 8;
+  // 비밀번호 유효성 검사
+  const strongPwRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&])[A-Za-z\d$@$!%*?&]{8,}$/;
+
+  const okPw = strongPwRegex.test(pw);
   const okMatch = pw.length > 0 && pw === pw2;
-  const canNext = okLen && okMatch;
+  const canNext = okPw && okMatch;
 
   return (
     <View style={{ flex: 1, paddingTop: insets.top + 20, paddingBottom: insets.bottom, backgroundColor: "#fff" }}>
@@ -83,10 +86,14 @@ export default function SignupPassword() {
               </View>
 
               {/* 조건부 에러 메시지 */}
-              {pw.length > 0 && !okLen && (
-                <Text style={{ color: "#c84b4b", fontSize: 12 }}>
-                  비밀번호는 8자 이상이어야 합니다.
-                </Text>
+              {pw.length > 0 && !okPw && (
+                <View>
+                  <Text style={{ color: "#c84b4b", fontSize: 12 }}>
+                    비밀번호는 8자 이상이며,
+                  </Text>
+                  <Text style={{ color: "#c84b4b", fontSize: 12 }}>대문자/소문자/숫자/특수문자를 모두 포함해야 합니다.</Text>
+                </View>
+
               )}
 
               {pw2.length > 0 && !okMatch && (
