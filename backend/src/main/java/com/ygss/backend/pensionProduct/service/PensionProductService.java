@@ -3,9 +3,9 @@ package com.ygss.backend.pensionProduct.service;
 import com.ygss.backend.pensionProduct.dto.entity.Company;
 import com.ygss.backend.pensionProduct.dto.entity.ProductType;
 import com.ygss.backend.pensionProduct.dto.entity.Systype;
+import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
-import com.ygss.backend.pensionProduct.dto.response.PensionProductDto;
-import com.ygss.backend.pensionProduct.dto.response.PensionProductSearchResponse;
+import com.ygss.backend.pensionProduct.dto.response.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,9 +15,13 @@ public interface PensionProductService {
 
     Optional<PensionProductDto> findById(Long id);
 
-    List<Company> getAllCompanies();
+    List<CompanyResponse> getAllCompanies();
 
-    List<ProductType> getAllProductTypes();
+    List<ProductTypeResponse> getAllProductTypes();
 
-    List<Systype> getAllSystypes();
+    List<SystypeResponse> getAllSystypes();
+
+    BondSearchResponse searchBonds(BondSearchRequest searchRequest);
+
+    Optional<BondDto> searchBondById(Long bondId);
 }
