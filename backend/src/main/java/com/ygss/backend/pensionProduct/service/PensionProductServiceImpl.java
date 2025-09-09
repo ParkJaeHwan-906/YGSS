@@ -1,6 +1,7 @@
 package com.ygss.backend.pensionProduct.service;
 
 import com.ygss.backend.pensionProduct.dto.entity.PensionProduct;
+import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.response.*;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
 import com.ygss.backend.pensionProduct.repository.PensionProductRepository;
@@ -81,6 +82,40 @@ public class PensionProductServiceImpl implements PensionProductService {
     @Override
     public List<SystypeResponse> getAllSystypes() {
         return pensionProductRepository.findAllSystypes();
+    }
+
+
+    @Override
+    public BondSearchResponse searchBonds(BondSearchRequest searchRequest) {
+        log.info("채권 목록 조회 - 검색조건: {}", searchRequest);
+
+        // 전체 개수 조회
+        long totalElements = pensionProductRepository.countBonds(searchRequest);
+
+        // 페이징 정보 생성
+        PageInfo pageInfo = PageInfo.of(searchRequest.getPage(), searchRequest.getSize(), totalElements);
+
+        // 채권 목록 조회
+        List<BondDto> bonds = pensionProductRepository.selectBonds(searchRequest);
+
+        log.info("채권 목록 조회 완료 - 조회 건수: {}, {}", bonds.size(), pageInfo.getSummary());
+
+        return BondSearchResponse.of(bonds, pageInfo);
+    }
+
+    @Override
+    public Optional<BondDto> searchBondById(Long bondId) {
+        log.info("채권 단건 조회 - ID: {}", bondId);
+
+        Optional<BondDto> result = pensionProductRepository.selectBondById(bondId);
+
+        if (result.isPresent()) {
+            log.info("채권 단건 조회 완료 - {}", result.get().getProductName());
+        } else {
+            log.warn("채권 정보 없음 - ID: {}", bondId);
+        }
+
+        return result;
     }
 
     /**

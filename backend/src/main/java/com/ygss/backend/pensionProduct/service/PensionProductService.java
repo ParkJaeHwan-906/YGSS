@@ -3,6 +3,7 @@ package com.ygss.backend.pensionProduct.service;
 import com.ygss.backend.pensionProduct.dto.entity.Company;
 import com.ygss.backend.pensionProduct.dto.entity.ProductType;
 import com.ygss.backend.pensionProduct.dto.entity.Systype;
+import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
 import com.ygss.backend.pensionProduct.dto.response.*;
 
@@ -19,4 +20,8 @@ public interface PensionProductService {
     List<ProductTypeResponse> getAllProductTypes();
 
     List<SystypeResponse> getAllSystypes();
+
+    BondSearchResponse searchBonds(BondSearchRequest searchRequest);
+
+    Optional<BondDto> searchBondById(Long bondId);
 }
