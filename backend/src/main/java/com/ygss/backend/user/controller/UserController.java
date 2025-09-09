@@ -3,14 +3,19 @@ package com.ygss.backend.user.controller;
 import com.ygss.backend.common.response.ApiResponseDto;
 import com.ygss.backend.common.response.ErrorCode;
 import com.ygss.backend.common.response.SuccessCode;
+import com.ygss.backend.user.dto.ValidationPasswordRequest;
 import com.ygss.backend.user.service.UserService;
 import com.ygss.backend.user.service.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
@@ -55,5 +60,29 @@ public class UserController {
      * --------------------------------------------------------------------------------------------------
      */
 
-
+    /**
+     * 회원정보 수정을 위한 비밀번호 검증
+     */
+    @PostMapping("/validation/password")
+    public ResponseEntity<?> validationPassword(
+            @AuthenticationPrincipal String email,
+            @RequestBody ValidationPasswordRequest request) {
+        try {
+            return ResponseEntity.ok(userService.validationPassword(email, request.getPassword()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+    }
+    /**
+     * 비밀번호 검증을 거친 사용자 정보 불러오기
+     */
+    @GetMapping("/load/detail")
+    public ResponseEntity<?> loadUserInfoToEdit(@AuthenticationPrincipal String email) {
+        try {
+            return ResponseEntity.ok(userService.getUserInfoByUserEmail(email));
+        } catch (Exception e) {
+            log.error("Load UserInfo To Edit Failed : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+    }
 }

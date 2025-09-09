@@ -1,6 +1,7 @@
 package com.ygss.backend.user.service;
 
 import com.ygss.backend.auth.service.AuthServiceImpl;
+import com.ygss.backend.user.dto.EditUserInfoResponseDto;
 import com.ygss.backend.user.repository.UserAccountsRepository;
 import com.ygss.backend.user.repository.UsersRepository;
 import lombok.AllArgsConstructor;
@@ -21,15 +22,13 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public Boolean validationPassword(String email, String password) {
-        try {
-            if(!authService.decryptoPassword(password, userAccountsRepository.getPasswordByUserEmail(email))) throw new IllegalArgumentException("Password Does Not Match");
-            return true;
-        } catch(IllegalArgumentException e) {
-            log.warn("Validation Password Failed : {}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            log.error("Unexpected Error");
-            throw e;
-        }
+        if(!authService.decryptoPassword(password, userAccountsRepository.getPasswordByUserEmail(email))) throw new IllegalArgumentException("Password Does Not Match");
+        return true;
+    }
+
+    @Override
+    public EditUserInfoResponseDto getUserInfoByUserEmail(String userEmail) {
+        return usersRepository.getUserInfo(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User Not Found"));
     }
 }

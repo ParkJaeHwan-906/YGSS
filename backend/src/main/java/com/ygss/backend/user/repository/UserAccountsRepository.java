@@ -13,4 +13,7 @@ public interface UserAccountsRepository {
 
     @Select("SELECT * FROM user_accounts WHERE email LIKE #{userEmail}")
     UserAccountsDto selectByUserEmail(String userEmail);
+
+    @Select("SELECT password FROM user_accounts WHERE email LIKE #{userEmail}")
+    String getPasswordByUserEmail(String userEmail);
 }
