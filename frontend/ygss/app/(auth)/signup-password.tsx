@@ -1,11 +1,16 @@
-import React, { useEffect, useRef, useState } from "react";
-import {
-  KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard,
-  View, Text, TextInput, Pressable, StyleSheet
-} from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import ProgressBar from "@/components/login/ProgressBar";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Keyboard,
+  KeyboardAvoidingView, Platform,
+  Pressable, StyleSheet,
+  Text, TextInput,
+  TouchableWithoutFeedback,
+  View
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SignupPassword() {
   const router = useRouter();
@@ -36,8 +41,8 @@ export default function SignupPassword() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <View style={styles.wrap}>
+            <ProgressBar step={3} totalSteps={4} />
             <Text style={styles.title}>회원가입</Text>
-            <Text style={styles.state}>3/4</Text>
 
             <View style={{ flex: 1, gap: 16 }}>
               {/* 비밀번호 */}
@@ -112,7 +117,6 @@ export default function SignupPassword() {
 const styles = StyleSheet.create({
   wrap: { flex: 1, paddingHorizontal: 20, paddingBottom: 24 },
   title: { fontSize: 30, fontWeight: "800", color: "#111", textAlign: "center", marginTop: 8, marginBottom: 50 },
-  state: { fontSize: 14, position: "absolute", right: 20, top: 20 },
   label: { fontSize: 20, fontWeight: "800", color: "#5465FF", marginBottom: 8, marginTop: 8 },
   // 언더라인 대신 박스형 인풋 (스크린샷 3 기준)
   boxInput: {

@@ -1,10 +1,15 @@
+import ProgressBar from "@/components/login/ProgressBar";
+import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard,
-    View, Text, TextInput, Pressable, StyleSheet
+    Keyboard,
+    KeyboardAvoidingView, Platform,
+    Pressable, StyleSheet,
+    Text, TextInput,
+    TouchableWithoutFeedback,
+    View
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SignupEmail() {
     const router = useRouter();
@@ -25,8 +30,8 @@ export default function SignupEmail() {
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                     <View style={styles.wrap}>
+                        <ProgressBar step={2} totalSteps={4} />
                         <Text style={styles.title}>회원가입</Text>
-                        <Text style={styles.state}>2/4</Text>
 
                         <View style={{ flex: 1 }}>
                             <Text style={styles.label}>이메일</Text>
@@ -44,6 +49,16 @@ export default function SignupEmail() {
                                 returnKeyType="next"
                                 onSubmitEditing={() => canNext && router.push("/(auth)/signup-password")}
                             />
+
+                            {/* 이메일 형식이 올바르지 않다면 안내문구 */}
+                            {!canNext && email.length > 0 && (
+                                <Text style={{ color: "#FF5656", marginTop: 8, fontSize: 12 }}>
+                                    올바른 이메일 형식이 아닙니다.
+                                </Text>
+                            )}
+                            {/* 이메일 형식이 올바르다면 사용 가능한 이메일인지 실시간으로 db에 요청보내서 확인 */}
+
+
                         </View>
 
                         <Pressable
@@ -67,7 +82,6 @@ export default function SignupEmail() {
 const styles = StyleSheet.create({
     wrap: { flex: 1, paddingHorizontal: 20, paddingBottom: 24 },
     title: { fontSize: 30, fontWeight: "800", color: "#111", textAlign: "center", marginTop: 8, marginBottom: 50 },
-    state: { fontSize: 14, position: "absolute", right: 20, top: 20 },
     label: { fontSize: 20, fontWeight: "800", color: "#5465FF", marginBottom: 10, marginTop: 8 },
     underlineInput: {
         borderBottomWidth: 1.2,
