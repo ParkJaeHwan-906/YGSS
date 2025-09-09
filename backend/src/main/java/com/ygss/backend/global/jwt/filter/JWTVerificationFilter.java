@@ -30,33 +30,18 @@ public class JWTVerificationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         String method = request.getMethod();
 
-        // 리프레시 토큰 엔드포인트는 항상 스킵
-        if ("/api/auth/refresh".equals(path)) {
-            return true;
-        }
-
-        // 로그인 엔드포인트 스킵
-        if ("/api/auth/login".equals(path)) {
-            return true;
-        }
-
-        // 회원가입 엔드포인트 스킵
-        if ("/api/auth/signup".equals(path)) {
-            return true;
-        }
-
         // CORS preflight 스킵
         if (HttpMethod.OPTIONS.matches(method)) {
             return true;
         }
 
         // 인증이 필요없는 public 경로들
-        if (path.startsWith("/api/public/")) {
+        if (path.startsWith("/public")) {
             return true;
         }
 
         // 헬스체크 엔드포인트
-        if (path.equals("/api/health")) {
+        if (path.equals("/health")) {
             return true;
         }
 
