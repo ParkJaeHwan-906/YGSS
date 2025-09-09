@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: ygss-test
+data:
+  SPRING_PROFILES_ACTIVE: "prod"
+  MYSQL_HOST: "172.26.7.217"
+  MYSQL_DATABASE: "ygss"
+  REDIS_HOST: "172.26.7.217"
+  REDIS_PORT: "6379"

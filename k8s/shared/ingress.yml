@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: main-ingress
+  namespace: ygss-test
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # 첫 인증서 발급 확인 후 주석 해제
+    # traefik.ingress.kubernetes.io/redirect-to-https: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - j13a103.p.ssafy.io
+    secretName: main-tls
+  rules:
+  - host: j13a103.p.ssafy.io
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: backend-service
+            port:
+              number: 80

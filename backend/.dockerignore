@@ -1,0 +1,27 @@
+# Jenkins 빌드 환경용
+.gradle/
+build/
+src/
+gradle/
+gradlew*
+*.gradle
+settings.gradle
+
+# 개발 환경
+.git/
+.gitignore
+.env
+*.md
+Dockerfile*
+.dockerignore
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# 런타임 파일
+*.log
+logs/
+.DS_Store
+Thumbs.db
