@@ -111,6 +111,7 @@ public class AuthServiceImpl implements AuthService {
         return securityConfig.passwordEncoder().matches(inputPassword, originPassword);
     }
     private UserAccountsDto getStoredUser(String userEmail) {
-        return userAccountsRepository.selectByUserEmail(userEmail);
+        return userAccountsRepository.selectByUserEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User Not Found"));
     }
 }

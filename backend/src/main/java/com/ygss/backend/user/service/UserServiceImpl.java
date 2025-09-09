@@ -63,4 +63,10 @@ public class UserServiceImpl implements UserService{
             request.setPassword(authService.cryptoPassword(request.getPassword()));
         }
     }
+
+    @Override
+    public Boolean updateUserExit(String userEmail) {
+        if(userAccountsRepository.updateUserExit(userEmail) < 1) throw new IllegalArgumentException("User Not Found");
+        return true;
+    }
 }

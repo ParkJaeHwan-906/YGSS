@@ -102,4 +102,17 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
+    /**
+     * 회원 탈퇴
+     * exit 의 null 값을 바꿔줌
+     */
+    @PostMapping("/update/exit")
+    public ResponseEntity<?> updateUserExit(@AuthenticationPrincipal String email) {
+        try {
+            return ResponseEntity.ok(userService.updateUserExit(email));
+        } catch (Exception e) {
+            log.error("Update User Exit Failed : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+    }
 }
