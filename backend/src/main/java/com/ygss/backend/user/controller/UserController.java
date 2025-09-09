@@ -90,7 +90,7 @@ public class UserController {
     /**
      * 회원정보 수정
      */
-    @PostMapping("/update/detail")
+    @PutMapping("/update/detail")
     public ResponseEntity<?> editUserInfo(
             @AuthenticationPrincipal String email,
             @RequestBody EditUserInfoResponseDto request) {
@@ -106,7 +106,7 @@ public class UserController {
      * 회원 탈퇴
      * exit 의 null 값을 바꿔줌
      */
-    @PostMapping("/update/exit")
+    @PatchMapping("/update/exit")
     public ResponseEntity<?> updateUserExit(@AuthenticationPrincipal String email) {
         try {
             return ResponseEntity.ok(userService.updateUserExit(email));
