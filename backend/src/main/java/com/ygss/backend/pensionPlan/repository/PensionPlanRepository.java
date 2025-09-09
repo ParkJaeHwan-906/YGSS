@@ -45,19 +45,21 @@ public interface PensionPlanRepository {
     })
     List<PensionPlanSearchResponse> selectPensionPlans(PensionPlanSearchRequest searchDto);
 
-    @Select("SELECT " +
-            "c.company AS companyName, " +
-            "s.systype AS systype, " +
-            "r.reserve, " +
-            "r.earn_rate AS earnRate, " +
-            "CASE WHEN r.systype_id = 1 THEN NULL ELSE r.earn_rate3 END AS earnRate3, " +
-            "CASE WHEN r.systype_id = 1 THEN NULL ELSE r.earn_rate5 END AS earnRate5, " +
-            "CASE WHEN r.systype_id = 1 THEN NULL ELSE r.earn_rate7 END AS earnRate7, " +
-            "CASE WHEN r.systype_id = 1 THEN NULL ELSE r.earn_rate10 END AS earnRate10, " +
-            "r.id" +
-            "FROM retire_pension_rate r " +
-            "INNER JOIN companies c ON r.company_id = c.id " +
-            "INNER JOIN retire_pension_systype s ON r.systype_id = s.id " +
-            "WHERE r.id = #{pensionPlanId}")
+    @Select({
+            "SELECT",
+            "    c.company AS companyName,",
+            "    s.systype AS systype,",
+            "    r.reserve,",
+            "    r.earn_rate AS earnRate,",
+            "    CASE WHEN r.systype_id = 1 THEN NULL ELSE r.earn_rate3 END AS earnRate3,",
+            "    CASE WHEN r.systype_id = 1 THEN NULL ELSE r.earn_rate5 END AS earnRate5,",
+            "    CASE WHEN r.systype_id = 1 THEN NULL ELSE r.earn_rate7 END AS earnRate7,",
+            "    CASE WHEN r.systype_id = 1 THEN NULL ELSE r.earn_rate10 END AS earnRate10,",
+            "    r.id",
+            "FROM retire_pension_rate r",
+            "INNER JOIN companies c ON r.company_id = c.id",
+            "INNER JOIN retire_pension_systype s ON r.systype_id = s.id",  // ← 정확한 테이블명
+            "WHERE r.id = #{pensionPlanId}"
+    })
     Optional<PensionPlanSearchResponse> selectPensionPlanById(@Param("pensionPlanId") Long pensionPlanId);
 }
