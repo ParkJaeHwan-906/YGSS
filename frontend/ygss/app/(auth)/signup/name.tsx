@@ -11,10 +11,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function SignupEmail() {
+export default function SignupName() {
     const router = useRouter();
     const ref = useRef<TextInput>(null);
-    const [email, setEmail] = useState("");
+    const [name, setName] = useState("");
     const insets = useSafeAreaInsets();
 
     useEffect(() => {
@@ -22,51 +22,46 @@ export default function SignupEmail() {
         return () => clearTimeout(t);
     }, []);
 
-    // 이메일 유효성 검사용
-    const canNext = /\S+@\S+\.\S+/.test(email.trim());
+    // 이름 유효성 검사용 (한글, 2자 이상 10자 이하)
+    const nameRegex = /^[가-힣]{2,10}$/;
+    const isValid = nameRegex.test(name);
 
     return (
         <View style={{ flex: 1, paddingTop: insets.top + 20, paddingBottom: insets.bottom, backgroundColor: "#fff" }}>
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                     <View style={styles.wrap}>
-                        <ProgressBar step={2} totalSteps={4} />
+                        <ProgressBar step={1} totalSteps={4} />
                         <Text style={styles.title}>회원가입</Text>
 
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.label}>이메일</Text>
+                            <Text style={styles.label}>이름</Text>
                             <TextInput
                                 ref={ref}
                                 autoFocus
-                                value={email}
-                                onChangeText={setEmail}
+                                value={name}
+                                onChangeText={setName}
                                 placeholder=" "
-                                placeholderTextColor="#b8b8c9"
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                autoCorrect={false}
                                 style={styles.underlineInput}
                                 returnKeyType="next"
-                                onSubmitEditing={() => canNext && router.push("/(auth)/signup-password")}
+                                onSubmitEditing={() => isValid && router.push("/(auth)/signup/email")}
                             />
 
-                            {/* 이메일 형식이 올바르지 않다면 안내문구 */}
-                            {!canNext && email.length > 0 && (
+                            {/* 이름이 두글자 이상이 아니거나 한글이 아니면 경고 */}
+                            {name.length > 0 && !isValid && (
                                 <Text style={{ color: "#FF5656", marginTop: 8, fontSize: 12 }}>
-                                    올바른 이메일 형식이 아닙니다.
+                                    이름은 한글, 2~10자로 입력해주세요.
                                 </Text>
                             )}
-                            {/* 이메일 형식이 올바르다면 사용 가능한 이메일인지 실시간으로 db에 요청보내서 확인 */}
-
-
                         </View>
 
                         <Pressable
-                            onPress={() => router.push("/(auth)/signup-password")}
-                            disabled={!canNext}
+                            onPress={() => router.push("/(auth)/signup/email")}
+                            // 에러메시지 출력시 비활성화
+                            disabled={!isValid}
                             style={({ pressed }) => [
                                 styles.nextBtn,
-                                !canNext && { opacity: 0.4 },
+                                !isValid && { opacity: 0.4 },
                                 pressed && { transform: [{ scale: 0.98 }] },
                             ]}
                         >

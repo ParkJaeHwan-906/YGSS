@@ -74,7 +74,7 @@ export default function SignupPassword() {
                   placeholder=" "
                   secureTextEntry={!show2}
                   returnKeyType="done"
-                  onSubmitEditing={() => canNext && router.push("/(auth)/signup-salary")}
+                  onSubmitEditing={() => canNext && router.push("/(auth)/signup/salary")}
                   style={styles.boxField}
                 />
                 <Pressable onPress={() => setShow2((s) => !s)} style={styles.iconBtn}>
@@ -97,7 +97,7 @@ export default function SignupPassword() {
             </View>
 
             <Pressable
-              onPress={() => router.push("/(auth)/signup-salary")}
+              onPress={() => router.push("/(auth)/signup/salary")}
               disabled={!canNext}
               style={({ pressed }) => [
                 styles.nextBtn,
