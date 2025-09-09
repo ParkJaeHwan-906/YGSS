@@ -2,14 +2,18 @@ import ProgressBar from "@/components/login/ProgressBar";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+    FlatList,
     Keyboard,
     KeyboardAvoidingView, Platform,
     Pressable, StyleSheet,
     Text, TextInput,
+    TouchableOpacity,
     TouchableWithoutFeedback,
-    View
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const DOMAINS = ["naver.com", "gmail.com", "hanmail.net", "daum.net", "nate.com", "yahoo.com", "hotmail.com"];
 
 export default function SignupEmail() {
     const router = useRouter();
@@ -24,6 +28,16 @@ export default function SignupEmail() {
 
     // 이메일 유효성 검사용
     const canNext = /\S+@\S+\.\S+/.test(email.trim());
+
+    // 이메일을 '@' 기준으로 나누기
+    const [localPart, domainPartRaw] = email.split("@");
+    const domainPart = domainPartRaw ?? "";
+    const [suggestVisible, setSuggestVisible] = useState(true);
+    // 도메인 부분 자동완성용
+    const showSuggestions = email.includes("@") && domainPart.length >= 0;
+
+    const filteredDomains = DOMAINS.filter((domain) =>
+        domain.startsWith(domainPart.toLowerCase()));
 
     return (
         <View style={{ flex: 1, paddingTop: insets.top + 20, paddingBottom: insets.bottom, backgroundColor: "#fff" }}>
@@ -58,6 +72,24 @@ export default function SignupEmail() {
                             )}
                             {/* 이메일 형식이 올바르다면 사용 가능한 이메일인지 실시간으로 db에 요청보내서 확인 */}
 
+                            {/* 추천 이메일 도메인 */}
+                            {showSuggestions && suggestVisible && filteredDomains.length > 0 && (
+                                <FlatList
+                                    style={styles.suggestionBox}
+                                    data={filteredDomains}
+                                    keyExtractor={(item) => item}
+                                    renderItem={({ item }) => (
+                                        <TouchableOpacity
+                                            style={styles.suggestionItem}
+                                            onPress={() => {
+                                                setEmail(`${localPart}@${item}`);
+                                                setSuggestVisible(false);
+                                            }}                                        >
+                                            <Text>{localPart}@{item}</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                />
+                            )}
 
                         </View>
 
@@ -98,4 +130,13 @@ const styles = StyleSheet.create({
         elevation: 6,
     },
     nextTxt: { color: "#fff", fontWeight: "700", fontSize: 15 },
+    suggestionBox: {
+        marginTop: 10,
+        borderRadius: 6,
+        backgroundColor: "#f5faffff",
+        maxHeight: 200,
+    },
+    suggestionItem: {
+        padding: 10,
+    },
 });
