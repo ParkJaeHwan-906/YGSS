@@ -4,6 +4,7 @@ import com.ygss.backend.user.dto.UserAccountsDto;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 @Mapper
 public interface UserAccountsRepository {
@@ -16,4 +17,14 @@ public interface UserAccountsRepository {
 
     @Select("SELECT password FROM user_accounts WHERE email LIKE #{userEmail}")
     String getPasswordByUserEmail(String userEmail);
+
+    @Update("""
+            UPDATE `user_accounts` SET
+            `password` = #{password},
+            `worked_at` = #{workedAt},
+            `salary` = #{salary},
+            `total_retire_pension` = #{totalRetirePension}
+            WHERE `email` LIKE #{userEmail};
+            """)
+    Integer updateUserAccount(String userEmail, String password, Integer workedAt, Integer salary, Integer totalRetirePension);
 }

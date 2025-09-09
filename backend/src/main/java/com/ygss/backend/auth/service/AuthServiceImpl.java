@@ -101,7 +101,7 @@ public class AuthServiceImpl implements AuthService {
     /**
      * 비밀번호 암호화
      */
-    private String cryptoPassword(String password) {
+    public String cryptoPassword(String password) {
         return securityConfig.passwordEncoder().encode(password);
     }
     /**

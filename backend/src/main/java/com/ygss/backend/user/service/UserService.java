@@ -6,4 +6,5 @@ public interface UserService {
     String getUserNameById(Long userId);
     Boolean validationPassword(String email, String password);
     EditUserInfoResponseDto getUserInfoByUserEmail(String userEmail);
+    Boolean updateUserInfo(EditUserInfoResponseDto request);
 }

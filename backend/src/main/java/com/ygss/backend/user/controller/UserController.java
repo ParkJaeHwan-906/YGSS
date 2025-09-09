@@ -3,6 +3,7 @@ package com.ygss.backend.user.controller;
 import com.ygss.backend.common.response.ApiResponseDto;
 import com.ygss.backend.common.response.ErrorCode;
 import com.ygss.backend.common.response.SuccessCode;
+import com.ygss.backend.user.dto.EditUserInfoResponseDto;
 import com.ygss.backend.user.dto.ValidationPasswordRequest;
 import com.ygss.backend.user.service.UserService;
 import com.ygss.backend.user.service.UserServiceImpl;
@@ -70,6 +71,7 @@ public class UserController {
         try {
             return ResponseEntity.ok(userService.validationPassword(email, request.getPassword()));
         } catch (Exception e) {
+            log.warn("Validation Password Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
@@ -82,6 +84,21 @@ public class UserController {
             return ResponseEntity.ok(userService.getUserInfoByUserEmail(email));
         } catch (Exception e) {
             log.error("Load UserInfo To Edit Failed : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+    }
+    /**
+     * 회원정보 수정
+     */
+    @PostMapping("/update/detail")
+    public ResponseEntity<?> editUserInfo(
+            @AuthenticationPrincipal String email,
+            @RequestBody EditUserInfoResponseDto request) {
+        try {
+            if(!email.equals(request.getEmail())) throw new IllegalArgumentException("Invalid User");
+            return ResponseEntity.ok(userService.updateUserInfo(request));
+        } catch (Exception e) {
+            log.error("Update User Info Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
