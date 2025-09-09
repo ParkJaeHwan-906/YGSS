@@ -121,14 +121,14 @@ const styles = StyleSheet.create({
 
   /* Header */
   header: {
-    marginTop: 8,
+    marginTop: 40,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: 20,
   },
-  headerTitleLine1: { fontSize: 28, fontWeight: "900", color: Colors?.black ?? "#111" },
-  headerTitleLine2: { fontSize: 28, fontWeight: "900", color: Colors?.black ?? "#111" },
+  headerTitleLine1: { fontSize: 24, fontFamily: "BasicBold", color: Colors?.black ?? "#111" },
+  headerTitleLine2: { fontSize: 24, fontFamily: "BasicBold", color: Colors?.black ?? "#111" },
   headerIcon: { width: 44, height: 44, resizeMode: "contain", marginTop: 4 },
 
   /* Carousel */
@@ -152,10 +152,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#BFD1FF",
     transform: [{ translateY: -8 }],
   },
-  cardTitle: { fontSize: 18, fontWeight: "800", color: "#111" },
-  cardTitleDark: { fontSize: 18, fontWeight: "800", color: "#111" },
-  cardRateUp: { marginTop: 8, fontSize: 18, fontWeight: "900", color: "#FF2C2C" },
-  cardRateUpDark: { marginTop: 8, fontSize: 18, fontWeight: "900", color: "#FF2C2C" },
+  cardTitle: { fontFamily: "BasicBold", fontSize: 18, color: "#111" },
+  cardTitleDark: { fontFamily: "BasicBold", fontSize: 18, color: "#111" },
+  cardRateUp: { marginTop: 8, fontFamily: "BasicBold", fontSize: 18, color: "#FF2C2C" },
+  cardRateUpDark: { marginTop: 8, fontFamily: "BasicBold", fontSize: 18, color: "#FF2C2C" },
   cardBadge: {
     width: 64, height: 64, resizeMode: "contain",
     position: "absolute", right: 18, bottom: 18,
@@ -169,8 +169,8 @@ const styles = StyleSheet.create({
   },
 
   /* Section */
-  sectionHeader: { marginTop: 6, marginBottom: 10 },
-  sectionTitle: { fontSize: 24, fontWeight: "900", color: "#111" },
+  sectionHeader: { marginTop: 16, marginBottom: 10 },
+  sectionTitle: { fontFamily: "BasicBold", fontSize: 20, color: "#111" },
 
   /* List */
   list: {
@@ -190,11 +190,11 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
     marginRight: 12,
   },
-  logoTxt: { fontSize: 22, fontWeight: "900", color: "#20140D" },
+  logoTxt: { fontFamily: "BasicBold", fontSize: 22, color: "#20140D" },
   rowCenter: { flex: 1 },
-  rowTitle: { fontSize: 18, fontWeight: "800", color: "#111" },
-  rowSub: { fontSize: 12, color: "#9AA0A6", marginTop: 4 },
-  rowRateUp: { fontSize: 18, fontWeight: "900", color: "#FF2C2C" },
-  rowRateDown: { fontSize: 18, fontWeight: "900", color: "#2F6FFF" },
+  rowTitle: { fontFamily: "BasicMedium", fontSize: 18, color: "#111" },
+  rowSub: { fontFamily: "BasicMedium", fontSize: 12, color: "#9AA0A6", marginTop: 4 },
+  rowRateUp: { fontFamily: "BasicBold", fontSize: 18, color: "#FF2C2C" },
+  rowRateDown: { fontFamily: "BasicBold", fontSize: 18, color: "#2F6FFF" },
   divider: { height: 1, backgroundColor: "#E8EBF1" },
 });

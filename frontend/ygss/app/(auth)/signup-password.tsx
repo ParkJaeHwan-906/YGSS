@@ -84,13 +84,13 @@ export default function SignupPassword() {
 
               {/* 조건부 에러 메시지 */}
               {pw.length > 0 && !okLen && (
-                <Text style={{ color: "#c84b4b", fontSize: 12 }}>
+                <Text style={{ color: "#c84b4b", fontFamily: "BasicMedium", fontSize: 12 }}>
                   비밀번호는 8자 이상이어야 합니다.
                 </Text>
               )}
 
               {pw2.length > 0 && !okMatch && (
-                <Text style={{ color: "#c84b4b", fontSize: 12 }}>
+                <Text style={{ color: "#c84b4b", fontFamily: "BasicMedium", fontSize: 12 }}>
                   비밀번호가 일치해야 합니다.
                 </Text>
               )}
@@ -116,8 +116,8 @@ export default function SignupPassword() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, paddingHorizontal: 20, paddingBottom: 24 },
-  title: { fontSize: 30, fontWeight: "800", color: "#111", textAlign: "center", marginTop: 8, marginBottom: 50 },
-  label: { fontSize: 20, fontWeight: "800", color: "#5465FF", marginBottom: 8, marginTop: 8 },
+  title: { fontSize: 30, fontFamily: "BasicBold", color: "#111", textAlign: "center", marginTop: 8, marginBottom: 50 },
+  label: { fontSize: 20, fontFamily: "BasicMedium", color: "#5465FF", marginBottom: 8, marginTop: 8 },
   // 언더라인 대신 박스형 인풋 (스크린샷 3 기준)
   boxInput: {
     borderWidth: 1,
@@ -128,8 +128,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
+    fontFamily: "BasicMedium",
   },
-  boxField: { flex: 1, fontSize: 16, color: "#111", paddingVertical: 4 },
+  boxField: { flex: 1, fontFamily: "BasicMedium", fontSize: 16, color: "#111", paddingVertical: 4 },
   iconBtn: { padding: 4, marginLeft: 6 },
   nextBtn: {
     backgroundColor: "#5465FF",
@@ -138,5 +139,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 6,
   },
-  nextTxt: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  nextTxt: { color: "#fff", fontFamily: "BasicMedium", fontSize: 15 },
 });

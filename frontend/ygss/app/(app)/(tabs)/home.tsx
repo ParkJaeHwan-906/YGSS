@@ -142,8 +142,8 @@ import {
       alignSelf: "center"
     },
     heroTitle: {
+      fontFamily: "BasicBold",
       fontSize: 24,
-      fontWeight: "900",
       color: "#111",
       lineHeight: 32,
       alignSelf: "flex-start", // ✅ 텍스트도 왼쪽 기준
@@ -227,9 +227,10 @@ import {
   
     /* 섹션 타이틀 */
     sectionTitle: {
-      fontSize: 22,
-      fontWeight: "900",
+      fontFamily: "BasicBold",
+      fontSize: 18,
       color: "#111",
+      marginLeft: 8,
       marginBottom: 12,
     },
   

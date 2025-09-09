@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     container: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, paddingHorizontal: 20 },
   
     headlineBox: { marginTop: 8, marginBottom: 8, position: "relative", alignSelf: "stretch" },
-    headline: { fontSize: 28, lineHeight: 36, fontWeight: "900", color: Colors.black },
+    headline: { fontSize: 28, lineHeight: 36, fontFamily: "BasicBold", color: Colors.black },
   
     coinImg: { position: "absolute", right: 6, top: -6, width: 70, height: 70 },
   
@@ -109,6 +109,7 @@ const styles = StyleSheet.create({
       borderRadius: 16,
       paddingHorizontal: 16,
       paddingVertical: 16,
+      fontFamily: "BasicMedium",
       fontSize: 18,
       color: Colors.black,
       shadowColor: "#000",
@@ -133,10 +134,10 @@ const styles = StyleSheet.create({
       shadowOffset: { width: 0, height: 8 },
       elevation: 4,
     },
-    primaryText: { color: Colors.white, fontSize: 18, fontWeight: "800" },
+    primaryText: { color: Colors.white, fontSize: 18, fontFamily: "BasicMedium" },
   
     mascotBox: { width: "100%", alignItems: "center", marginTop: 24, overflow: "visible" },
     mascotImg: { width: "60%", height: 200 },
   
-    caption: { textAlign: "center", marginTop: 2, fontSize: 14, fontWeight: "900", color: Colors.black },
+    caption: { textAlign: "center", marginTop: 2, fontSize: 14, fontFamily: "BasicMedium", color: Colors.black },
   });

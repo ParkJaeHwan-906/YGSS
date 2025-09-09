@@ -75,8 +75,8 @@ const styles = StyleSheet.create({
     height: 240,
   },
   caption: {
-    fontSize: 16,
-    fontWeight: "900",
+    fontFamily: "BasicBold",
+    fontSize: 12,
     color: Colors.black,
     textAlign: "center",
   },

@@ -72,6 +72,7 @@ const styles = StyleSheet.create({
     columnGap: 14,         // gap 이슈 피해서 columnGap 사용 (지원됨)
     flexWrap: "nowrap",
     alignItems: "stretch",
+    marginTop: 30,
   },
   // ← 비율은 래퍼에게
   colLeft: { flex: 6 },
@@ -93,9 +94,9 @@ const styles = StyleSheet.create({
   boxLeft: { backgroundColor: Colors?.primary ?? "#4666FF" },
   boxRight: { backgroundColor: Colors?.white ?? "#FFFFFF" },
 
-  boxTitle: { fontSize: 18, fontWeight: "800", marginBottom: 6 },
+  boxTitle: { fontFamily: "BasicBold", fontSize: 18, marginBottom: 6 },
   boxTitleLight: { color: "#FFFFFF" },
-  boxDesc: { fontSize: 12, lineHeight: 18 },
+  boxDesc: { fontFamily: "BasicMedium", fontSize: 12, lineHeight: 18 },
   boxDescLight: { color: "rgba(255,255,255,0.9)" },
   boxIcon: {
     width: 56,
@@ -109,7 +110,7 @@ const styles = StyleSheet.create({
   explainBox: {
     height: 600,
     padding: 20,
-    marginTop: 20,
+    marginTop: 10,
     alignItems: "center",
     justifyContent: "center",
   },

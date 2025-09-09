@@ -108,7 +108,7 @@ export default function Dc4() {
             <Image source={require("@/assets/icon/chart.png")} style={styles.sectionIcon} />
           </View>
 
-          <Text style={styles.bigNumber}>999,999원</Text>
+          <Text style={styles.bigNumber}>999 만원</Text>
           <Text style={styles.smallCaption}>10년 기준 평균치를 계산한 값이에요</Text>
 
           <ChartBox />
@@ -124,7 +124,7 @@ export default function Dc4() {
             <Image source={require("@/assets/icon/chart.png")} style={styles.sectionIcon} />
           </View>
 
-          <Text style={styles.bigNumber}>123,456원</Text>
+          <Text style={styles.bigNumber}>3,456 만원</Text>
           <Text style={styles.smallCaption}>10년 기준 평균치를 계산한 값이에요</Text>
 
           <ChartBox />
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "#FFFFFF",
     fontSize: 18,
-    fontWeight: "800",
+    fontFamily: "BasicBold",
     color: "#3D3D4E",
     textAlign: "center",
     marginRight: 8,
@@ -207,14 +207,14 @@ const styles = StyleSheet.create({
   headerTitle1: {
     fontSize: 28,
     lineHeight: 34,
-    fontWeight: "900",
+    fontFamily: "BasicBold",
     color: Colors?.black ?? "#111",
   },
   headerTitle2: {
     marginTop: 4,
     fontSize: 28,
     lineHeight: 34,
-    fontWeight: "900",
+    fontFamily: "BasicBold",
     color: Colors?.black ?? "#111",
   },
 
@@ -249,8 +249,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  input: { flex: 1, fontSize: 18, fontWeight: "700", color: "#2E2E3A" },
-  inputSuffix: { marginLeft: 8, fontSize: 16, fontWeight: "700", color: "#73738C" },
+  input: { flex: 1, fontSize: 18, fontFamily: "BasicMedium", color: "#2E2E3A" },
+  inputSuffix: { marginLeft: 8, fontSize: 16, fontFamily: "BasicBold", color: "#73738C" },
 
   primaryBtn: {
     width: 300,
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
   },
-  primaryBtnText: { color: "#FFFFFF", fontSize: 18, fontWeight: "900", letterSpacing: 0.2 },
+  primaryBtnText: { color: "#FFFFFF", fontSize: 18, fontFamily: "BasicMedium", letterSpacing: 0.2 },
 
   scrollHint: { alignSelf: "center", marginVertical: 12, fontSize: 18, color: "#8A8AA3" },
 
@@ -281,11 +281,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginRight: 8,
   },
-  pillText: { fontSize: 16, fontWeight: "900", color: "#2E2E3A" },
-  sectionTitle: { fontSize: 18, fontWeight: "900", color: "#2E2E3A" },
+  pillText: { fontSize: 16, fontFamily: "BasicBold", color: "#2E2E3A" },
+  sectionTitle: { fontSize: 18, fontFamily: "BasicBold", color: "#2E2E3A" },
   sectionIcon: { width: 28, height: 28, marginLeft: 8 },
-  bigNumber: { marginTop: 6, fontSize: 36, fontWeight: "900", color: "#141416" },
-  smallCaption: { marginTop: 6, marginBottom: 10, fontSize: 12, color: "#8A8AA3" },
+  bigNumber: { marginTop: 6, fontSize: 36, fontFamily: "BasicBold", color: "#141416" },
+  smallCaption: { marginTop: 6, marginBottom: 10, fontFamily: "BasicMedium", fontSize: 12, color: "#8A8AA3" },
 
   // 차트 박스(placeholder)
   chartBox: {
@@ -307,8 +307,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   irpImg: { width: 240, height: 240, marginBottom: 8 },
-  irpTextLine1: { fontSize: 14, color: "#4A4A5C" },
-  irpTextLine2: { marginTop: 2, fontSize: 16, fontWeight: "800", color: "#2E2E3A", marginBottom: 10 },
+  irpTextLine1: { fontSize: 14, fontFamily: "BasicMedium", color: "#4A4A5C" },
+  irpTextLine2: { marginTop: 2, fontSize: 16, fontFamily: "BasicBold", color: "#2E2E3A", marginBottom: 10 },
   secondaryBtn: {
     marginTop: 6,
     borderRadius: 14,
@@ -316,5 +316,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     backgroundColor: Colors?.primary ?? "#4D6BFE",
   },
-  secondaryBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "900" },
+  secondaryBtnText: { color: "#FFFFFF", fontSize: 16, fontFamily: "BasicMedium" },
 });

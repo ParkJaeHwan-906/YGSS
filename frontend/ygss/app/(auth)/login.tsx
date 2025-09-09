@@ -153,7 +153,7 @@ const stylesLogin = StyleSheet.create({
     },
     brand: {
         fontSize: 42,
-        fontWeight: "800",
+        fontFamily: "BasicBold",
         color: "#6b7bff",
         alignSelf: "center",
         marginBottom: 16,
@@ -171,7 +171,7 @@ const stylesLogin = StyleSheet.create({
         shadowOffset: { width: 0, height: 6 },
         elevation: 2,
     },
-    fieldInput: { flex: 1, fontSize: 16, color: "#111" },
+    fieldInput: { flex: 1, fontFamily: "BasicMedium", fontSize: 16, color: "#111" },
     loginBtn: {
         backgroundColor: "#5865f2",
         borderRadius: 12,
@@ -184,8 +184,8 @@ const stylesLogin = StyleSheet.create({
         shadowOffset: { width: 0, height: 8 },
         elevation: 6,
     },
-    loginTxt: { color: "#fff", fontWeight: "700", fontSize: 16 },
+    loginTxt: { color: "#fff", fontFamily: "BasicMedium", fontSize: 16 },
     linkRow: { flexDirection: "row", gap: 8, justifyContent: "flex-end", marginTop: 8 },
-    linkMuted: { color: "#6f7285", fontSize: 12, textAlign: "right" },
-    linkStrong: { color: "#5865f2", fontSize: 12, fontWeight: "800" },
+    linkMuted: { color: "#6f7285", fontSize: 12, fontFamily: "BasicMedium", textAlign: "right" },
+    linkStrong: { color: "#5865f2", fontSize: 12, fontFamily: "BasicMedium" },
 });
