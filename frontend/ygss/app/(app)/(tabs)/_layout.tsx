@@ -61,6 +61,13 @@ export default function TabLayout() {
             <Ionicons name="person" size={size} color={focused ? "skyblue" : color} />
           ),
         }} />
+      
+      {/* ⛔️ 탭바에서 숨길 라우트들 */}
+      <Tabs.Screen name="dc/index" options={{ href: null }} />
+      <Tabs.Screen name="dc/dc1" options={{ href: null }} />
+      <Tabs.Screen name="dc/dc2" options={{ href: null }} />
+      <Tabs.Screen name="dc/dc3" options={{ href: null }} />
+      <Tabs.Screen name="dc/dc4" options={{ href: null }} />
     </Tabs>
   );
 }
