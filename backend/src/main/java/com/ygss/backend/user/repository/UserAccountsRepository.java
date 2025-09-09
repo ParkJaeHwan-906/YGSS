@@ -42,4 +42,11 @@ public interface UserAccountsRepository {
             WHERE `email` LIKE #{userEmail};
             """)
     Integer updateUserExit(String userEmail);
+
+    @Update("""
+            UPDATE `user_accounts` SET
+            `risk_grade_id` = #{riskGradeId}
+            WHERE `email` LIKE #{userEmail};
+            """)
+    Integer updateUserRiskGrade(String userEmail, Long riskGradeId);
 }
