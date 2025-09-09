@@ -1,3 +1,5 @@
+// app/index.tsx
+
 import { Redirect } from "expo-router";
 import { useAppSelector } from "@/src/store/hooks";
 
