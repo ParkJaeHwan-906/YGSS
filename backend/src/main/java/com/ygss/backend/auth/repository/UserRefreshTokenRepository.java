@@ -24,9 +24,10 @@ public interface UserRefreshTokenRepository {
     @Select("""
             SELECT refresh_token FROM `user_refresh_token`
             WHERE user_id = #{userId}
-            AND `exit` > CURRENT_TIMESTAMP;
+            AND `exit` > CURRENT_TIMESTAMP
+            AND refresh_token = #{refreshToken};
             """)
-    Optional<String> findByuserId(Long userId);
+    Optional<String> findByuserId(Long userId, String refreshToken);
 
     @Delete("""
             DELETE FROM `user_refresh_token`
