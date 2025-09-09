@@ -1,18 +1,19 @@
+import ProgressBar from "@/components/login/ProgressBar";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+    Keyboard,
     KeyboardAvoidingView,
     Platform,
-    TouchableWithoutFeedback,
-    Keyboard,
-    View,
-    Text,
-    TextInput,
     Pressable,
     StyleSheet,
+    Text,
+    TextInput,
+    TouchableWithoutFeedback,
+    View,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SignupSalary() {
     const router = useRouter();
@@ -89,9 +90,8 @@ export default function SignupSalary() {
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                     <View style={styles.wrap}>
                         {/* 제목 */}
+                        <ProgressBar step={4} totalSteps={4} />
                         <Text style={styles.title}>회원가입</Text>
-                        <Text style={styles.state}>4/4</Text>
-
 
                         {/* 연차 */}
                         <View style={{ flex: 1, gap: 16 }}>
@@ -104,7 +104,8 @@ export default function SignupSalary() {
                                         onChangeText={(val) =>
                                             handleNumberChange(val, setYearsRaw, setYearsDisplay, setYearsError)
                                         }
-                                        placeholder=" "
+                                        placeholder="신입 0년"
+                                        placeholderTextColor={"#ccc"}
                                         keyboardType="numeric"
                                         style={[styles.underlineInput, { flex: 1, textAlign: "right" }]}
                                         selection={{ start: yearsDisplay.length, end: yearsDisplay.length }}
@@ -123,7 +124,8 @@ export default function SignupSalary() {
                                         onChangeText={(val) =>
                                             handleNumberChange(val, setSalaryRaw, setSalaryDisplay, setSalaryError, true)
                                         }
-                                        placeholder=" "
+                                        placeholder="단위를 확인해주세요"
+                                        placeholderTextColor={"#ccc"}
                                         keyboardType="numeric"
                                         style={[styles.underlineInput, { flex: 1, textAlign: "right" }]}
                                         selection={{ start: salaryDisplay.length, end: salaryDisplay.length }}
@@ -145,7 +147,7 @@ export default function SignupSalary() {
                                             color="#5865f2"
                                         />
                                     </Pressable>
-                                    <View style={[styles.inlineRowBox, { flex: 1 }]}>
+                                    <View style={[styles.inlineRowBox, { flex: 1 }, !hasPension && { backgroundColor: "#f5f5f5" }]}>
                                         <TextInput
                                             value={pensionDisplay}
                                             onChangeText={(val) =>
@@ -158,9 +160,10 @@ export default function SignupSalary() {
                                                 )
                                             }
                                             placeholder="기존 연금 잔액 입력"
+                                            placeholderTextColor={"#ccc"}
                                             editable={hasPension}
                                             keyboardType="numeric"
-                                            style={[styles.fieldInput, { flex: 1, textAlign: "right" }, !hasPension && { backgroundColor: "#f5f5f5", color: "#ccc" }]}
+                                            style={[styles.fieldInput, { flex: 1, textAlign: "right" }]}
                                             selection={{ start: pensionDisplay.length, end: pensionDisplay.length }}
                                         />
                                         <Text style={styles.suffix}>만원</Text>
@@ -201,7 +204,6 @@ const styles = StyleSheet.create({
         marginTop: 8,
         marginBottom: 50,
     },
-    state: { fontSize: 14, position: "absolute", right: 20, top: 20 },
     inputBox: { marginBottom: 20 },
     label: { fontSize: 18, fontWeight: "800", color: "#5465FF", marginBottom: 10 },
     underlineInput: {

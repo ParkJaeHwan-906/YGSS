@@ -130,7 +130,12 @@ export default function Login() {
                                     회원가입
                                 </Link>
                             </View>
-                            <Text style={stylesLogin.linkMuted}>비밀번호를 잊어버리셨나요?</Text>
+
+                            {/* 임시로 home으로 이동하는 라우터 replace */}
+                            <Pressable onPress={() => router.replace("/(app)/(tabs)/home")}>
+                                <Text style={stylesLogin.linkStrong}>홈으로</Text>
+                            </Pressable>
+                            {/* <Text style={stylesLogin.linkMuted}>비밀번호를 잊어버리셨나요?</Text> */}
                         </View>
                     </TouchableWithoutFeedback>
                 </KeyboardAvoidingView>
