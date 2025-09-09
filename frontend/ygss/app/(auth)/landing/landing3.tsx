@@ -2,8 +2,18 @@
 
 import { useEffect } from "react";
 import { Stack, useRouter } from "expo-router";
-import { View, Text, StyleSheet, Image, SafeAreaView, StatusBar } from "react-native";
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Image, 
+  SafeAreaView, 
+  StatusBar,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { Colors } from "@/src/theme/colors";
+import { MotiView } from "moti";
 
 export default function Landing3() {
   const router = useRouter();
@@ -11,7 +21,7 @@ export default function Landing3() {
   useEffect(() => {
     // 2.5초 후 다음 화면으로 자동 이동
     const timer = setTimeout(() => {
-      router.replace("/(auth)/login");
+      router.replace("/(auth)/landing/landing4");
     }, 2500);
 
     return () => clearTimeout(timer);
@@ -21,16 +31,33 @@ export default function Landing3() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="dark-content" />
-      <SafeAreaView style={styles.wrap}>
-        <View style={styles.container}>
-          <Image
-            source={require("@/assets/icon/coinPocket.png")}
-            style={styles.image}
-            resizeMode="contain"
-          />
-          <Text style={styles.caption}>알키가 열심히 계산 중이에요 ...</Text>
-        </View>
-      </SafeAreaView>
+
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <SafeAreaView style={styles.wrap}>
+          <View style={styles.container}>
+            <MotiView
+              from={{ translateY: 0 }}
+              animate={{ translateY: -15 }}
+              transition={{
+                type: "timing",
+                duration: 800,
+                loop: true,
+                repeatReverse: true,
+              }}
+            >
+            <Image
+              source={require("@/assets/icon/coinPocket.png")}
+              style={styles.image}
+              resizeMode="contain"
+            />
+            </MotiView>
+            <Text style={styles.caption}>알키가 열심히 계산 중이에요 ...</Text>
+          </View>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </>
   );
 }
