@@ -1,5 +1,6 @@
 import ProgressBar from "@/components/login/ProgressBar";
-import { API_URL } from "@env";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { setEmail } from "@/src/store/slices/signupSlice";
 import axios from "axios";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -16,15 +17,20 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const DOMAINS: string[] = ["naver.com", "gmail.com", "hanmail.net", "daum.net", "nate.com", "yahoo.com", "hotmail.com"];
+const API_URL = process.env.API_URL; // 환경변수에서 API_URL 가져오기
 
 export default function SignupEmail() {
     const router = useRouter();
     const ref = useRef<TextInput>(null);
     const insets = useSafeAreaInsets();
 
-    const [email, setEmail] = useState<string>("");
     const [showSuggestions, setShowSuggestions] = useState<boolean>(true);
     const [message, setMessage] = useState<string>("");
+
+    // 리덕스에 이메일 저장
+    const dispatch = useAppDispatch();
+    // 리덕스에 이메일 꺼내기
+    const email = useAppSelector((state) => state.signup.email);
 
     useEffect(() => {
         const t = setTimeout(() => ref.current?.focus(), 60);
@@ -50,16 +56,19 @@ export default function SignupEmail() {
         return () => clearTimeout(delay);
     }, [email]);
 
+    // 이메일 중복 확인 api 요청
     const checkEmail = async (email: string) => {
         try {
             const res = await axios.post(`${API_URL}/auth/check/email`, { email });
-            console.log(res);
+            console.log("res", res);
+            console.log("res.data", res.data);
             if (res.status === 200 && res.data === true) {
                 setMessage("사용 가능한 이메일입니다.");
             }
         } catch (err: any) {
             if (err.response?.status === 400) {
                 setMessage(err.response.data); // 서버에서 주는 메시지
+                console.log("err.response.data", err.response.data);
             } else {
                 setMessage("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
             }
@@ -89,8 +98,8 @@ export default function SignupEmail() {
                                 ref={ref}
                                 autoFocus
                                 value={email}
-                                onChangeText={setEmail}
-                                placeholder=" "
+                                onChangeText={(text) => dispatch(setEmail(text))}  // 리덕스에 즉시 저장
+                                placeholder="이메일 주소를 입력하세요"
                                 placeholderTextColor="#b8b8c9"
                                 keyboardType="email-address"
                                 autoCapitalize="none"

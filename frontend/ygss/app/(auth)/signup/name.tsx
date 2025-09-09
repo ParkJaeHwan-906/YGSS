@@ -1,11 +1,16 @@
 import ProgressBar from "@/components/login/ProgressBar";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { setName } from "@/src/store/slices/signupSlice";
 import { useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import {
     Keyboard,
-    KeyboardAvoidingView, Platform,
-    Pressable, StyleSheet,
-    Text, TextInput,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
     TouchableWithoutFeedback,
     View
 } from "react-native";
@@ -14,8 +19,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function SignupName() {
     const router = useRouter();
     const ref = useRef<TextInput>(null);
-    const [name, setName] = useState("");
     const insets = useSafeAreaInsets();
+
+    // 리덕스에 이름 저장 / 꺼내기
+    const dispatch = useAppDispatch();
+    const name = useAppSelector((state) => state.signup.name);
 
     useEffect(() => {
         const t = setTimeout(() => ref.current?.focus(), 60);
@@ -40,8 +48,9 @@ export default function SignupName() {
                                 ref={ref}
                                 autoFocus
                                 value={name}
-                                onChangeText={setName}
-                                placeholder=" "
+                                onChangeText={(text) => dispatch(setName(text))} // 리덕스에 즉시 저장
+                                placeholder="이름을 입력하세요"
+                                placeholderTextColor="#b8b8c9"
                                 style={styles.underlineInput}
                                 returnKeyType="next"
                                 onSubmitEditing={() => isValid && router.push("/(auth)/signup/email")}

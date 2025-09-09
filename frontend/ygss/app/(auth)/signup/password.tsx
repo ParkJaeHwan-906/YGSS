@@ -1,4 +1,6 @@
 import ProgressBar from "@/components/login/ProgressBar";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { setPassword } from "@/src/store/slices/signupSlice";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -19,12 +21,16 @@ export default function SignupPassword() {
   const pwRef = useRef<TextInput>(null);
   const pw2Ref = useRef<TextInput>(null);
 
-  // 비밀번호, 비밀번호 재입력
-  const [pw, setPw] = useState("");
+  // 비밀번호 재입력 (로컬에서 확인용)
   const [pw2, setPw2] = useState("");
+
   // 비밀번호 보기/숨기기 토글
   const [show1, setShow1] = useState(false);
   const [show2, setShow2] = useState(false);
+
+  // 리덕스 저장/불러오기
+  const dispatch = useAppDispatch();
+  const password = useAppSelector((s) => s.signup.password);
 
   // 화면 로드 후 약간의 딜레이를 두고 포커스
   useEffect(() => {
@@ -35,8 +41,8 @@ export default function SignupPassword() {
   // 비밀번호 유효성 검사
   const strongPwRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&])[A-Za-z\d$@$!%*?&]{8,}$/;
 
-  const okPw = strongPwRegex.test(pw);
-  const okMatch = pw.length > 0 && pw === pw2;
+  const okPw = strongPwRegex.test(password);
+  const okMatch = password.length > 0 && password === pw2;
   const canNext = okPw && okMatch;
 
   return (
@@ -54,8 +60,8 @@ export default function SignupPassword() {
                 <TextInput
                   ref={pwRef}
                   autoFocus
-                  value={pw}
-                  onChangeText={setPw}
+                  value={password}
+                  onChangeText={(text) => dispatch(setPassword(text))} // 리덕스에 즉시 저장
                   placeholder=" "
                   secureTextEntry={!show1}
                   returnKeyType="next"
@@ -86,7 +92,7 @@ export default function SignupPassword() {
               </View>
 
               {/* 조건부 에러 메시지 */}
-              {pw.length > 0 && !okPw && (
+              {password.length > 0 && !okPw && (
                 <View>
                   <Text style={{ color: "#c84b4b", fontSize: 12 }}>
                     비밀번호는 8자 이상이며,
