@@ -5,6 +5,9 @@ import com.ygss.backend.pensionProduct.dto.entity.PensionProduct;
 import com.ygss.backend.pensionProduct.dto.entity.ProductType;
 import com.ygss.backend.pensionProduct.dto.entity.Systype;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
+import com.ygss.backend.pensionProduct.dto.response.CompanyResponse;
+import com.ygss.backend.pensionProduct.dto.response.ProductTypeResponse;
+import com.ygss.backend.pensionProduct.dto.response.SystypeResponse;
 import org.apache.ibatis.annotations.*;
 import org.springframework.stereotype.Repository;
 
@@ -138,11 +141,9 @@ public interface PensionProductRepository {
     @Results({
             @Result(property = "id", column = "id"),
             @Result(property = "areaId", column = "area_id"),
-            @Result(property = "company", column = "company"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at")
+            @Result(property = "company", column = "company")
     })
-    List<Company> findAllCompanies();
+    List<CompanyResponse> findAllCompanies();
 
     /**
      * 상품 타입 목록 조회
@@ -154,23 +155,19 @@ public interface PensionProductRepository {
     })
     @Results({
             @Result(property = "id", column = "id"),
-            @Result(property = "productType", column = "product_type"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at")
+            @Result(property = "productType", column = "product_type")
     })
-    List<ProductType> findAllProductTypes();
+    List<ProductTypeResponse> findAllProductTypes();
 
     /**
      * 시스템 타입 목록 조회
      */
-    @Select("SELECT id, systype, created_at, updated_at FROM retire_pension_systype ORDER BY id")
+    @Select("SELECT id, systype FROM retire_pension_systype ORDER BY id")
     @Results({
             @Result(property = "id", column = "id"),
-            @Result(property = "systype", column = "systype"),
-            @Result(property = "createdAt", column = "created_at"),
-            @Result(property = "updatedAt", column = "updated_at")
+            @Result(property = "systype", column = "systype")
     })
-    List<Systype> findAllSystypes();
+    List<SystypeResponse> findAllSystypes();
 
     /**
      * 상품 ID로 상세 조회
