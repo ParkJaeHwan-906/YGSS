@@ -121,8 +121,8 @@ public class AuthServiceImpl implements AuthService {
     /**
      * RefreshToken 검증
      */
-    public Boolean isValidRefreshToken(Long userId) {
-        String userRefreshToken = userRefreshTokenRepository.findByuserId(userId)
+    public Boolean isValidRefreshToken(Long userId, String refreshToken) {
+        String userRefreshToken = userRefreshTokenRepository.findByuserId(userId, refreshToken)
                 .orElseThrow(() -> new IllegalArgumentException("Refresh Token Not Found"));
 
         if(!jwtTokenProvider.validateToken(userRefreshToken)) {
@@ -151,10 +151,10 @@ public class AuthServiceImpl implements AuthService {
                 .refreshToken(refreshToken)
                 .build();
     }
-    public LoginResponseDto regenerateAccessToken(String email) {
+    public LoginResponseDto regenerateAccessToken(String email, String refreshToken) {
         Long userId = userAccountsRepository.selectUserIdByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User Not Found"));
-        isValidRefreshToken(userId);
+        isValidRefreshToken(userId, refreshToken);
         return updateUserRefreshToken(userId);
     }
     /**

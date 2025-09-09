@@ -71,9 +71,11 @@ public class AuthController {
      * refreshToken 으로 AccessToken 재발급
      */
     @PutMapping("/refresh")
-    public ResponseEntity<?> regenerateAccessToken(@AuthenticationPrincipal String email) {
+    public ResponseEntity<?> regenerateAccessToken(
+            @AuthenticationPrincipal String email,
+            @RequestHeader("Authorization") String refreshToken) {
         try {
-            return ResponseEntity.ok(authService.regenerateAccessToken(email));
+            return ResponseEntity.ok(authService.regenerateAccessToken(email, refreshToken.substring(5)));
         } catch (Exception e) {
             log.error("Regenerate Access Token Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
