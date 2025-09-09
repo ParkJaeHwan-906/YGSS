@@ -1,13 +1,8 @@
 package com.ygss.backend.pensionProduct.service;
 
-import com.ygss.backend.pensionProduct.dto.entity.Company;
 import com.ygss.backend.pensionProduct.dto.entity.PensionProduct;
-import com.ygss.backend.pensionProduct.dto.entity.ProductType;
-import com.ygss.backend.pensionProduct.dto.entity.Systype;
-import com.ygss.backend.pensionProduct.dto.response.PensionProductDto;
+import com.ygss.backend.pensionProduct.dto.response.*;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
-import com.ygss.backend.pensionProduct.dto.response.PageInfo;
-import com.ygss.backend.pensionProduct.dto.response.PensionProductSearchResponse;
 import com.ygss.backend.pensionProduct.repository.PensionProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +62,7 @@ public class PensionProductServiceImpl implements PensionProductService {
      * 운용사 목록 조회
      */
     @Override
-    public List<Company> getAllCompanies() {
+    public List<CompanyResponse> getAllCompanies() {
 
             return pensionProductRepository.findAllCompanies();
     }
@@ -76,7 +71,7 @@ public class PensionProductServiceImpl implements PensionProductService {
      * 상품 타입 목록 조회
      */
     @Override
-    public List<ProductType> getAllProductTypes() {
+    public List<ProductTypeResponse> getAllProductTypes() {
         return pensionProductRepository.findAllProductTypes();
     }
 
@@ -84,7 +79,7 @@ public class PensionProductServiceImpl implements PensionProductService {
      * 시스템 타입 목록 조회
      */
     @Override
-    public List<Systype> getAllSystypes() {
+    public List<SystypeResponse> getAllSystypes() {
         return pensionProductRepository.findAllSystypes();
     }
 

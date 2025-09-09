@@ -11,6 +11,6 @@ public class SignUpRequestDto {
     private String email;
     private String password;
     private Integer workedAt = 0;
-    private Integer salary;
-    private Integer totalRetirePension;
+    private Long salary;
+    private Long totalRetirePension;
 }

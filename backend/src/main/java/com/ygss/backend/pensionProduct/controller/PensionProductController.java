@@ -5,7 +5,10 @@ import com.ygss.backend.pensionProduct.dto.entity.ProductType;
 import com.ygss.backend.pensionProduct.dto.entity.Systype;
 import com.ygss.backend.pensionProduct.dto.request.PensionProductSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
+import com.ygss.backend.pensionProduct.dto.response.CompanyResponse;
 import com.ygss.backend.pensionProduct.dto.response.PensionProductSearchResponse;
+import com.ygss.backend.pensionProduct.dto.response.ProductTypeResponse;
+import com.ygss.backend.pensionProduct.dto.response.SystypeResponse;
 import com.ygss.backend.pensionProduct.service.PensionProductService;
 import com.ygss.backend.pensionProduct.service.PensionProductServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +34,7 @@ import java.util.List;
  * 퇴직연금 상품 REST API Controller
  */
 @RestController
-@RequestMapping("/pension/products")
+@RequestMapping("/pension")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "퇴직연금 상품 API", description = "ETF/펀드 상품 검색 및 조회 API")
@@ -69,7 +72,7 @@ public class PensionProductController {
                     )
             )
     })
-    @GetMapping("/search")
+    @GetMapping("/product/search")
     public ResponseEntity<PensionProductSearchResponse> searchProducts(
             @Parameter(description = "쉼표로 구분된 상품타입 (ETF,펀드만 가능)", example = "ETF,펀드")
             @RequestParam(required = false) String productTypes,
@@ -123,14 +126,14 @@ public class PensionProductController {
     @ApiResponse(
             responseCode = "200",
             description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = Company.class))
+            content = @Content(schema = @Schema(implementation = CompanyResponse.class))
     )
-    @GetMapping("/companies")
+    @GetMapping("/product/companies")
     public ResponseEntity<?> getAllCompanies() {
 
         log.info("운용사 목록 조회 요청");
         try{
-            List<Company> companies = pensionProductService.getAllCompanies();
+            List<CompanyResponse> companies = pensionProductService.getAllCompanies();
 
             return ResponseEntity.ok(companies);
         }catch (Exception e){
@@ -146,14 +149,14 @@ public class PensionProductController {
     @ApiResponse(
             responseCode = "200",
             description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = ProductType.class))
+            content = @Content(schema = @Schema(implementation = ProductTypeResponse.class))
     )
-    @GetMapping("/product-types")
-    public ResponseEntity<List<ProductType>> getAllProductTypes() {
+    @GetMapping("/product/types")
+    public ResponseEntity<List<ProductTypeResponse>> getAllProductTypes() {
 
         log.info("상품 타입 목록 조회 요청");
 
-        List<ProductType> productTypes = pensionProductService.getAllProductTypes();
+        List<ProductTypeResponse> productTypes = pensionProductService.getAllProductTypes();
 
         return ResponseEntity.ok(productTypes);
     }
@@ -165,14 +168,14 @@ public class PensionProductController {
     @ApiResponse(
             responseCode = "200",
             description = "조회 성공",
-            content = @Content(schema = @Schema(implementation = Systype.class))
+            content = @Content(schema = @Schema(implementation = SystypeResponse.class))
     )
     @GetMapping("/systypes")
-    public ResponseEntity<List<Systype>> getAllSystypes() {
+    public ResponseEntity<List<SystypeResponse>> getAllSystypes() {
 
         log.info("시스템 타입 목록 조회 요청");
 
-        List<Systype> systypes = pensionProductService.getAllSystypes();
+        List<SystypeResponse> systypes = pensionProductService.getAllSystypes();
 
         return ResponseEntity.ok(systypes);
     }

@@ -37,11 +37,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         //인증 없이 허용할 엔드포인트들
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/infra/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         //비허용 엔드포인트
                         .anyRequest().authenticated()
                 )
-                .httpBasic(Customizer.withDefaults())
+//                .httpBasic(Customizer.withDefaults())
                 // JWT 필터들을 필터 체인에 추가
                 // 순서: SecurityExceptionHandlingFilter -> JWTVerificationFilter
                 .addFilterBefore(securityExceptionHandlingFilter, UsernamePasswordAuthenticationFilter.class)
