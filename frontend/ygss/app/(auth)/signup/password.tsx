@@ -1,4 +1,6 @@
 import ProgressBar from "@/components/login/ProgressBar";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { setPassword } from "@/src/store/slices/signupSlice";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -19,12 +21,16 @@ export default function SignupPassword() {
   const pwRef = useRef<TextInput>(null);
   const pw2Ref = useRef<TextInput>(null);
 
-  // 비밀번호, 비밀번호 재입력
-  const [pw, setPw] = useState("");
+  // 비밀번호 재입력 (로컬에서 확인용)
   const [pw2, setPw2] = useState("");
+
   // 비밀번호 보기/숨기기 토글
   const [show1, setShow1] = useState(false);
   const [show2, setShow2] = useState(false);
+
+  // 리덕스 저장/불러오기
+  const dispatch = useAppDispatch();
+  const password = useAppSelector((s) => s.signup.password);
 
   // 화면 로드 후 약간의 딜레이를 두고 포커스
   useEffect(() => {
@@ -32,12 +38,15 @@ export default function SignupPassword() {
     return () => clearTimeout(t);
   }, []);
 
-  const okLen = pw.length >= 8;
-  const okMatch = pw.length > 0 && pw === pw2;
-  const canNext = okLen && okMatch;
+  // 비밀번호 유효성 검사
+  const strongPwRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&])[A-Za-z\d$@$!%*?&]{8,}$/;
+
+  const okPw = strongPwRegex.test(password);
+  const okMatch = password.length > 0 && password === pw2;
+  const canNext = okPw && okMatch;
 
   return (
-    <View style={{ flex: 1, paddingTop: insets.top + 20, paddingBottom: insets.bottom, backgroundColor: "#fff" }}>
+    <View style={{ flex: 1, paddingTop: insets.top + 20, paddingBottom: insets.bottom, backgroundColor: "#FBFCFD" }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <View style={styles.wrap}>
@@ -51,8 +60,8 @@ export default function SignupPassword() {
                 <TextInput
                   ref={pwRef}
                   autoFocus
-                  value={pw}
-                  onChangeText={setPw}
+                  value={password}
+                  onChangeText={(text) => dispatch(setPassword(text))} // 리덕스에 즉시 저장
                   placeholder=" "
                   secureTextEntry={!show1}
                   returnKeyType="next"
@@ -83,14 +92,18 @@ export default function SignupPassword() {
               </View>
 
               {/* 조건부 에러 메시지 */}
-              {pw.length > 0 && !okLen && (
-                <Text style={{ color: "#c84b4b", fontFamily: "BasicMedium", fontSize: 12 }}>
-                  비밀번호는 8자 이상이어야 합니다.
-                </Text>
+              {password.length > 0 && !okPw && (
+                <View>
+                  <Text style={{ color: "#c84b4b", fontSize: 12 }}>
+                    비밀번호는 8자 이상이며,
+                  </Text>
+                  <Text style={{ color: "#c84b4b", fontSize: 12 }}>대문자/소문자/숫자/특수문자를 모두 포함해야 합니다.</Text>
+                </View>
+
               )}
 
               {pw2.length > 0 && !okMatch && (
-                <Text style={{ color: "#c84b4b", fontFamily: "BasicMedium", fontSize: 12 }}>
+                <Text style={{ color: "#c84b4b", fontSize: 12 }}>
                   비밀번호가 일치해야 합니다.
                 </Text>
               )}
@@ -116,8 +129,8 @@ export default function SignupPassword() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, paddingHorizontal: 20, paddingBottom: 24 },
-  title: { fontSize: 30, fontFamily: "BasicBold", color: "#111", textAlign: "center", marginTop: 8, marginBottom: 50 },
-  label: { fontSize: 20, fontFamily: "BasicMedium", color: "#5465FF", marginBottom: 8, marginTop: 8 },
+  title: { fontSize: 30, fontWeight: "800", color: "#111", textAlign: "center", marginTop: 8, marginBottom: 50 },
+  label: { fontSize: 20, fontWeight: "800", color: "#5465FF", marginBottom: 8, marginTop: 8 },
   // 언더라인 대신 박스형 인풋 (스크린샷 3 기준)
   boxInput: {
     borderWidth: 1,
@@ -128,9 +141,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
-    fontFamily: "BasicMedium",
   },
-  boxField: { flex: 1, fontFamily: "BasicMedium", fontSize: 16, color: "#111", paddingVertical: 4 },
+  boxField: { flex: 1, fontSize: 16, color: "#111", paddingVertical: 4 },
   iconBtn: { padding: 4, marginLeft: 6 },
   nextBtn: {
     backgroundColor: "#5465FF",
@@ -139,5 +151,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 6,
   },
-  nextTxt: { color: "#fff", fontFamily: "BasicMedium", fontSize: 15 },
+  nextTxt: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });
