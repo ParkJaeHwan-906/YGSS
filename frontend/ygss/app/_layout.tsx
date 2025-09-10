@@ -45,7 +45,7 @@ export default function RootLayout() {
   }
 
   // 참고: 필요하면 여기서 pathname 활용 가능(이미 훅 호출은 끝났음)
-  // console.log(pathname);
+  console.log(pathname);
 
   return (
     <Provider store={store}>
