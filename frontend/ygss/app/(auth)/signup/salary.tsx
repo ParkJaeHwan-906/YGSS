@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         elevation: 6,
     },
-    nextTxt: { color: "#fff", fontFamily: "BasicMedium", fontSize: 15 },
+    nextTxt: { color: "#fff", fontFamily: "BasicBold", fontSize: 15 },
     errorText: {
         fontFamily: "BasicMedium",
         fontSize: 12,

@@ -3,6 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+    Image,
     Keyboard,
     KeyboardAvoidingView,
     Platform,
@@ -56,8 +57,13 @@ export default function Login() {
                 >
                     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                         <View style={stylesLogin.wrap}>
-                            <Text style={stylesLogin.brand}>연금술사</Text>
-
+                            <View style={{ justifyContent: "center", alignItems: "center" }}>
+                                <Image
+                                    source={require("../../../assets/icon/titleLogo.png")}
+                                    style={{ width: 300, height: 150 }}
+                                    resizeMode="contain"
+                                />
+                            </View>
                             {/* 이메일 필드 */}
                             <View style={stylesLogin.fieldBox}>
                                 <MaterialCommunityIcons

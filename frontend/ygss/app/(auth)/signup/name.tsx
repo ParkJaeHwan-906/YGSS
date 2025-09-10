@@ -85,13 +85,14 @@ export default function SignupName() {
 
 const styles = StyleSheet.create({
     wrap: { flex: 1, paddingHorizontal: 20, paddingBottom: 24 },
-    title: { fontSize: 30, fontWeight: "800", color: "#111", textAlign: "center", marginTop: 8, marginBottom: 50 },
-    label: { fontSize: 20, fontWeight: "800", color: "#5465FF", marginBottom: 10, marginTop: 8 },
+    title: { fontSize: 30, fontFamily: "BasicBold", color: "#111", textAlign: "center", marginTop: 8, marginBottom: 50 },
+    label: { fontSize: 20, fontFamily: "BasicMedium", color: "#5465FF", marginBottom: 10, marginTop: 8 },
     underlineInput: {
         borderBottomWidth: 1.2,
         borderBottomColor: "#8ea2ff",
         paddingVertical: 10,
         fontSize: 16,
+        fontFamily: "BasicLight",
         color: "#111",
     },
     nextBtn: {
@@ -101,5 +102,5 @@ const styles = StyleSheet.create({
         alignItems: "center",
         elevation: 6,
     },
-    nextTxt: { color: "#FBFCFD", fontWeight: "700", fontSize: 15 },
+    nextTxt: { color: "#FBFCFD", fontFamily: "BasicBold", fontSize: 15 },
 });
