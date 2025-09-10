@@ -38,6 +38,11 @@ spec:
               value: "172.26.7.217"
             - name: REDIS_PORT
               value: "6379"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: MYSQL_PASSWORD
           resources:
             requests:
               cpu: "200m"
