@@ -1,28 +1,63 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-prefixes
+spec:
+  stripPrefix:
+    prefixes:
+      - /api
+      - /api-dev
+      - /ai
+      - /ai-dev
+
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: main-ingress
-  namespace: ygss-prod
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
-    # 첫 인증서 발급 확인 후 주석 해제
-    # traefik.ingress.kubernetes.io/redirect-to-https: "true"
-    # /api prefix를 제거하고 백엔드로 전달
-    traefik.ingress.kubernetes.io/rewrite-target: /$1
+    # 동일 네임스페이스의 CRD 미들웨어를 연결
+    traefik.ingress.kubernetes.io/router.middlewares: strip-prefixes@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
-  - hosts:
-    - j13a103.p.ssafy.io
-    secretName: main-tls
+    - hosts:
+        - j13a103.p.ssafy.io
+      secretName: main-tls
   rules:
-  - host: j13a103.p.ssafy.io
-    http:
-      paths:
-      - path: /api/(.*)
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: backend-service
-            port:
-              number: 80
+    - host: j13a103.p.ssafy.io
+      http:
+        paths:
+          # Backend API
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 80
+          # - path: /api-dev
+          #   pathType: Prefix
+          #   backend:
+          #     service:
+          #       name: backend-service
+          #       port:
+          #         number: 80
+
+          # AI API (AI 서비스 이름이 다르면 여기만 바꾸면 됩니다)
+          # - path: /ai
+          #   pathType: Prefix
+          #   backend:
+          #     service:
+          #       name: ai-service
+          #       port:
+          #         number: 80
+          # - path: /ai-dev
+          #   pathType: Prefix
+          #   backend:
+          #     service:
+          #       name: ai-service
+          #       port:
+          #         number: 80
