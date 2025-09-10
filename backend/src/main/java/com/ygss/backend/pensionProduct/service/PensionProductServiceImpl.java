@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -116,6 +117,41 @@ public class PensionProductServiceImpl implements PensionProductService {
         }
 
         return result;
+    }
+
+    public ProductSummaryResponse getProductSummary(Long productId) {
+        // 상품명 조회
+        String productName = pensionProductRepository.getProductName(productId);
+        if (productName == null) {
+            throw new RuntimeException("Product not found with id: " + productId);
+        }
+
+        // 상위 4개 카테고리 조회
+        List<CategorySummary> top4Summary = pensionProductRepository.getTop4CategorySummary(productId);
+
+        // 나머지 카테고리들의 총 비중 계산
+        Double othersPercentage = pensionProductRepository.getOthersCategoryPercentage(productId);
+
+        // 결과 리스트 생성
+        List<CategorySummary> result = new ArrayList<>(top4Summary);
+
+        // 나머지 비중이 0보다 크면 "기타" 항목 추가
+        if (othersPercentage > 0) {
+            result.add(CategorySummary.builder()
+                    .categoryName("기타")
+                    .percentage(othersPercentage)
+                    .build());
+        }
+
+        return ProductSummaryResponse.builder()
+                .productName(productName)
+                .summary(result)
+                .id(productId)
+                .build();
+    }
+
+    public List<ProductDetailResponse> getProductDetails(Long productId) {
+        return pensionProductRepository.getProductDetails(productId);
     }
 
     /**

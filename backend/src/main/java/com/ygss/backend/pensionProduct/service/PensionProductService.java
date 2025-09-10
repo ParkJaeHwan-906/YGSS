@@ -24,4 +24,6 @@ public interface PensionProductService {
     BondSearchResponse searchBonds(BondSearchRequest searchRequest);
 
     Optional<BondDto> searchBondById(Long bondId);
+    List<ProductDetailResponse> getProductDetails(Long productId);
+    ProductSummaryResponse getProductSummary(Long productId);
 }
