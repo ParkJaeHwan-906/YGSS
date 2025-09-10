@@ -35,7 +35,7 @@ export default function SignupName() {
     const isValid = nameRegex.test(name);
 
     return (
-        <View style={{ flex: 1, paddingTop: insets.top + 20, paddingBottom: insets.bottom, backgroundColor: "#fff" }}>
+        <View style={{ flex: 1, paddingTop: insets.top + 20, paddingBottom: insets.bottom, backgroundColor: "#FBFCFD" }}>
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                     <View style={styles.wrap}>
@@ -101,5 +101,5 @@ const styles = StyleSheet.create({
         alignItems: "center",
         elevation: 6,
     },
-    nextTxt: { color: "#fff", fontWeight: "700", fontSize: 15 },
+    nextTxt: { color: "#FBFCFD", fontWeight: "700", fontSize: 15 },
 });

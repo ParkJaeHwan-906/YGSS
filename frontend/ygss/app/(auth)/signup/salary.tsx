@@ -15,10 +15,21 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { signIn } from "@/src/store/slices/authSlice";
+import { resetSignup, setSalary, setTotalRetirePension, setWorkedAt } from "@/src/store/slices/signupSlice";
+import axios from "axios";
+
+const API_URL = process.env.API_URL;
+
 export default function SignupSalary() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const dispatch = useAppDispatch();
 
+    const { name, email, password } = useAppSelector((s) => s.signup);
+
+    // 각 raw는 실제 숫자이고, display는 천단위 콤마가 들어간 문자열 
     // 연차
     const [yearsRaw, setYearsRaw] = useState("");
     const [yearsDisplay, setYearsDisplay] = useState("");
@@ -32,6 +43,7 @@ export default function SignupSalary() {
     // 퇴직연금
     const [pensionRaw, setPensionRaw] = useState("");
     const [pensionDisplay, setPensionDisplay] = useState("");
+
     const [hasPension, setHasPension] = useState(false);
     const [pensionError, setPensionError] = useState("");
 
@@ -62,23 +74,62 @@ export default function SignupSalary() {
 
     // 다음 버튼 활성화 조건
     const canNext =
-        yearsRaw.trim().length > 0 &&
         salaryRaw.trim().length > 0 &&
-        !yearsError &&
         !salaryError &&
         !pensionError;
 
-    const goNext = () => {
-        if (!canNext) return;
-        // TODO: 회원가입 API 호출 후 성공 → 자동 로그인 처리
-        console.log({
-            years: yearsRaw,
-            salary: salaryRaw,
-            pension: hasPension ? pensionRaw : "0",
-        });
-        router.replace("/(app)/(tabs)/home");
+    type SignupPayload = {
+        name: string;
+        email: string;
+        password: string;
+        salary: number;
+        workedAt?: number;          // 선택
+        totalRetirePension: number; // 항상 number (없으면 0)
     };
 
+    // 회원가입 + 자동 로그인
+    const handleSignup = async () => {
+        if (!canNext) return; // false면 거부
+
+        console.log("연차", yearsRaw, "연봉", salaryRaw, "퇴직연금", pensionRaw, hasPension);
+
+        if (yearsRaw.trim().length > 0) {
+            dispatch(setWorkedAt(Number(yearsRaw)));
+        }
+
+        dispatch(setSalary(Number(salaryRaw)));
+        dispatch(setTotalRetirePension(hasPension ? Number(pensionRaw) : 0));
+
+        // payload 생성
+        const payload: SignupPayload = {
+            name,
+            email,
+            password,
+            salary: Number(salaryRaw),
+            workedAt: yearsRaw.trim().length > 0 ? Number(yearsRaw) : undefined,
+            totalRetirePension: hasPension ? Number(pensionRaw) : 0,
+        };
+
+        try {
+            const res = await axios.post(`${API_URL}/auth/signup`, payload);
+            console.log("회원가입 성공", res.data);
+
+            // 자동 로그인 처리 (토큰 바로 준다고 하면)
+            if (res.status === 201) {
+                dispatch(signIn(res.data.token));
+            } else {
+                // 혹시 토큰을 안 준다면, 로그인 API 호출
+                const loginRes = await axios.post(`${API_URL}/auth/signin`, { email, password });
+                dispatch(signIn(loginRes.data.token));
+            }
+
+            dispatch(resetSignup());
+            router.replace("/(app)/(tabs)/home");
+        } catch (err) {
+            console.error("회원가입 실패", err);
+            alert("회원가입에 실패했습니다. 다시 시도해주세요.");
+        }
+    };
 
 
     return (
@@ -104,7 +155,7 @@ export default function SignupSalary() {
                                         onChangeText={(val) =>
                                             handleNumberChange(val, setYearsRaw, setYearsDisplay, setYearsError)
                                         }
-                                        placeholder="신입 0년"
+                                        placeholder="신입: 0년"
                                         placeholderTextColor={"#ccc"}
                                         keyboardType="numeric"
                                         style={[styles.underlineInput, { flex: 1, textAlign: "right" }]}
@@ -177,7 +228,7 @@ export default function SignupSalary() {
 
                         {/* 가입 버튼 */}
                         <Pressable
-                            onPress={goNext}
+                            onPress={handleSignup}
                             disabled={!canNext}
                             style={({ pressed }) => [
                                 styles.nextBtn,
@@ -217,7 +268,8 @@ const styles = StyleSheet.create({
     inlineRowBox: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#fff",
+        borderColor: "#d7dafc",
+        backgroundColor: "#FBFCFD",
         borderRadius: 8,
         paddingHorizontal: 12,
         paddingVertical: 10,

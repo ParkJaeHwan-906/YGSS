@@ -76,7 +76,8 @@ export default function SignupEmail() {
     };
 
     // 다음 버튼 활성화 여부
-    const canNext = validFormat && message === "사용 가능한 이메일입니다.";
+    // const canNext = validFormat && message === "사용 가능한 이메일입니다.";
+    const canNext = validFormat
 
     //추천 도메인 필터링
     const filteredDomains: string[] = DOMAINS.filter((domain) =>
@@ -85,7 +86,7 @@ export default function SignupEmail() {
     );
 
     return (
-        <View style={{ flex: 1, paddingTop: insets.top + 20, paddingBottom: insets.bottom, backgroundColor: "#fff" }}>
+        <View style={{ flex: 1, paddingTop: insets.top + 20, paddingBottom: insets.bottom, backgroundColor: "#FBFCFD" }}>
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                     <View style={styles.wrap}>
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         elevation: 6,
     },
-    nextTxt: { color: "#fff", fontWeight: "700", fontSize: 15 },
+    nextTxt: { color: "#FBFCFD", fontWeight: "700", fontSize: 15 },
     suggestionBox: {
         marginTop: 10,
         borderRadius: 6,
