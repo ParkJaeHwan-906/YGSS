@@ -3,6 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+    Alert,
     Image,
     Keyboard,
     KeyboardAvoidingView,
@@ -13,15 +14,20 @@ import {
     Text,
     TextInput,
     TouchableWithoutFeedback,
-    View,
+    View
 } from "react-native";
-// TODO: 실제 로그인 시 Redux signIn 디스패치 연결
-// import { useAppDispatch } from "@/src/store/hooks";
-// import { signIn } from "@/src/store/slices/authSlice";
+
+// store관련
+import { useAppDispatch } from "@/src/store/hooks";
+import { setUser, signIn } from "@/src/store/slices/authSlice";
+import axios from "axios";
+import * as SecureStore from "expo-secure-store";
+
+const API_URL = process.env.API_URL;
 
 export default function Login() {
     const router = useRouter();
-    // const dispatch = useAppDispatch();
+    const dispatch = useAppDispatch();
 
     const emailRef = useRef<TextInput>(null);
     const pwRef = useRef<TextInput>(null);
@@ -37,10 +43,38 @@ export default function Login() {
 
     const canLogin = email.trim().length > 0 && pw.length >= 4;
 
-    const onLogin = () => {
+    // 로그인
+    const onLogin = async () => {
         if (!canLogin) return;
-        // dispatch(signIn("dummy-token"));
-        router.replace("/(app)/(tabs)/home");
+
+        try {
+            const res = await axios.post(`${API_URL}/auth/login`, {
+                email,
+                password: pw,
+            });
+
+            const accessToken = res.data.accessToken;
+            const refreshToken = res.data.refreshToken;
+            // accessToken Redux 저장
+            dispatch(signIn(res.data.accessToken));
+
+            // refreshToken은 SecureStore에 저장
+            await SecureStore.setItemAsync("refreshToken", refreshToken);
+
+            // 사용자 정보 불러오기
+            const detail = await axios.get(`${API_URL}/user/load/detail`, {
+                headers: { Authorization: `A130 ${accessToken}` },
+            });
+
+            dispatch(setUser(detail.data)); // authSlice.user 채우기
+
+            router.replace("/(app)/(tabs)/home");
+        } catch (err) {
+            console.error("로그인 실패", err);
+            Alert.alert("로그인 실패", "이메일이나 비밀번호를 확인해주세요.", [
+                { text: "확인", onPress: () => console.log("확인 눌림") },
+            ]);
+        }
     };
 
     return (

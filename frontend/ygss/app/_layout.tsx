@@ -6,12 +6,13 @@ import { store } from "@/src/store";
 import { Slot, usePathname } from "expo-router";
 import { Provider } from "react-redux";
 
-import { useEffect } from "react";
+import AppInitializer from "@/components/Appinitializer";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
+import { useEffect } from "react";
 import { setCustomText, setCustomTextInput } from "react-native-global-props";
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.preventAutoHideAsync().catch(() => { });
 
 export default function RootLayout() {
   // ✅ 훅은 조건 없이 최상단에서 호출
@@ -35,7 +36,7 @@ export default function RootLayout() {
       style: { fontFamily: "BasicMedium" },
     });
 
-    SplashScreen.hideAsync().catch(() => {});
+    SplashScreen.hideAsync().catch(() => { });
   }, [fontsLoaded]);
 
   // ✅ 훅 호출이 끝난 뒤에 조건부 렌더(초기 로딩 화면/NULL) 처리
@@ -48,6 +49,7 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
+      <AppInitializer />
       <Slot />
     </Provider>
   );

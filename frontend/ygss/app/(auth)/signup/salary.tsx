@@ -1,3 +1,4 @@
+// app/(auth)/signup/salary.tsx
 import ProgressBar from "@/components/login/ProgressBar";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -16,9 +17,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { signIn } from "@/src/store/slices/authSlice";
+import { setUser, signIn } from "@/src/store/slices/authSlice";
 import { resetSignup, setSalary, setTotalRetirePension, setWorkedAt } from "@/src/store/slices/signupSlice";
 import axios from "axios";
+import * as SecureStore from "expo-secure-store";
 
 const API_URL = process.env.API_URL;
 
@@ -116,11 +118,28 @@ export default function SignupSalary() {
 
             // 자동 로그인 처리 (토큰 바로 준다고 하면)
             if (res.status === 201) {
-                dispatch(signIn(res.data.token));
+                const accessToken = res.data.accessToken;
+                const refreshToken = res.data.refreshToken;
+                dispatch(signIn(accessToken));
+                await SecureStore.setItemAsync("refreshToken", refreshToken);
+
+                const detail = await axios.get(`${API_URL}/user/load/detail`, {
+                    headers: { Authorization: `A130 ${accessToken}` },
+                });
+                dispatch(setUser(detail.data));
             } else {
                 // 혹시 토큰을 안 준다면, 로그인 API 호출
                 const loginRes = await axios.post(`${API_URL}/auth/signin`, { email, password });
-                dispatch(signIn(loginRes.data.token));
+                const accessToken = loginRes.data.accessToken;
+                const refreshToken = loginRes.data.refreshToken;
+
+                dispatch(signIn(accessToken));
+                await SecureStore.setItemAsync("refreshToken", refreshToken);
+
+                const detail = await axios.get(`${API_URL}/user/load/detail`, {
+                    headers: { Authorization: `A130 ${accessToken}` },
+                })
+                dispatch(setUser(detail.data));
             }
 
             dispatch(resetSignup());
@@ -297,7 +316,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         elevation: 6,
     },
-    nextTxt: { color: "#fff", fontFamily: "BasicBold", fontSize: 15 },
+    nextTxt: { color: "#FBFCFD", fontFamily: "BasicBold", fontSize: 15 },
     errorText: {
         fontFamily: "BasicMedium",
         fontSize: 12,
