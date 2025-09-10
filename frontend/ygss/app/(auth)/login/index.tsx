@@ -126,7 +126,7 @@ export default function Login() {
                             {/* 링크 영역 */}
                             <View style={stylesLogin.linkRow}>
                                 <Text style={stylesLogin.linkMuted}>계정이 없으신가요?</Text>
-                                <Link href="/(auth)/signup-name" style={stylesLogin.linkStrong}>
+                                <Link href="/(auth)/signup/name" style={stylesLogin.linkStrong}>
                                     회원가입
                                 </Link>
                             </View>

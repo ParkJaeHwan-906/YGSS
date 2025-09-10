@@ -47,7 +47,7 @@ export default function SignupEmail() {
                                 autoCorrect={false}
                                 style={styles.underlineInput}
                                 returnKeyType="next"
-                                onSubmitEditing={() => canNext && router.push("/(auth)/signup-password")}
+                                onSubmitEditing={() => canNext && router.push("/(auth)/signup/password")}
                             />
 
                             {/* 이메일 형식이 올바르지 않다면 안내문구 */}
@@ -62,7 +62,7 @@ export default function SignupEmail() {
                         </View>
 
                         <Pressable
-                            onPress={() => router.push("/(auth)/signup-password")}
+                            onPress={() => router.push("/(auth)/signup/password")}
                             disabled={!canNext}
                             style={({ pressed }) => [
                                 styles.nextBtn,

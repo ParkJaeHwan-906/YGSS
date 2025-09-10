@@ -44,7 +44,7 @@ export default function SignupName() {
                                 placeholder=" "
                                 style={styles.underlineInput}
                                 returnKeyType="next"
-                                onSubmitEditing={() => isValid && router.push("/(auth)/signup-email")}
+                                onSubmitEditing={() => isValid && router.push("/(auth)/signup/email")}
                             />
 
                             {/* 이름이 두글자 이상이 아니거나 한글이 아니면 경고 */}
@@ -56,7 +56,7 @@ export default function SignupName() {
                         </View>
 
                         <Pressable
-                            onPress={() => router.push("/(auth)/signup-email")}
+                            onPress={() => router.push("/(auth)/signup/email")}
                             // 에러메시지 출력시 비활성화
                             disabled={!isValid}
                             style={({ pressed }) => [
