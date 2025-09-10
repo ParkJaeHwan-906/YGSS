@@ -1,0 +1,12 @@
+package com.ygss.backend.pensionPlan.service;
+
+import com.ygss.backend.pensionPlan.dto.request.PensionPlanSearchRequest;
+import com.ygss.backend.pensionPlan.dto.response.PensionPlanSearchResponse;
+
+import java.util.List;
+
+public interface PensionPlanService {
+    public List<PensionPlanSearchResponse> searchAll(PensionPlanSearchRequest request);
+
+    PensionPlanSearchResponse searchById(Long pensionPlanId);
+}
