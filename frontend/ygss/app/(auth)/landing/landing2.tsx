@@ -8,18 +8,20 @@ import {
   StyleSheet,
   Image,
   Pressable,
-  SafeAreaView,
   StatusBar,
   TextInput,
   KeyboardAvoidingView,
   Platform,
   Alert,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "@/src/theme/colors";
+import SkipImageButton from "@/components/molecules/skipButton";
 
 export default function Landing2() {
   const [salary, setSalary] = useState<string>("");
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const onSubmit = () => {
     const clean = salary.replace(/[^\d]/g, "");
@@ -34,14 +36,12 @@ export default function Landing2() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView style={styles.wrap}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <SafeAreaView style={[styles.wrap, { paddingTop: insets.top }]}>
         {/* 상단 SKIP */}
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, { paddingTop: 8, paddingRight: 16 }]}>
           <Link href="/(auth)/login" asChild>
-            <Pressable hitSlop={10}>
-              <Text style={styles.skip}>SKIP &gt;&gt;</Text>
-            </Pressable>
+            <SkipImageButton />
           </Link>
         </View>
 
@@ -96,6 +96,16 @@ export default function Landing2() {
 
 const styles = StyleSheet.create({
     wrap: { flex: 1, backgroundColor: Colors.white },
+    topBar: {
+      width: "100%",
+      alignItems: "flex-end",
+    },
+    skip: {
+      fontSize: 16,
+      fontFamily: "BasicMedium",
+      color: Colors.primary,
+      marginRight: 16,
+    },
     container: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, paddingHorizontal: 20 },
   
     headlineBox: { marginTop: 8, marginBottom: 8, position: "relative", alignSelf: "stretch" },

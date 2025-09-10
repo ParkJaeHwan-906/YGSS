@@ -21,6 +21,7 @@ export default function RootLayout() {
     BasicLight: require("@/assets/fonts/GmarketSansTTFLight.ttf"),
     BasicMedium: require("@/assets/fonts/GmarketSansTTFMedium.ttf"),
     BasicBold: require("@/assets/fonts/GmarketSansTTFBold.ttf"),
+    Bubble: require("@/assets/fonts/BagelFatOne-Regular.ttf"),
   });
 
   useEffect(() => {
