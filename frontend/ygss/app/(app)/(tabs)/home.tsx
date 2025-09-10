@@ -8,7 +8,7 @@ import {
     Platform,
     StatusBar,
   } from "react-native";
-  import { useRouter } from "expo-router";
+  import { Link, useRouter } from "expo-router";
   import { Colors } from "@/src/theme/colors";
   import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
   
@@ -71,7 +71,8 @@ import {
           <View style={styles.divider} />
   
           <Text style={styles.sectionTitle}>DC 상품 Top3</Text>
-          <View style={styles.listItem} />
+          <Link href="/(app)/(tabs)/component">컴포넌트</Link>
+            <View style={styles.listItem} />
           <View style={styles.listItem} />
           <View style={styles.listItem} />
   
