@@ -52,7 +52,7 @@ export default function SignupEmail() {
 
                             {/* 이메일 형식이 올바르지 않다면 안내문구 */}
                             {!canNext && email.length > 0 && (
-                                <Text style={{ color: "#FF5656", marginTop: 8, fontSize: 12 }}>
+                                <Text style={{ color: "#FF5656", marginTop: 8, fontFamily: "BasicMedium", fontSize: 12 }}>
                                     올바른 이메일 형식이 아닙니다.
                                 </Text>
                             )}
@@ -81,12 +81,13 @@ export default function SignupEmail() {
 
 const styles = StyleSheet.create({
     wrap: { flex: 1, paddingHorizontal: 20, paddingBottom: 24 },
-    title: { fontSize: 30, fontWeight: "800", color: "#111", textAlign: "center", marginTop: 8, marginBottom: 50 },
-    label: { fontSize: 20, fontWeight: "800", color: "#5465FF", marginBottom: 10, marginTop: 8 },
+    title: { fontSize: 30, fontFamily: "BasicBold", color: "#111", textAlign: "center", marginTop: 8, marginBottom: 50 },
+    label: { fontSize: 20, fontFamily: "BasicBold", color: "#5465FF", marginBottom: 10, marginTop: 8 },
     underlineInput: {
         borderBottomWidth: 1.2,
         borderBottomColor: "#8ea2ff",
         paddingVertical: 10,
+        fontFamily: "BasicMedium",
         fontSize: 16,
         color: "#111",
     },
@@ -97,5 +98,5 @@ const styles = StyleSheet.create({
         alignItems: "center",
         elevation: 6,
     },
-    nextTxt: { color: "#fff", fontWeight: "700", fontSize: 15 },
+    nextTxt: { color: "#fff", fontFamily: "BasicMedium", fontSize: 15 },
 });

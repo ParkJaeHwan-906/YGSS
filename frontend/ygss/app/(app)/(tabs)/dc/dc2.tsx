@@ -1,4 +1,4 @@
-// app/(auth)/landing/landing3.tsx
+// app/(app)/(tabs)/dc/dc2.tsx
 
 import { useEffect } from "react";
 import { Stack, useRouter } from "expo-router";
@@ -15,13 +15,13 @@ import {
 import { Colors } from "@/src/theme/colors";
 import { MotiView } from "moti";
 
-export default function Landing3() {
+export default function Dc2() {
   const router = useRouter();
 
   useEffect(() => {
     // 2.5초 후 다음 화면으로 자동 이동
     const timer = setTimeout(() => {
-      router.replace("/(auth)/landing/landing4");
+      router.replace("/(app)/(tabs)/dc/dc3");
     }, 2500);
 
     return () => clearTimeout(timer);
@@ -49,12 +49,12 @@ export default function Landing3() {
               }}
             >
             <Image
-              source={require("@/assets/icon/coinPocket.png")}
+              source={require("@/assets/char/winkAlchi.png")}
               style={styles.image}
               resizeMode="contain"
             />
             </MotiView>
-            <Text style={styles.caption}>알키가 열심히 계산 중이에요 ...</Text>
+            <Text style={styles.caption}>알키가 당신에게 딱 맞는 상품을 고르는 중이에요 ...</Text>
           </View>
         </SafeAreaView>
       </KeyboardAvoidingView>
@@ -63,7 +63,7 @@ export default function Landing3() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: Colors.white },
+  wrap: { flex: 1, backgroundColor: Colors.back },
   container: {
     flex: 1,
     alignItems: "center",
@@ -71,12 +71,12 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   image: {
-    width: 180,
-    height: 180,
+    width: 240,
+    height: 240,
   },
   caption: {
-    fontSize: 16,
-    fontFamily: "BasicMedium",
+    fontFamily: "BasicBold",
+    fontSize: 12,
     color: Colors.black,
     textAlign: "center",
   },
