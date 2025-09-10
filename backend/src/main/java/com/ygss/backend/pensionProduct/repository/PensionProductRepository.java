@@ -6,10 +6,7 @@ import com.ygss.backend.pensionProduct.dto.entity.ProductType;
 import com.ygss.backend.pensionProduct.dto.entity.Systype;
 import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
-import com.ygss.backend.pensionProduct.dto.response.BondDto;
-import com.ygss.backend.pensionProduct.dto.response.CompanyResponse;
-import com.ygss.backend.pensionProduct.dto.response.ProductTypeResponse;
-import com.ygss.backend.pensionProduct.dto.response.SystypeResponse;
+import com.ygss.backend.pensionProduct.dto.response.*;
 import org.apache.ibatis.annotations.*;
 import org.springframework.stereotype.Repository;
 
@@ -338,4 +335,83 @@ public interface PensionProductRepository {
             "WHERE b.id = #{bondId}"
     })
     Optional<BondDto> selectBondById(@Param("bondId") Long bondId);
+
+
+
+    /**
+     * 상품 요약 정보 조회 - 상위 4개 카테고리만
+     */
+    @Select({
+            "SELECT ",
+            "    pc.category_name,",
+            "    pcp.percentage",
+            "FROM product_category_percentage pcp",
+            "JOIN product_categories pc ON pcp.category_id = pc.id",
+            "WHERE pcp.super_product_id = #{productId}",
+            "ORDER BY pcp.percentage DESC",
+            "LIMIT 4"
+    })
+    @Results({
+            @Result(property = "categoryName", column = "category_name"),
+            @Result(property = "percentage", column = "percentage")
+    })
+    List<CategorySummary> getTop4CategorySummary(@Param("productId") Long productId);
+
+    /**
+     * 나머지 카테고리들의 총 비중 계산
+     */
+    @Select({
+            "SELECT COALESCE(SUM(percentage), 0) as others_percentage",
+            "FROM (",
+            "    SELECT percentage ",
+            "    FROM product_category_percentage ",
+            "    WHERE super_product_id = #{productId}",
+            "    ORDER BY percentage DESC",
+            "    LIMIT 18446744073709551615 OFFSET 4",
+            ") others"
+    })
+    Double getOthersCategoryPercentage(@Param("productId") Long productId);
+
+    /**
+     * 상품 상세 정보 조회 - 상위 4개만
+     */
+    @Select({
+            "SELECT ",
+            "    pc.category_name as category,",
+            "    rppd.product,",
+            "    rppd.weight",
+            "FROM retire_pension_product_details rppd",
+            "LEFT JOIN product_categories pc ON rppd.category_id = pc.id",
+            "WHERE rppd.super_product_id = #{productId}",
+            "ORDER BY rppd.weight DESC",
+    })
+    @Results({
+            @Result(property = "category", column = "category"),
+            @Result(property = "product", column = "product"),
+            @Result(property = "weight", column = "weight")
+    })
+    List<ProductDetailResponse> getProductDetails(@Param("productId") Long productId);
+
+    /**
+     * 나머지 종목들의 총 비중 계산
+     */
+    @Select({
+            "SELECT COALESCE(SUM(weight), 0) as others_weight",
+            "FROM (",
+            "    SELECT weight ",
+            "    FROM retire_pension_product_details ",
+            "    WHERE super_product_id = #{productId}",
+            "    ORDER BY weight DESC",
+            "    LIMIT 18446744073709551615 OFFSET 4",
+            ") others"
+    })
+    Double getOthersWeight(@Param("productId") Long productId);
+
+    @Select({
+            "SELECT ",
+            "    rpp.product",
+            "FROM retire_pension_products rpp",
+            "WHERE rpp.id = #{productId}",
+    })
+    String getProductName(Long productId);
 }
