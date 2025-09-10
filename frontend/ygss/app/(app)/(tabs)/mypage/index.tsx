@@ -1,5 +1,6 @@
+import MyInfo from "@/components/molecules/MyInfo";
 import { useRouter } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, SafeAreaView, Text } from "react-native";
 
 export default function Mypage() {
     const router = useRouter();
@@ -10,8 +11,9 @@ export default function Mypage() {
     };
 
     return (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
             <Text>My Page</Text>
+            <MyInfo />
 
             <Pressable
                 onPress={handleLogout}
@@ -19,6 +21,6 @@ export default function Mypage() {
                 <Text style={{ color: "white" }}>Logout</Text>
             </Pressable>
 
-        </View>
+        </SafeAreaView>
     );
 }

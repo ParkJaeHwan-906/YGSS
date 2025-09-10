@@ -1,3 +1,4 @@
+// src/store/slices/signupSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 // 회원가입 과정에서 필요한 상태(변수)들의 타입 정의

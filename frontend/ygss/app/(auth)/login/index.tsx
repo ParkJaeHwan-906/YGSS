@@ -60,7 +60,7 @@ export default function Login() {
                             <View style={{ justifyContent: "center", alignItems: "center" }}>
                                 <Image
                                     source={require("../../../assets/icon/titleLogo.png")}
-                                    style={{ width: 300, height: 150 }}
+                                    style={{ width: 300, height: 100 }}
                                     resizeMode="contain"
                                 />
                             </View>
