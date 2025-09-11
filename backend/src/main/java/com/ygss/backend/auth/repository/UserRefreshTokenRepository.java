@@ -34,4 +34,10 @@ public interface UserRefreshTokenRepository {
             WHERE user_id = #{userId};
             """)
     Integer deleteFromUserId(Long userId);
+
+    @Delete("""
+            DELETE FROM `user_refresh_token`
+            WHERE `exit` <= CURRENT_TIMESTAMP
+            """)
+    Integer deleteExpRefreshToken();
 }
