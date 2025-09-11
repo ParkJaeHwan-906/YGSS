@@ -1,3 +1,4 @@
+// app/(app)/(tabs)/_layout.tsx
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
@@ -7,9 +8,11 @@ import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const router = useRouter();
 
   return (
     <Tabs
@@ -34,6 +37,8 @@ export default function TabLayout() {
             <Ionicons name="home" size={size} color={focused ? "skyblue" : color} />
           ),
         }}
+        listeners={{ focus: () => router.replace("/(app)/(tabs)/home") }}
+
       />
       <Tabs.Screen
         name="dc"
@@ -43,6 +48,7 @@ export default function TabLayout() {
             <Ionicons name="compass-outline" size={size} color={focused ? "skyblue" : color} />
           ),
         }}
+
       />
       <Tabs.Screen
         name="irp"
@@ -51,7 +57,9 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name="search" size={size} color={focused ? "skyblue" : color} />
           ),
-        }} />
+        }}
+        listeners={{ focus: () => router.replace("/(app)/(tabs)/irp") }}
+      />
       <Tabs.Screen
         name="mypage"
         options={{
@@ -59,7 +67,10 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name="person" size={size} color={focused ? "skyblue" : color} />
           ),
-        }} />
+        }}
+        listeners={{ focus: () => router.replace("/(app)/(tabs)/mypage") }}
+
+      />
 
       {/* ⛔️ 탭바에서 숨길 라우트들 */}
       <Tabs.Screen name="dc/index" options={{ href: null }} />

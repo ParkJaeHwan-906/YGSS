@@ -2,6 +2,7 @@
 import { useAppDispatch } from "@/src/store/hooks";
 import { signOut } from "@/src/store/slices/authSlice";
 import { deleteRefreshToken } from "@/src/utils/secureStore";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,7 +25,7 @@ export default function Mypage() {
                 style={styles.profileButton}
             >
                 <Text style={styles.profileName}>김알키  </Text>
-                <Text style={styles.profileArrow}>{">"}</Text>
+                <Ionicons name="chevron-forward-outline" size={22} color="#333" />
             </Pressable>
 
             {/* 로그아웃 버튼 */}
