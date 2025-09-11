@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 public class RemoveExpRefreshTokenSheduler {
     private final UserRefreshTokenRepository userRefreshTokenRepository;
 
-    @Scheduled(cron = "0 0 0 ? * MON")
+    @Scheduled(cron = "0 0 3 * * *")
     private void removeExpRefreshToken() {
         try {
             log.info("Remove Exp RefreshToken Success : REMOVE {} RefreshTokens", userRefreshTokenRepository.deleteExpRefreshToken());
