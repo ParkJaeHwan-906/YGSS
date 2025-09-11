@@ -4,6 +4,7 @@ import com.ygss.backend.user.repository.UserAccountsRepository;
 import com.ygss.backend.wmti.dto.InvestorPersonalityQuestionDto;
 import com.ygss.backend.wmti.dto.InvestorPersonalityResultRequestDto;
 import com.ygss.backend.wmti.dto.InvestorPersonalityResultResponseDto;
+import com.ygss.backend.wmti.dto.InvestorPersonerlityListDto;
 import com.ygss.backend.wmti.repository.RiskGradeOptionRepository;
 import com.ygss.backend.wmti.repository.RiskGradeQuestionRepository;
 import com.ygss.backend.wmti.repository.UserRiskGradeRepository;
@@ -43,6 +44,14 @@ public class InvestorPersonalityServiceImpl implements InvestorPersonalityServic
                 .investorRiskGrade(userRiskGradeRepository.selectRiskGradeById(investorRiskGrade)
                         .orElseThrow(() -> new IllegalArgumentException("Risk Grade Not Found")))
                 .build();
+    }
+
+    @Override
+    public List<InvestorPersonerlityListDto> loadInvestorPersonalityList() {
+        List<InvestorPersonerlityListDto> investorPersonerlityList
+                = userRiskGradeRepository.selectAllRiskGrade();
+        if(investorPersonerlityList == null) throw new IllegalArgumentException("UnExpected Error");
+        return investorPersonerlityList;
     }
 
     private Long calcRiskGrade(Integer score) {
