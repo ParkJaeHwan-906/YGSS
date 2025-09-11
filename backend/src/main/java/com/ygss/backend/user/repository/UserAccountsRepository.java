@@ -17,6 +17,9 @@ public interface UserAccountsRepository {
     @Select("SELECT * FROM user_accounts WHERE email LIKE #{userEmail} AND `exit` IS NULL")
     Optional<UserAccountsDto> selectByUserEmail(String userEmail);
 
+    @Select("SELECT COUNT(*) FROM user_accounts WHERE email LIKE #{userEmail}")
+    Integer selectCountByUserEmail(String userEmail);
+
     @Select("SELECT * FROM user_accounts WHERE user_id = #{userId} AND `exit` IS NULL")
     Optional<UserAccountsDto> selectByUserId(Long userId);
 
