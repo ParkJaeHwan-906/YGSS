@@ -15,8 +15,6 @@ import com.ygss.backend.user.repository.UsersRepository;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,21 +37,11 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public Boolean checkEmail(CheckEmailRequestDto request) {
-        try {
-            String lowerCaseEmail = request.getEmail().toLowerCase();
-            for(String banKeyword : banKeywords) {
-                if(lowerCaseEmail.contains(banKeyword)) throw new IllegalArgumentException("Invalid Email");
-            }
-            userAccountsRepository.selectByUserEmail(request.getEmail())
-                    .orElseThrow(() -> new IllegalArgumentException("Already Exist Email"));
-            return true;
-        } catch (IllegalArgumentException e) {
-            log.warn("Invalid Email : {}",e.getMessage());
-            return false;
-        } catch (Exception e) {
-            log.error("UnExpected Error : {}", e.getMessage());
-            return false;
+        String lowerCaseEmail = request.getEmail().toLowerCase();
+        for(String banKeyword : banKeywords) {
+            if(lowerCaseEmail.contains(banKeyword)) throw new IllegalArgumentException("Invalid Email");
         }
+        return userAccountsRepository.selectCountByUserEmail(request.getEmail()) == 0;
     }
 
     /**
@@ -78,15 +66,14 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public Boolean signUp(SignUpRequestDto request) {
         try {
-            checkEmail(CheckEmailRequestDto.builder().email(request.getEmail()).build());
+            if(!checkEmail(CheckEmailRequestDto.builder().email(request.getEmail()).build())) throw new IllegalArgumentException("Already Exist Email");
             usersRepsitory.insertUser(request.getName());
             userAccountsRepository.insertUserAccount(usersRepsitory.getLastUserIdx(),
                     request.getEmail(), cryptoPassword(request.getPassword()),
                     request.getNewEmp(), request.getSalary(), request.getTotalRetirePension());
             return true;
         } catch (Exception e) {
-            log.error("Sign Up Failed : {}", e.getMessage());
-            throw new IllegalArgumentException("회원가입에 실패하였습니다.");
+            throw e;
         }
     }
     /**

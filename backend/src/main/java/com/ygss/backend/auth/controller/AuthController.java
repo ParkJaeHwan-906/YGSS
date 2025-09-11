@@ -52,6 +52,7 @@ public class AuthController {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(authService.signUp(request));
         } catch (IllegalArgumentException e) {
+            log.error("Sign Up Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }

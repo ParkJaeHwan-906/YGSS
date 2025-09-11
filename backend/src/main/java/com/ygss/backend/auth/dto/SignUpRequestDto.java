@@ -12,5 +12,5 @@ public class SignUpRequestDto {
     private String password;
     private Boolean newEmp = true;    // 신입 여부 ( Default = ture )
     private Long salary;
-    private Long totalRetirePension;
+    private Long totalRetirePension = 0L;
 }
