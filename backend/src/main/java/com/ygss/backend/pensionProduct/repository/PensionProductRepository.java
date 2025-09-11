@@ -425,4 +425,47 @@ public interface PensionProductRepository {
     })
     List<ProductTimeLineDto> getTimeLines(@Param("productId") Long productId);
 
+
+    //===================좋아요 로직====================//
+
+    @Select({
+            "SELECT COUNT(*) FROM retire_pension_product_like",
+            "WHERE user_account_id = #{userId}",
+            "AND retire_pension_product_id = #{productId}"
+    })
+    int getProductLike(@Param("userId")Long userId, @Param("productId")Long productId);
+
+    @Delete({
+            "DELETE FROM retire_pension_product_like",
+            "WHERE user_account_id = #{userId}",
+            "AND retire_pension_product_id = #{productId}"
+    })
+    int deleteProductLike(@Param("userId") Long userId, @Param("productId") Long productId);
+
+    @Insert({
+            "INSERT INTO retire_pension_product_like(user_account_id, retire_pension_product_id)",
+            "VALUES(#{userId}, #{productId})"
+    })
+    int addProductLike(@Param("userId") Long userId, @Param("productId") Long productId);
+
+    @Select({
+            "SELECT COUNT(*) FROM bond_product_like",
+            "WHERE user_account_id = #{userId}",
+            "AND bond_product_id = #{bondId}"
+    })
+    int getBondLike(@Param("userId")Long userId, @Param("bondId")Long bondId);
+
+    @Delete({
+            "DELETE FROM retire_pension_product_like",
+            "WHERE user_account_id = #{userId}",
+            "AND bond_product_id = #{bondId}"
+    })
+    int deleteBondLike(@Param("userId") Long userId, @Param("bondId") Long bondId);
+
+    @Insert({
+            "INSERT INTO bond_product_like(user_account_id, bond_product_id)",
+            "VALUES(#{userId}, #{bondId})"
+    })
+    int addBondLike(@Param("userId") Long userId, @Param("bondId") Long bondId);
+
 }

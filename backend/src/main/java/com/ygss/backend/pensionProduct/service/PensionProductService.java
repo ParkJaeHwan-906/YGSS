@@ -27,4 +27,6 @@ public interface PensionProductService {
     List<ProductDetailResponse> getProductDetails(Long productId);
     ProductSummaryResponse getProductSummary(Long productId);
     List<ProductTimeLineDto> getProductTimeLine(Long productId);
+    boolean toggleProductLike(Long productId,String email);
+    boolean toggleBondLike(Long productId,String email);
 }

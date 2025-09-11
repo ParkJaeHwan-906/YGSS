@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
@@ -106,7 +107,7 @@ public class PensionProductController {
         request.setPage(page);
         request.setSize(size);
 
-        log.info("상품 검색 요청: {}", request);
+//        log.info("상품 검색 요청: {}", request);
 
         // 요청 검증
         request.validate();
@@ -132,7 +133,7 @@ public class PensionProductController {
     @GetMapping("/product/companies")
     public ResponseEntity<?> getAllCompanies() {
 
-        log.info("운용사 목록 조회 요청");
+//        log.info("운용사 목록 조회 요청");
         try{
             List<CompanyResponse> companies = pensionProductService.getAllCompanies();
 
@@ -155,8 +156,6 @@ public class PensionProductController {
     @GetMapping("/product/types")
     public ResponseEntity<List<ProductTypeResponse>> getAllProductTypes() {
 
-        log.info("상품 타입 목록 조회 요청");
-
         List<ProductTypeResponse> productTypes = pensionProductService.getAllProductTypes();
 
         return ResponseEntity.ok(productTypes);
@@ -173,8 +172,6 @@ public class PensionProductController {
     )
     @GetMapping("/systypes")
     public ResponseEntity<List<SystypeResponse>> getAllSystypes() {
-
-        log.info("시스템 타입 목록 조회 요청");
 
         List<SystypeResponse> systypes = pensionProductService.getAllSystypes();
 
@@ -242,4 +239,13 @@ public class PensionProductController {
         }
     }
 
+    @PostMapping("/product/{productId}/like") //
+    public boolean toggleProductLike(@PathVariable Long productId, Principal principal) {
+        return pensionProductService.toggleProductLike(productId,principal.getName());
+    }
+
+    @PostMapping("/bond/{BondId}/like") //
+    public boolean toggleBondLike(@PathVariable Long BondId, Principal principal) {
+        return pensionProductService.toggleBondLike(BondId,principal.getName());
+    }
 }
