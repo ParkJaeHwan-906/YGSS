@@ -468,4 +468,48 @@ public interface PensionProductRepository {
     })
     int addBondLike(@Param("userId") Long userId, @Param("bondId") Long bondId);
 
+
+    @Select({
+            "SELECT",
+            "    b.id AS id,",
+            "    b.product AS productName,",
+            "    prg.grade AS riskGrade,",
+            "    b.publisher_grade AS publisherGrade,",
+            "    b.publisher,",
+            "    b.coupon_rate AS couponRate,",
+            "    b.published_rate AS publishedRate,",
+            "    b.evalution_rate AS evaluationRate,",
+            "    b.maturity_years AS maturityYears,",
+            "    b.expired_day AS expiredDay,",
+            "    b.final_profit_rate AS finalProfitRate",
+            "FROM bond_products b",
+            "INNER JOIN product_risk_grade prg ON b.risk_grade_id = prg.id",
+            "INNER JOIN bond_product_like bpl ON b.id = bpl.bond_product_id",
+            "WHERE bpl.user_account_id = #{userId}"
+    })
+    List<BondDto> selectLikedBonds(@Param("userId") Long userId);
+
+    @Select({
+            "SELECT ",
+            "    rpp.id,",
+            "    rpp.company_id,",
+            "    rpp.systype_id,",
+            "    rpp.product_type_id,",
+            "    rpp.product,",
+            "    rpp.risk_grade_id AS risk_grade,",
+            "    rpp.reserve,",
+            "    rpp.next_year_profit_rate,",
+            "    rpp.created_at,",
+            "    rpp.updated_at,",
+            "    c.company AS company_name,",
+            "    pt.product_type AS product_type_name,",
+            "    s.systype AS systype_name",
+            "FROM retire_pension_products rpp",
+            "INNER JOIN companies c ON rpp.company_id = c.id",
+            "INNER JOIN retire_pension_product_type pt ON rpp.product_type_id = pt.id",
+            "INNER JOIN retire_pension_systype s ON rpp.systype_id = s.id",
+            "INNER JOIN retire_pension_product_like rppl ON rpp.id = rppl.retire_pension_product_id",  // ✅ 수정
+            "WHERE rppl.user_account_id = #{userId}"
+    })
+    List<PensionProduct> selectLikedProducts(@Param("userId") Long userId);
 }

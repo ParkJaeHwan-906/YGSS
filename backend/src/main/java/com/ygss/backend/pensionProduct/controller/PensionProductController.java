@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -247,5 +248,14 @@ public class PensionProductController {
     @PostMapping("/bond/{BondId}/like") //
     public boolean toggleBondLike(@PathVariable Long BondId, Principal principal) {
         return pensionProductService.toggleBondLike(BondId,principal.getName());
+    }
+
+    @GetMapping("/liked-product")
+    public ResponseEntity<?> getAllLikedProduct(Principal principal){
+        try {
+            return ResponseEntity.ok(pensionProductService.getAllLikedProduct(principal.getName()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

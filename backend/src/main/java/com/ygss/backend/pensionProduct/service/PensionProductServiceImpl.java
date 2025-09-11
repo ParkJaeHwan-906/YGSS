@@ -206,4 +206,14 @@ public class PensionProductServiceImpl implements PensionProductService {
         pensionProductRepository.addBondLike(userId, BondId);
         return true;
     }
+
+    @Override
+    public AllLikedProductDto getAllLikedProduct(String email) {
+        Long userId = usersAccountsRepository.selectUserIdByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
+        List<BondDto> bonds = pensionProductRepository.selectLikedBonds(userId);
+        List<PensionProduct> products = pensionProductRepository.selectLikedProducts(userId);
+
+        return AllLikedProductDto.builder().likedProduct(products).likedBond(bonds).build();
+    }
 }
