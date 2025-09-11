@@ -1,5 +1,4 @@
 // app/(app)/(tabs)/mypage/index.tsx
-import MyInfo from "@/components/molecules/MyInfo";
 import { useAppDispatch } from "@/src/store/hooks";
 import { signOut } from "@/src/store/slices/authSlice";
 import { deleteRefreshToken } from "@/src/utils/secureStore";
@@ -27,9 +26,6 @@ export default function Mypage() {
                 <Text style={styles.profileName}>김알키  </Text>
                 <Text style={styles.profileArrow}>{">"}</Text>
             </Pressable>
-
-            {/* 내 정보 */}
-            <MyInfo />
 
             {/* 로그아웃 버튼 */}
             <Pressable onPress={handleLogout} style={styles.logoutButton}>
