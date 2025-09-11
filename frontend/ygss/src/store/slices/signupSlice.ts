@@ -1,14 +1,20 @@
 // src/store/slices/signupSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-// 회원가입 과정에서 필요한 상태(변수)들의 타입 정의
-type SignupState = {
-    name: string;                // 사용자 이름
-    email: string;               // 이메일
-    password: string;            // 비밀번호
-    salary: number | null;       // 연봉 (없으면 null)
-    workedAt: number | null;     // 근속 연수 (없으면 null)
-    totalRetirePension: number | null; // 현재 보유 중인 퇴직연금 (없으면 null)
+/** 회원가입 상태 타입 */
+export type SignupState = {
+    name: string;
+    email: string;
+    password: string;
+
+    /** 신입 여부: 신입(true) / 경력(false) */
+    newEmp: boolean;
+
+    /** 급여(원 단위) */
+    salary: number | null;
+
+    /** 보유 퇴직연금(원 단위, 경력일 때만 사용) */
+    totalRetirePension: number | null;
 };
 
 // 초기 상태값 (회원가입 시작 시 기본값)
@@ -16,46 +22,36 @@ const initialState: SignupState = {
     name: "",
     email: "",
     password: "",
+    newEmp: true,               // 기본값: 신입
     salary: null,
-    workedAt: null,
     totalRetirePension: null,
 };
 
 // slice 생성
 const signupSlice = createSlice({
-    // slice의 이름 (액션 type prefix로 사용됨)
     name: "signup",
-
-    // 위에서 정의한 초기 상태
     initialState,
-
-    // 상태를 업데이트할 수 있는 함수들
     reducers: {
-        // 이름 저장
         setName: (state, action: PayloadAction<string>) => {
             state.name = action.payload;
         },
-        // 이메일 저장
         setEmail: (state, action: PayloadAction<string>) => {
             state.email = action.payload;
         },
-        // 비밀번호 저장
         setPassword: (state, action: PayloadAction<string>) => {
             state.password = action.payload;
         },
-        // 연봉 저장
-        setSalary: (state, action: PayloadAction<number>) => {
+        setNewEmp: (state, action: PayloadAction<boolean>) => {
+            state.newEmp = action.payload;
+            // 신입으로 바꾸면 경력 값은 비워둠
+            if (action.payload === true) state.totalRetirePension = null;
+        },
+        setSalary: (state, action: PayloadAction<number | null>) => {
             state.salary = action.payload;
         },
-        // 근속 연수 저장
-        setWorkedAt: (state, action: PayloadAction<number>) => {
-            state.workedAt = action.payload;
-        },
-        // 총 퇴직연금 저장
-        setTotalRetirePension: (state, action: PayloadAction<number>) => {
+        setTotalRetirePension: (state, action: PayloadAction<number | null>) => {
             state.totalRetirePension = action.payload;
         },
-        // 회원가입 과정 초기화 (로그아웃 시 or 회원가입 완료 시)
         resetSignup: () => initialState,
     },
 });
@@ -65,8 +61,8 @@ export const {
     setName,
     setEmail,
     setPassword,
+    setNewEmp,
     setSalary,
-    setWorkedAt,
     setTotalRetirePension,
     resetSignup,
 } = signupSlice.actions;

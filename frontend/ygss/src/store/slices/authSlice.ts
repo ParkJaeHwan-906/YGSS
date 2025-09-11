@@ -1,12 +1,12 @@
 // src/store/slices/authSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-type User = {
+export type User = {
     name: string;
     email: string;
-    password: string | null;
+    password: string;
+    newEmp: boolean;
     salary: number | null;
-    workedAt: number | null;
     totalRetirePension: number | null;
 };
 

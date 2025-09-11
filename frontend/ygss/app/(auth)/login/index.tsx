@@ -20,10 +20,10 @@ import {
 
 // store관련
 import { useAppDispatch } from "@/src/store/hooks";
-import { setUser, signIn } from "@/src/store/slices/authSlice";
+import { signIn } from "@/src/store/slices/authSlice";
 import axios from "axios";
 
-const API_URL = process.env.API_URL;
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function Login() {
     const router = useRouter();
@@ -45,15 +45,17 @@ export default function Login() {
 
     // 로그인
     const onLogin = async () => {
+        console.log("onLogin 호출됨");
         if (!canLogin) return;
 
         try {
+            console.log("API_URL", API_URL);
             const res = await axios.post(`${API_URL}/auth/login`, {
                 email,
                 password: pw,
             });
+            console.log("로그인 응답:", res.status, res.data);
 
-            const accessToken = res.data.accessToken;
             const refreshToken = res.data.refreshToken;
             // accessToken Redux 저장
             dispatch(signIn(res.data.accessToken));
@@ -61,14 +63,8 @@ export default function Login() {
             // refreshToken은 SecureStore에 저장
             await saveRefreshToken(refreshToken);
 
-            // 사용자 정보 불러오기
-            const detail = await axios.get(`${API_URL}/user/load/detail`, {
-                headers: { Authorization: `A130 ${accessToken}` },
-            });
-
-            dispatch(setUser(detail.data)); // authSlice.user 채우기
-
             router.replace("/(app)/(tabs)/home");
+
         } catch (err) {
             console.error("로그인 실패", err);
             Alert.alert("로그인 실패", "이메일이나 비밀번호를 확인해주세요.", [
