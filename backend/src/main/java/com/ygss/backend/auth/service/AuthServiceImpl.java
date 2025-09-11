@@ -90,7 +90,6 @@ public class AuthServiceImpl implements AuthService {
             String storedUserName = usersRepsitory.getUserNameById(storedUser.getUserId());
             String accessToken = jwtTokenProvider.generateAccessToken(storedUser.getId(), storedUser.getEmail(), storedUserName);
             String refreshToken = jwtTokenProvider.generateRefreshToken(storedUser.getId(), storedUser.getEmail(), storedUserName);
-            System.out.println(storedUser);
             userRefreshTokenRepository.insertUserRefreshToken(
                     storedUser.getUserId(),
                     refreshToken,
