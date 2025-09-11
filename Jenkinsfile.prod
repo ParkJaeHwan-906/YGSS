@@ -1,0 +1,250 @@
+pipeline {
+  agent any
+
+  environment {
+    // 배포 환경
+    DOCKER_IMAGE  = 'ygss-backend'       // 매니페스트의 image 이름과 동일해야 합니다.
+    DOCKER_TAG    = "v${BUILD_NUMBER}"
+    K8S_NAMESPACE = 'ygss-prod'
+
+    // k3s kubeconfig (Jenkins 유저가 읽을 수 있어야 함)
+    KUBECONFIG = '/etc/rancher/k3s/k3s.yaml'
+
+    // Jenkins Credentials → 런타임 Secret 생성
+    MYSQL_PASSWORD = credentials('mysql-password')
+    JWT_SECRET     = credentials('jwt-secret')
+  }
+
+  options {
+    buildDiscarder(logRotator(numToKeepStr: '5'))
+    timeout(time: 10, unit: 'MINUTES')
+    timestamps()
+    disableConcurrentBuilds()
+  }
+
+  stages {
+    stage('체크아웃') {
+      steps {
+        echo '🔄 마스터 브랜치 체크아웃'
+        git branch: 'master',
+            url: 'https://lab.ssafy.com/s13-bigdata-recom-sub1/S13P21A103.git',
+            credentialsId: 'gitlab-git-token'
+
+        script {
+          env.GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+        }
+        echo "🚀 배포 빌드 시작 - 커밋: ${env.GIT_COMMIT}"
+      }
+    }
+
+    stage('브랜치 가드') {
+      steps {
+        script {
+          def current = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+          if (current != 'master') {
+            error "This pipeline runs only on master. Current: ${current}"
+          }
+        }
+      }
+    }
+
+    stage('소스 검증') {
+      steps {
+        sh '''
+          bash -lc '
+          set -euo pipefail
+            echo "🔍 필수 파일 확인"
+            [ -f backend/build.gradle ] || { echo "❌ backend/build.gradle 없음"; exit 1; }
+            [ -f backend/Dockerfile   ] || { echo "❌ backend/Dockerfile 없음"; exit 1; }
+            [ -d k8s/backend ] && [ -d k8s/shared ] || { echo "❌ k8s 매니페스트 없음"; exit 1; }
+            echo "✅ 필수 파일 확인 완료"
+          '
+        '''
+      }
+    }
+
+    stage('백엔드 빌드') {
+      steps {
+        echo '🔨 백엔드 빌드 (테스트 제외)'
+        dir('backend') {
+          sh '''
+            set -euo pipefail
+            chmod +x ./gradlew
+            ./gradlew clean build -x test --no-daemon
+            ls -la build/libs/ || true
+          '''
+        }
+      }
+    }
+
+    stage('Docker 이미지 빌드') {
+      steps {
+        dir('backend') {
+          sh '''
+            set -euo pipefail
+            echo '🐳 Docker 이미지 빌드'
+            docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+            docker images | grep "$DOCKER_IMAGE" || true
+            echo "✅ 이미지 빌드 완료: $DOCKER_IMAGE:$DOCKER_TAG"
+          '''
+        }
+      }
+    }
+
+    stage('k3s(containerd) 이미지 import') {
+      steps {
+        sh '''
+          set -Eeuo pipefail
+          echo "📦 Docker → k3s(containerd) import"
+
+          docker save "$DOCKER_IMAGE:$DOCKER_TAG" -o "/tmp/$DOCKER_IMAGE-$DOCKER_TAG.tar"
+
+          # sudoers: Cmnd_Alias K3S_IMPORT = /usr/local/bin/k3s ctr images import *
+          sudo -n /usr/local/bin/k3s ctr images import "/tmp/$DOCKER_IMAGE-$DOCKER_TAG.tar"
+
+          rm -f "/tmp/$DOCKER_IMAGE-$DOCKER_TAG.tar"
+          echo "✅ containerd import 완료"
+        '''
+      }
+    }
+
+    stage('K8s Secret 생성') {
+      steps {
+        sh '''
+          set -euo pipefail
+          echo '🔐 Kubernetes Secret 생성/업데이트'
+          kubectl create namespace $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+
+          kubectl -n $K8S_NAMESPACE create secret generic backend-secrets \
+            --from-literal=MYSQL_PASSWORD="$MYSQL_PASSWORD" \
+            --from-literal=JWT_SECRET="$JWT_SECRET" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          echo '✅ Secret 생성 완료'
+        '''
+      }
+    }
+
+    stage('K8s 매니페스트 준비') {
+      steps {
+        sh '''
+          set -euo pipefail
+          echo "⚙️ 배포 매니페스트 준비"
+
+          rm -rf deploy && mkdir -p deploy
+          cp k8s/shared/ingress.yml  deploy/ 2>/dev/null || true
+          cp k8s/backend/*.yml       deploy/ 2>/dev/null || true
+          # cert-issuer.yml은 제외 (부트스트랩에서 1회 적용 권장)
+
+          # namespace 라인 삭제(라인 시작 기준으로만)
+          find deploy/ -name "*.yml" -exec sed -i -E "/^[[:space:]]*namespace:[[:space:]]*/d" {} \\;
+
+          # image 줄 치환 (들여쓰기 보존)
+          if [ -f deploy/deployment.yml ]; then
+            sed -i -E "s|^([[:space:]]*)image:[[:space:]]*.*$|\\1image: ${DOCKER_IMAGE}:${DOCKER_TAG}|g" deploy/deployment.yml
+          fi
+
+          echo "=== 매니페스트 준비 완료 ==="
+          ls -la deploy/ || true
+          echo "=== 이미지 태그 확인 ==="
+          grep -nE "^[[:space:]]*image:" deploy/deployment.yml || echo "이미지 설정 없음"
+
+          # dry-run으로 사전 검증
+          kubectl -n ${K8S_NAMESPACE} apply --dry-run=client -f deploy/
+        '''
+      }
+    }
+
+    stage('Kubernetes 배포') {
+      steps {
+        sh '''
+          set -euo pipefail
+          echo '🚢 Kubernetes 배포'
+          # 네임스페이스는 -n 옵션으로만 강제(매니페스트 내부 namespace 미사용)
+          kubectl -n $K8S_NAMESPACE apply -f deploy/
+          kubectl -n $K8S_NAMESPACE set image deploy/backend backend=$DOCKER_IMAGE:$DOCKER_TAG || true
+          kubectl -n $K8S_NAMESPACE rollout status deployment/backend --timeout=300s
+
+          echo '=== 리소스 현황 ==='
+          kubectl -n $K8S_NAMESPACE get all
+        '''
+      }
+    }
+
+    stage('헬스체크') {
+      steps {
+        script {
+          echo '⏳ Pod 시작 대기 중...'
+          sleep(time: 10, unit: 'SECONDS')  // 10초 대기
+          
+          echo '🏥 서비스 헬스체크'
+          timeout(time: 3, unit: 'MINUTES') {
+            waitUntil {
+              def code = sh(
+                script: '''
+                  set -euo pipefail
+                  curl -s -k -o /dev/null -w "%{http_code}" \
+                       --connect-timeout 10 \
+                       --max-time 30 \
+                       https://j13a103.p.ssafy.io/api/infra || echo 000
+                ''',
+                returnStdout: true
+              ).trim()
+              echo "헬스체크 응답: ${code}"
+              return (code == '200')
+            }
+          }
+        }
+      }
+    }
+
+    stage('정리') {
+      steps {
+        sh '''
+          set -euo pipefail
+          echo '🧹 이전 이미지 정리'
+          # $DOCKER_IMAGE: v접두 태그 중 최신 3개만 남기고 삭제
+          KEEP=3
+          TAGS=$(docker images "$DOCKER_IMAGE" --format '{{.Tag}}' | grep -E '^v[0-9]+' | sort -V -r || true)
+          COUNT=0
+          for t in $TAGS; do
+            COUNT=$((COUNT+1))
+            if [ $COUNT -le $KEEP ]; then continue; fi
+            docker rmi "$DOCKER_IMAGE:$t" 2>/dev/null || true
+          done
+          docker image prune -f || true
+        '''
+      }
+    }
+  }
+
+  post {
+    success {
+      echo """
+✅ 🎉 배포 성공! 🎉
+
+📋 배포 정보:
+• 커밋: ${env.GIT_COMMIT}
+• 이미지: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
+• 네임스페이스: ${env.K8S_NAMESPACE}
+
+"""
+    }
+    failure {
+      echo '❌ 배포 실패! 디버깅 정보 출력'
+      sh '''
+        set -euo pipefail
+        echo '=== Pods ==='
+        kubectl -n $K8S_NAMESPACE get pods -o wide || true
+        echo '=== 최근 로그(backend) ==='
+        kubectl -n $K8S_NAMESPACE logs -l app=backend --tail=50 || true
+        echo '=== Deployment 설명 ==='
+        kubectl -n $K8S_NAMESPACE describe deployment backend || true
+      '''
+    }
+    always {
+      sh 'rm -rf deploy || true'
+      cleanWs()
+    }
+  }
+}

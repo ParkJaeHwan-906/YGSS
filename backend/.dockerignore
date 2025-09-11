@@ -1,0 +1,25 @@
+# 빌드 아티팩트 제외 (Jenkins가 관리)
+.gradle/
+build/
+!build/libs/*.jar
+
+# 개발 환경 파일들
+.git/
+.gitignore
+.env
+*.md
+Dockerfile
+.dockerignore
+
+# IDE 설정
+.idea/
+.vscode/
+*.iml
+
+# 로그 파일
+*.log
+logs/
+
+# OS 생성 파일
+.DS_Store
+Thumbs.db

@@ -9,7 +9,7 @@ public class EditUserInfoResponseDto {
     private String name;
     private String email;
     private String password;
-    private Integer workedAt;
+    private Boolean newEmp;
     private Long salary;
     private Long totalRetirePension;
 }

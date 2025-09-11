@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: ygss-test
+data:
+  SPRING_PROFILES_ACTIVE: "prod"
+  SPRING_DATASOURCE_URL: "jdbc:mysql://172.26.7.217:3306/ygss"
+  SPRING_DATASOURCE_USERNAME: "admin"
+  SPRING_DATASOURCE_DRIVER_CLASS_NAME: "com.mysql.cj.jdbc.Driver"
+  MYSQL_HOST: "172.26.7.217"
+  MYSQL_DATABASE: "ygss"
+  MYSQL_USER: "admin"
+  REDIS_HOST: "172.26.7.217"
+  REDIS_PORT: "6379"
+  JWT_ACCESS_TOKEN_EXPIRATION: "3600000"
+  JWT_REFRESH_TOKEN_EXPIRATION: "604800000"
