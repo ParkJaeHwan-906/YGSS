@@ -1,10 +1,12 @@
 package com.ygss.backend.pensionProduct.service;
 
+import com.ygss.backend.global.exception.UserNotFoundException;
 import com.ygss.backend.pensionProduct.dto.entity.PensionProduct;
 import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.response.*;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
 import com.ygss.backend.pensionProduct.repository.PensionProductRepository;
+import com.ygss.backend.user.repository.UserAccountsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,7 +26,7 @@ import java.util.Optional;
 public class PensionProductServiceImpl implements PensionProductService {
 
     private final PensionProductRepository pensionProductRepository;
-
+    private final UserAccountsRepository usersAccountsRepository;
     /**
      * 동적 조건으로 상품 검색
      */
@@ -88,7 +90,7 @@ public class PensionProductServiceImpl implements PensionProductService {
 
     @Override
     public BondSearchResponse searchBonds(BondSearchRequest searchRequest) {
-        log.info("채권 목록 조회 - 검색조건: {}", searchRequest);
+//        log.info("채권 목록 조회 - 검색조건: {}", searchRequest);
 
         // 전체 개수 조회
         long totalElements = pensionProductRepository.countBonds(searchRequest);
@@ -99,21 +101,21 @@ public class PensionProductServiceImpl implements PensionProductService {
         // 채권 목록 조회
         List<BondDto> bonds = pensionProductRepository.selectBonds(searchRequest);
 
-        log.info("채권 목록 조회 완료 - 조회 건수: {}, {}", bonds.size(), pageInfo.getSummary());
+//        log.info("채권 목록 조회 완료 - 조회 건수: {}, {}", bonds.size(), pageInfo.getSummary());
 
         return BondSearchResponse.of(bonds, pageInfo);
     }
 
     @Override
     public Optional<BondDto> searchBondById(Long bondId) {
-        log.info("채권 단건 조회 - ID: {}", bondId);
+//        log.info("채권 단건 조회 - ID: {}", bondId);
 
         Optional<BondDto> result = pensionProductRepository.selectBondById(bondId);
 
         if (result.isPresent()) {
-            log.info("채권 단건 조회 완료 - {}", result.get().getProductName());
+//            log.info("채권 단건 조회 완료 - {}", result.get().getProductName());
         } else {
-            log.warn("채권 정보 없음 - ID: {}", bondId);
+//            log.warn("채권 정보 없음 - ID: {}", bondId);
         }
 
         return result;
@@ -174,5 +176,44 @@ public class PensionProductServiceImpl implements PensionProductService {
                 .nextYearProfitRate(product.getNextYearProfitRate())
                 .createdAt(product.getCreatedAt())
                 .build();
+    }
+
+    @Transactional
+    @Override
+    public boolean toggleProductLike(Long productId,String email){
+        Long userId = usersAccountsRepository.selectUserIdByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
+        boolean exist = pensionProductRepository.getProductLike(userId, productId) != 0;
+
+        if (exist) {
+            pensionProductRepository.deleteProductLike(userId, productId);
+            return false;
+        }
+        pensionProductRepository.addProductLike(userId, productId);
+        return true;
+    }
+    @Transactional
+    @Override
+    public boolean toggleBondLike(Long BondId,String email) {
+        Long userId = usersAccountsRepository.selectUserIdByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
+        boolean exist = pensionProductRepository.getProductLike(userId, BondId) != 0;
+
+        if (exist) {
+            pensionProductRepository.deleteBondLike(userId, BondId);
+            return false;
+        }
+        pensionProductRepository.addBondLike(userId, BondId);
+        return true;
+    }
+
+    @Override
+    public AllLikedProductDto getAllLikedProduct(String email) {
+        Long userId = usersAccountsRepository.selectUserIdByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
+        List<BondDto> bonds = pensionProductRepository.selectLikedBonds(userId);
+        List<PensionProduct> products = pensionProductRepository.selectLikedProducts(userId);
+
+        return AllLikedProductDto.builder().likedProduct(products).likedBond(bonds).build();
     }
 }
