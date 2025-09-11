@@ -9,7 +9,9 @@ import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
 import com.ygss.backend.pensionProduct.dto.response.*;
 import com.ygss.backend.pensionProduct.service.PensionProductService;
 import com.ygss.backend.pensionProduct.service.PensionProductServiceImpl;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -200,32 +202,44 @@ public class PensionProductController {
             Optional<BondDto> result = pensionProductService.searchBondById(id);
 
             return result.map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.notFound().build());
+                    .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
 
         } catch (Exception e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 
+    @Operation(summary = "상품 단건 요약 제공", description = "상품의 요약 정보를 제공합니다.")
     @GetMapping("/product/{id}")
     public ResponseEntity<ProductSummaryResponse> getProductSummary(@PathVariable Long id) {
         try {
             ProductSummaryResponse summary = pensionProductService.getProductSummary(id);
             return ResponseEntity.ok(summary);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 
+    @Operation(summary = "상품 단건 상세 정보 제공", description = "상품의 상세 정보를 제공합니다.")
     @GetMapping("/product/{id}/detail")
     public ResponseEntity<List<ProductDetailResponse>> getProductDetails(@PathVariable Long id) {
         try {
             List<ProductDetailResponse> details = pensionProductService.getProductDetails(id);
             return ResponseEntity.ok(details);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 
+    @Operation(summary = "상품 단건 시계열 정보 제공", description = "상품의 시계열 정보를 제공합니다.")
+    @GetMapping("/product/time-line/{id}")
+    public ResponseEntity<List<ProductTimeLineDto>> getProductTimeLines(@PathVariable Long id){
+        try {
+            List<ProductTimeLineDto> timeLines = pensionProductService.getProductTimeLine(id);
+            return ResponseEntity.ok(timeLines);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
 
 }

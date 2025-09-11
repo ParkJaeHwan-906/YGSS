@@ -8,6 +8,7 @@ import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
 import com.ygss.backend.pensionProduct.dto.response.*;
 import org.apache.ibatis.annotations.*;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -414,4 +415,14 @@ public interface PensionProductRepository {
             "WHERE rpp.id = #{productId}",
     })
     String getProductName(Long productId);
+
+    @Select({
+            "SELECT ",
+            "   date,",
+            "   final_price AS price",
+            "FROM retire_pension_product_price_log",
+            "WHERE retire_pension_product_id=#{productId}"
+    })
+    List<ProductTimeLineDto> getTimeLines(@Param("productId") Long productId);
+
 }

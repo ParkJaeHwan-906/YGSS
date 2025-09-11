@@ -39,4 +39,14 @@ public class InvestorPersonalityController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
+
+    @GetMapping("/list")
+    public ResponseEntity<?> loadInvestorPersonalityList() {
+        try {
+            return ResponseEntity.ok(investorPersonalityService.loadInvestorPersonalityList());
+        } catch (Exception e) {
+            log.error("Load Investor Personality List Failed : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+    }
 }

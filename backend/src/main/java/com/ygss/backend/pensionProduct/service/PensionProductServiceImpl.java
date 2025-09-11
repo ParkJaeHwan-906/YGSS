@@ -150,6 +150,11 @@ public class PensionProductServiceImpl implements PensionProductService {
                 .build();
     }
 
+    @Override
+    public List<ProductTimeLineDto> getProductTimeLine(Long productId) {
+        return pensionProductRepository.getTimeLines(productId);
+    }
+
     public List<ProductDetailResponse> getProductDetails(Long productId) {
         return pensionProductRepository.getProductDetails(productId);
     }
