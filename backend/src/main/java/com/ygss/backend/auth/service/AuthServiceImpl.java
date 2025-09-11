@@ -82,7 +82,7 @@ public class AuthServiceImpl implements AuthService {
             usersRepsitory.insertUser(request.getName());
             userAccountsRepository.insertUserAccount(usersRepsitory.getLastUserIdx(),
                     request.getEmail(), cryptoPassword(request.getPassword()),
-                    request.getWorkedAt(), request.getSalary(), request.getTotalRetirePension());
+                    request.getNewEmp(), request.getSalary(), request.getTotalRetirePension());
             return true;
         } catch (Exception e) {
             log.error("Sign Up Failed : {}", e.getMessage());

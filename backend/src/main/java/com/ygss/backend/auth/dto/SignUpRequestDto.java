@@ -10,7 +10,7 @@ public class SignUpRequestDto {
     private String name;
     private String email;
     private String password;
-    private Integer workedAt = 0;
+    private Boolean newEmp = true;    // 신입 여부 ( Default = ture )
     private Long salary;
     private Long totalRetirePension;
 }

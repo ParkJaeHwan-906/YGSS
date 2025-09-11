@@ -206,4 +206,26 @@ public class PensionProductController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/product/{id}")
+    public ResponseEntity<ProductSummaryResponse> getProductSummary(@PathVariable Long id) {
+        try {
+            ProductSummaryResponse summary = pensionProductService.getProductSummary(id);
+            return ResponseEntity.ok(summary);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/product/{id}/detail")
+    public ResponseEntity<List<ProductDetailResponse>> getProductDetails(@PathVariable Long id) {
+        try {
+            List<ProductDetailResponse> details = pensionProductService.getProductDetails(id);
+            return ResponseEntity.ok(details);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
 }

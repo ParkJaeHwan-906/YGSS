@@ -14,7 +14,7 @@ public class UserAccountsDto {
     private Long userId;
     private String email;
     private String password;
-    private Integer workedAt;
+    private Boolean newEmp;
     private Long salary;
     private Long totalRetirePension;
     private LocalDateTime createdAt;
