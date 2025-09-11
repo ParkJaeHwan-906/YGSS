@@ -22,7 +22,7 @@ import {
 
 // store관련
 import { useAppDispatch } from "@/src/store/hooks";
-import { signIn } from "@/src/store/slices/authSlice";
+import { setUser, signIn } from "@/src/store/slices/authSlice";
 import axios from "axios";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -66,12 +66,19 @@ export default function Login() {
                 email,
                 password: pw,
             });
-            const refreshToken = res.data.refreshToken;
+            const { accessToken, refreshToken } = res.data;
+
             // accessToken Redux 저장
-            dispatch(signIn(res.data.accessToken));
+            dispatch(signIn(accessToken));
 
             // refreshToken은 SecureStore에 저장
             await saveRefreshToken(refreshToken);
+
+            // 로그인 직후 유저 정보 요청
+            const { data: user } = await axios.get(`${API_URL}/user/load/detail`, {
+                headers: { Authorization: `A103 ${accessToken}` },
+            });
+            dispatch(setUser(user));
 
             router.replace("/(app)/(tabs)/home");
 
@@ -95,7 +102,7 @@ export default function Login() {
                     style={{ flex: 1 }}
                     behavior={Platform.OS === "ios" ? "padding" : undefined}
                 >
-                    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+                    <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); setShowSuggestions(false) }} accessible={false}>
                         <View style={stylesLogin.wrap}>
                             <View style={{ justifyContent: "center", alignItems: "center" }}>
                                 <Image

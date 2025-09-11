@@ -17,7 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { signIn } from "@/src/store/slices/authSlice";
+import { setUser, signIn } from "@/src/store/slices/authSlice";
 import {
     resetSignup,
     setNewEmp,
@@ -97,6 +97,12 @@ export default function SignupSalary() {
 
         dispatch(signIn(accessToken));
         await saveRefreshToken(refreshToken);
+
+        // 로그인 직후 유저 정보 요청
+        const { data: user } = await axios.get(`${API_URL}/user/load/detail`, {
+            headers: { Authorization: `A103 ${accessToken}` },
+        });
+        dispatch(setUser(user));
     };
 
     const handleSignup = async () => {
@@ -118,9 +124,9 @@ export default function SignupSalary() {
             const res = await axios.post(`${API_URL}/auth/signup`, payload);
 
             if (res.status === 201) {
-                setTimeout(async () => {
-                    await loginAfterSignup(email, password)
-                }, 500)
+                await loginAfterSignup(email, password)
+
+                // 회원가입 store 비우기
                 dispatch(resetSignup());
                 console.log("회원가입 성공")
                 router.replace("/(app)/(tabs)/home");

@@ -1,44 +1,60 @@
 // app/(app)/(tabs)/mypage/modify.tsx
-
-import Button from "@/components/molecules/Button";
 import MyInfo from "@/components/molecules/MyInfo";
-import ProfitChart from "@/components/molecules/ProfitChart";
-import { StyleSheet } from "react-native";
+import DeleteAccountModal from "@/components/organisms/DeleteAccountModal";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { signOut } from "@/src/store/slices/authSlice";
+import { Colors } from "@/src/theme/colors";
+import { deleteRefreshToken } from "@/src/utils/secureStore";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import { Pressable, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// 가격 시계열(마지막 날짜가 최신)
-const kospi = {
-    id: "KOSPI",
-    color: "#06b6d4",
-    points: [
-        { date: "2025-01-02", price: 2600 },
-        { date: "2025-02-03", price: 2550 },
-        // ...
-    ],
-};
-const kosdaq = {
-    id: "KOSDAQ",
-    color: "#ef4444",
-    points: [
-        { date: "2025-01-02", price: 840 },
-        // ...
-    ],
-};
+export default function Modify() {
+    const accessToken = useAppSelector((s) => s.auth.accessToken);
+    const dispatch = useAppDispatch();
+    const router = useRouter();
 
+    const [modalVisible, setModalVisible] = useState(false);
 
-
-export default function Mypage() {
     return (
         <SafeAreaView style={styles.container}>
             {/* 내 정보 */}
             <MyInfo />
-            <Button label="적용하기" />
 
-            <ProfitChart datasets={[kospi, kosdaq]} height={240} />
+            {/* 회원탈퇴 버튼 */}
+            <Pressable onPress={() => setModalVisible(true)} style={styles.deleteButton}>
+                <Text style={styles.deleteText}>회원탈퇴</Text>
+            </Pressable>
+
+            {/* 회원탈퇴 확인 모달 */}
+            <DeleteAccountModal
+                visible={modalVisible}
+                onClose={() => setModalVisible(false)}
+                onSuccess={async () => {
+                    // 탈퇴 성공 → 토큰 삭제 및 로그아웃
+                    await deleteRefreshToken();
+                    dispatch(signOut());
+                    router.replace("/(auth)/login");
+                }}
+            />
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     container: { flex: 1, padding: 16 },
+    deleteButton: {
+        position: "absolute",
+        bottom: 20,
+        left: 0,
+        right: 0,
+        alignItems: "center",
+    },
+    deleteText: {
+        fontSize: 15,
+        fontFamily: "BasicLight",
+        color: Colors.black,
+        textDecorationLine: "underline",
+    },
 });
