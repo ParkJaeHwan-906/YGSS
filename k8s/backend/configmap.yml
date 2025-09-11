@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: backend-config
-  namespace: ygss-test
+  namespace: ygss-prod
 data:
   SPRING_PROFILES_ACTIVE: "prod"
   SPRING_DATASOURCE_URL: "jdbc:mysql://172.26.7.217:3306/ygss"
@@ -15,3 +15,4 @@ data:
   REDIS_PORT: "6379"
   JWT_ACCESS_TOKEN_EXPIRATION: "3600000"
   JWT_REFRESH_TOKEN_EXPIRATION: "604800000"
+  MYBATIS_CONFIGURATION_MAP_UNDERSCORE_TO_CAMEL_CASE: "true"

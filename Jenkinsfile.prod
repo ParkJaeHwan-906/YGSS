@@ -132,9 +132,8 @@ pipeline {
           echo "⚙️ 배포 매니페스트 준비"
 
           rm -rf deploy && mkdir -p deploy
-          cp k8s/shared/ingress.yml  deploy/ 2>/dev/null || true
+          cp k8s/shared/*.yml        deploy/ 2>/dev/null || true
           cp k8s/backend/*.yml       deploy/ 2>/dev/null || true
-          # cert-issuer.yml은 제외 (부트스트랩에서 1회 적용 권장)
 
           # namespace 라인 삭제(라인 시작 기준으로만)
           find deploy/ -name "*.yml" -exec sed -i -E "/^[[:space:]]*namespace:[[:space:]]*/d" {} \\;
