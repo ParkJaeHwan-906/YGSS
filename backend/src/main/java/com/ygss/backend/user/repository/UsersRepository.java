@@ -19,9 +19,10 @@ public interface UsersRepository {
     String getUserNameById(Long userId);
 
     @Select("""
-            SELECT u.name, ua.email, NULL AS 'password', ua.worked_at, ua.salary, ua.total_retire_pension FROM `users` u
+            SELECT u.name, ua.email, NULL AS 'password', ua.new_Emp, ua.salary, ua.total_retire_pension FROM `users` u
             JOIN `user_accounts` ua ON ua.user_id = u.id
-            WHERE ua.email LIKE #{userEmail};
+            WHERE ua.email LIKE #{userEmail}
+            AND ua.exit IS NULL;
             """)
     Optional<EditUserInfoResponseDto> getUserInfo(String userEmail);
 
