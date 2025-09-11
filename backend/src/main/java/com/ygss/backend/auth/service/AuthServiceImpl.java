@@ -83,6 +83,7 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponseDto login(LoginRequestDto request) {
         try {
             UserAccountsDto storedUser = getStoredUser(request.getEmail());
+            System.out.println(storedUser);
             if(!decryptoPassword(request.getPassword(), storedUser.getPassword())) throw new IllegalArgumentException("Password Not Matched");
 
             userRefreshTokenRepository.deleteFromUserId(storedUser.getUserId());
