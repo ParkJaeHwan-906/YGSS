@@ -45,17 +45,13 @@ export default function Login() {
 
     // 로그인
     const onLogin = async () => {
-        console.log("onLogin 호출됨");
         if (!canLogin) return;
 
         try {
-            console.log("API_URL", API_URL);
             const res = await axios.post(`${API_URL}/auth/login`, {
                 email,
                 password: pw,
             });
-            console.log("로그인 응답:", res.status, res.data);
-
             const refreshToken = res.data.refreshToken;
             // accessToken Redux 저장
             dispatch(signIn(res.data.accessToken));
