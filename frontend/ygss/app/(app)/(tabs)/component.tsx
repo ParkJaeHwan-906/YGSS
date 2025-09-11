@@ -4,7 +4,6 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Dict from "@/components/molecules/Dict";
-import InvestChar from "@/components/molecules/InvestChar";
 import ItemRatio from "@/components/molecules/ItemRatio";
 import LinkCard from "@/components/molecules/LinkCard";
 import ListItem from "@/components/molecules/ListItem";
@@ -53,7 +52,6 @@ export default function ComponentsPage() {
         <ItemRatio />
         <PortfolioChart />
         <MyMoney rate={1.2} amount={1000000} />
-        <InvestChar />
         <ImageList items={items}/>
         <View>
           {/* 낮음 */}
