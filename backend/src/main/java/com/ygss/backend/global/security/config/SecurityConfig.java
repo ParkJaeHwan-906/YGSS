@@ -40,6 +40,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/infra/**").permitAll()
                         .requestMatchers("/investor/personality/list").permitAll()
+                        .requestMatchers("/recommend/public/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         //비허용 엔드포인트
                         .anyRequest().authenticated()
