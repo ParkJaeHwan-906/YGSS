@@ -1,6 +1,7 @@
 import ProgressBar from "@/components/login/ProgressBar";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { setEmail } from "@/src/store/slices/signupSlice";
+import { Colors } from "@/src/theme/colors";
 import axios from "axios";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -17,7 +18,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const DOMAINS: string[] = ["naver.com", "gmail.com", "hanmail.net", "daum.net", "nate.com", "yahoo.com", "hotmail.com"];
-const API_URL = process.env.API_URL; // 환경변수에서 API_URL 가져오기
+const API_URL = process.env.EXPO_PUBLIC_API_URL as string; // 환경변수에서 API_URL 가져오기
 
 export default function SignupEmail() {
     const router = useRouter();
@@ -60,10 +61,12 @@ export default function SignupEmail() {
     const checkEmail = async (email: string) => {
         try {
             const res = await axios.post(`${API_URL}/auth/check/email`, { email });
-            console.log("res", res);
             console.log("res.data", res.data);
-            if (res.status === 200 && res.data === true) {
-                setMessage("사용 가능한 이메일입니다.");
+
+            if (res.status === 200) {
+                // 서버 규약: true = 사용 가능, false = 이미 사용중/사용불가
+                const isAvailable = res.data === true;
+                setMessage(isAvailable ? "사용 가능한 이메일입니다." : "이미 사용중이거나 사용불가한 메일입니다.");
             }
         } catch (err: any) {
             if (err.response?.status === 400) {
@@ -76,8 +79,8 @@ export default function SignupEmail() {
     };
 
     // 다음 버튼 활성화 여부
-    // const canNext = validFormat && message === "사용 가능한 이메일입니다.";
-    const canNext = validFormat
+    const canNext = validFormat && message === "사용 가능한 이메일입니다.";
+    // const canNext = validFormat
 
     //추천 도메인 필터링
     const filteredDomains: string[] = DOMAINS.filter((domain) =>
@@ -112,7 +115,7 @@ export default function SignupEmail() {
 
                             {/* 이메일 형식이 올바르지 않다면 안내문구 */}
                             {!validFormat && email.length > 0 && (
-                                <Text style={{ color: "#FF5656", marginTop: 8, fontSize: 12 }}>
+                                <Text style={{ color: "#FF5656", marginTop: 8, fontSize: 10, fontFamily: 'BasicMedium' }}>
                                     올바른 이메일 형식이 아닙니다.
                                 </Text>
                             )}
@@ -121,6 +124,7 @@ export default function SignupEmail() {
                                 <Text
                                     style={{
                                         marginTop: 8,
+                                        fontFamily: "BasicLight",
                                         fontSize: 12,
                                         color: message === "사용 가능한 이메일입니다." ? "green" : "red",
                                     }}
@@ -139,11 +143,11 @@ export default function SignupEmail() {
                                         <TouchableOpacity
                                             style={styles.suggestionItem}
                                             onPress={() =>
-                                                setEmail(
+                                                dispatch(setEmail(
                                                     email.includes("@")
                                                         ? `${email.split("@")[0]}@${item}`
                                                         : `${email}@${item}`
-                                                )
+                                                ))
                                             }
                                         >
                                             <Text>
@@ -179,13 +183,14 @@ export default function SignupEmail() {
 
 const styles = StyleSheet.create({
     wrap: { flex: 1, paddingHorizontal: 20, paddingBottom: 24 },
-    title: { fontSize: 30, fontWeight: "800", color: "#111", textAlign: "center", marginTop: 8, marginBottom: 50 },
-    label: { fontSize: 20, fontWeight: "800", color: "#5465FF", marginBottom: 10, marginTop: 8 },
+    title: { fontSize: 30, fontFamily: "BasicBold", color: Colors.black, textAlign: "center", marginTop: 8, marginBottom: 50 },
+    label: { fontSize: 20, fontFamily: "BasicBold", color: "#5465FF", marginBottom: 10, marginTop: 8 },
     underlineInput: {
         borderBottomWidth: 1.2,
         borderBottomColor: "#8ea2ff",
         paddingVertical: 10,
         fontSize: 16,
+        fontFamily: "BasicLight",
         color: "#111",
     },
     nextBtn: {
@@ -195,14 +200,16 @@ const styles = StyleSheet.create({
         alignItems: "center",
         elevation: 6,
     },
-    nextTxt: { color: "#FBFCFD", fontWeight: "700", fontSize: 15 },
+    nextTxt: { color: "#FBFCFD", fontFamily: "BasicBold", fontSize: 15 },
     suggestionBox: {
         marginTop: 10,
         borderRadius: 6,
         backgroundColor: "#f5faffff",
+        fontFamily: "BasicLight",
         maxHeight: 200,
     },
     suggestionItem: {
         padding: 10,
+        fontFamily: "BasicLight"
     },
 });

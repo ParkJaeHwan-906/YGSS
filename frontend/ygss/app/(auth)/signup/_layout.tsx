@@ -7,7 +7,7 @@ export default function SignupLayout() {
             <Stack.Screen name="name" />
             <Stack.Screen name="email" />
             <Stack.Screen name="password" />
-            <Stack.Screen name="complete" />
+            <Stack.Screen name="salary" />
         </Stack>
     );
 }

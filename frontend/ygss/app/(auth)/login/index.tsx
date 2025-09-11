@@ -1,8 +1,11 @@
+import { saveRefreshToken } from "@/src/utils/secureStore";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+    Alert,
+    Image,
     Keyboard,
     KeyboardAvoidingView,
     Platform,
@@ -12,15 +15,19 @@ import {
     Text,
     TextInput,
     TouchableWithoutFeedback,
-    View,
+    View
 } from "react-native";
-// TODO: 실제 로그인 시 Redux signIn 디스패치 연결
-// import { useAppDispatch } from "@/src/store/hooks";
-// import { signIn } from "@/src/store/slices/authSlice";
+
+// store관련
+import { useAppDispatch } from "@/src/store/hooks";
+import { signIn } from "@/src/store/slices/authSlice";
+import axios from "axios";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function Login() {
     const router = useRouter();
-    // const dispatch = useAppDispatch();
+    const dispatch = useAppDispatch();
 
     const emailRef = useRef<TextInput>(null);
     const pwRef = useRef<TextInput>(null);
@@ -36,15 +43,35 @@ export default function Login() {
 
     const canLogin = email.trim().length > 0 && pw.length >= 4;
 
-    const onLogin = () => {
+    // 로그인
+    const onLogin = async () => {
         if (!canLogin) return;
-        // dispatch(signIn("dummy-token"));
-        router.replace("/(app)/(tabs)/home");
+
+        try {
+            const res = await axios.post(`${API_URL}/auth/login`, {
+                email,
+                password: pw,
+            });
+            const refreshToken = res.data.refreshToken;
+            // accessToken Redux 저장
+            dispatch(signIn(res.data.accessToken));
+
+            // refreshToken은 SecureStore에 저장
+            await saveRefreshToken(refreshToken);
+
+            router.replace("/(app)/(tabs)/home");
+
+        } catch (err) {
+            console.error("로그인 실패", err);
+            Alert.alert("로그인 실패", "이메일이나 비밀번호를 확인해주세요.", [
+                { text: "확인", onPress: () => console.log("확인 눌림") },
+            ]);
+        }
     };
 
     return (
         <LinearGradient
-            colors={["#fff5e6", "#f0f0ff"]}
+            colors={["#fff5e6", "#eaeaffff"]}
             start={{ x: 0.1, y: 0.1 }}
             end={{ x: 0.9, y: 0.9 }}
             style={{ flex: 1 }}
@@ -56,8 +83,13 @@ export default function Login() {
                 >
                     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                         <View style={stylesLogin.wrap}>
-                            <Text style={stylesLogin.brand}>연금술사</Text>
-
+                            <View style={{ justifyContent: "center", alignItems: "center" }}>
+                                <Image
+                                    source={require("../../../assets/icon/titleLogo.png")}
+                                    style={{ width: 300, height: 100 }}
+                                    resizeMode="contain"
+                                />
+                            </View>
                             {/* 이메일 필드 */}
                             <View style={stylesLogin.fieldBox}>
                                 <MaterialCommunityIcons
