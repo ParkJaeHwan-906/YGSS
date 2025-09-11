@@ -1,7 +1,7 @@
 // src/utils/secureStore.ts
 import * as SecureStore from "expo-secure-store";
 
-const REFRESH_KEY = "refresh_token";
+const REFRESH_KEY = "refreshToken";
 
 export async function saveRefreshToken(token: string) {
     await SecureStore.setItemAsync(REFRESH_KEY, token);

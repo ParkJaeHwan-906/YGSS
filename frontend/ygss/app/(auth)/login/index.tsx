@@ -1,3 +1,4 @@
+import { saveRefreshToken } from "@/src/utils/secureStore";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
@@ -21,7 +22,6 @@ import {
 import { useAppDispatch } from "@/src/store/hooks";
 import { setUser, signIn } from "@/src/store/slices/authSlice";
 import axios from "axios";
-import * as SecureStore from "expo-secure-store";
 
 const API_URL = process.env.API_URL;
 
@@ -59,7 +59,7 @@ export default function Login() {
             dispatch(signIn(res.data.accessToken));
 
             // refreshToken은 SecureStore에 저장
-            await SecureStore.setItemAsync("refreshToken", refreshToken);
+            await saveRefreshToken(refreshToken);
 
             // 사용자 정보 불러오기
             const detail = await axios.get(`${API_URL}/user/load/detail`, {

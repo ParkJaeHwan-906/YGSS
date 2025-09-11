@@ -19,8 +19,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { setUser, signIn } from "@/src/store/slices/authSlice";
 import { resetSignup, setSalary, setTotalRetirePension, setWorkedAt } from "@/src/store/slices/signupSlice";
+import { saveRefreshToken } from "@/src/utils/secureStore";
 import axios from "axios";
-import * as SecureStore from "expo-secure-store";
 
 const API_URL = process.env.API_URL;
 
@@ -121,7 +121,7 @@ export default function SignupSalary() {
                 const accessToken = res.data.accessToken;
                 const refreshToken = res.data.refreshToken;
                 dispatch(signIn(accessToken));
-                await SecureStore.setItemAsync("refreshToken", refreshToken);
+                await saveRefreshToken(refreshToken);
 
                 const detail = await axios.get(`${API_URL}/user/load/detail`, {
                     headers: { Authorization: `A130 ${accessToken}` },
@@ -134,7 +134,7 @@ export default function SignupSalary() {
                 const refreshToken = loginRes.data.refreshToken;
 
                 dispatch(signIn(accessToken));
-                await SecureStore.setItemAsync("refreshToken", refreshToken);
+                await saveRefreshToken(refreshToken);
 
                 const detail = await axios.get(`${API_URL}/user/load/detail`, {
                     headers: { Authorization: `A130 ${accessToken}` },

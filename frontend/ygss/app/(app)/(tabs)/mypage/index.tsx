@@ -1,15 +1,20 @@
 // app/(app)/(tabs)/mypage/index.tsx
 import MyInfo from "@/components/molecules/MyInfo";
+import { useAppDispatch } from "@/src/store/hooks";
+import { signOut } from "@/src/store/slices/authSlice";
+import { deleteRefreshToken } from "@/src/utils/secureStore";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Mypage() {
     const router = useRouter();
+    const dispatch = useAppDispatch()
 
-    const handleLogout = () => {
-        // 나중에 로그아웃 api 호출 +토큰 삭제
-        router.replace("/(auth)/login");
+    const handleLogout = async () => {
+        await deleteRefreshToken();     // 1) SecureStore 비우기
+        dispatch(signOut());            // 2) 전역 상태 초기화
+        router.replace("/(auth)/login"); // 3) 뒤로가기 못하게 교체 이동
     };
 
     return (

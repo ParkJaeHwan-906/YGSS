@@ -1,8 +1,8 @@
 // src/components/AppInitializer.tsx
 import { useAppDispatch } from "@/src/store/hooks";
 import { setUser, signOut, updateAccessToken } from "@/src/store/slices/authSlice";
+import { deleteRefreshToken, getRefreshToken } from "@/src/utils/secureStore";
 import axios from "axios";
-import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 
 const API_URL = process.env.API_URL;
@@ -13,7 +13,7 @@ export default function AppInitializer() {
 
     useEffect(() => {
         const init = async () => {
-            const refreshToken = await SecureStore.getItemAsync("refreshToken");
+            const refreshToken = await getRefreshToken();
             if (!refreshToken) {
                 setLoading(false);
                 return;
@@ -35,7 +35,7 @@ export default function AppInitializer() {
             } catch (err) {
                 // refresh 실패 → 강제 로그아웃
                 dispatch(signOut());
-                await SecureStore.deleteItemAsync("refreshToken");
+                await deleteRefreshToken();
             } finally {
                 setLoading(false);
             }
