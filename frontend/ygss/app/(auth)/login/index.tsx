@@ -1,3 +1,4 @@
+import { Colors } from "@/src/theme/colors";
 import { saveRefreshToken } from "@/src/utils/secureStore";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -5,6 +6,7 @@ import { Link, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
     Alert,
+    FlatList,
     Image,
     Keyboard,
     KeyboardAvoidingView,
@@ -24,6 +26,15 @@ import { signIn } from "@/src/store/slices/authSlice";
 import axios from "axios";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const DOMAINS: string[] = [
+    "naver.com",
+    "gmail.com",
+    "hanmail.net",
+    "daum.net",
+    "nate.com",
+    "yahoo.com",
+    "hotmail.com",
+];
 
 export default function Login() {
     const router = useRouter();
@@ -35,6 +46,9 @@ export default function Login() {
     const [email, setEmail] = useState("");
     const [pw, setPw] = useState("");
     const [showPw, setShowPw] = useState(false);
+
+    // 자동 완성 박스
+    const [showSuggestions, setShowSuggestions] = useState(false);
 
     useEffect(() => {
         const t = setTimeout(() => emailRef.current?.focus(), 60);
@@ -64,7 +78,7 @@ export default function Login() {
         } catch (err) {
             console.error("로그인 실패", err);
             Alert.alert("로그인 실패", "이메일이나 비밀번호를 확인해주세요.", [
-                { text: "확인", onPress: () => console.log("확인 눌림") },
+                { text: "확인" },
             ]);
         }
     };
@@ -90,28 +104,61 @@ export default function Login() {
                                     resizeMode="contain"
                                 />
                             </View>
-                            {/* 이메일 필드 */}
-                            <View style={stylesLogin.fieldBox}>
-                                <MaterialCommunityIcons
-                                    name="email-outline"
-                                    size={20}
-                                    color="#8c8ca1"
-                                    style={{ marginRight: 8 }}
-                                />
-                                <TextInput
-                                    ref={emailRef}
-                                    autoFocus
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    placeholder="이메일"
-                                    placeholderTextColor="#b8b8c9"
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    autoCorrect={false}
-                                    returnKeyType="next"
-                                    onSubmitEditing={() => pwRef.current?.focus()}
-                                    style={stylesLogin.fieldInput}
-                                />
+                            <View style={{ position: "relative", marginBottom: 10 }}>
+                                {/* 이메일 입력 박스 */}
+                                <View style={stylesLogin.fieldBox}>
+                                    <MaterialCommunityIcons
+                                        name="email-outline"
+                                        size={20}
+                                        color="#8c8ca1"
+                                        style={{ marginRight: 8 }}
+                                    />
+                                    <TextInput
+                                        ref={emailRef}
+                                        value={email}
+                                        onChangeText={(text) => {
+                                            setEmail(text);
+                                            setShowSuggestions(true);
+                                        }}
+                                        placeholder="이메일"
+                                        placeholderTextColor="#b8b8c9"
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                        autoCorrect={false}
+                                        style={stylesLogin.fieldInput}
+                                    />
+                                </View>
+
+                                {/* 자동완성 박스 */}
+                                {showSuggestions && email.length > 0 && (
+                                    <FlatList
+                                        style={stylesLogin.suggestionBox}
+                                        data={DOMAINS}
+                                        keyExtractor={(item) => item}
+                                        keyboardDismissMode="on-drag"       // 스크롤 시 키보드 닫힘
+                                        keyboardShouldPersistTaps="handled" // 탭 시 키보드 닫힘
+                                        renderItem={({ item }) => (
+                                            <Pressable
+                                                style={stylesLogin.suggestionItem}
+                                                onPress={() => {
+                                                    setEmail(
+                                                        email.includes("@")
+                                                            ? `${email.split("@")[0]}@${item}`
+                                                            : `${email}@${item}`
+                                                    );
+                                                    setShowSuggestions(false);
+                                                    Keyboard.dismiss();
+                                                }}
+                                            >
+                                                <Text>
+                                                    {email.includes("@")
+                                                        ? `${email.split("@")[0]}@${item}`
+                                                        : `${email}@${item}`}
+                                                </Text>
+                                            </Pressable>
+                                        )}
+                                    />
+                                )}
                             </View>
 
                             {/* 비밀번호 필드 */}
@@ -180,7 +227,7 @@ const stylesLogin = StyleSheet.create({
     wrap: {
         flex: 1,
         paddingHorizontal: 20,
-        gap: 14,
+        gap: 10,
         justifyContent: "center",
     },
     brand: {
@@ -193,7 +240,7 @@ const stylesLogin = StyleSheet.create({
     fieldBox: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#ffffff",
+        backgroundColor: Colors.white,
         borderRadius: 12,
         paddingHorizontal: 14,
         paddingVertical: 12,
@@ -203,7 +250,7 @@ const stylesLogin = StyleSheet.create({
         shadowOffset: { width: 0, height: 6 },
         elevation: 2,
     },
-    fieldInput: { flex: 1, fontFamily: "BasicMedium", fontSize: 16, color: "#111" },
+    fieldInput: { flex: 1, fontFamily: "BasicMedium", fontSize: 16, color: Colors.black },
     loginBtn: {
         backgroundColor: "#5865f2",
         borderRadius: 12,
@@ -216,8 +263,21 @@ const stylesLogin = StyleSheet.create({
         shadowOffset: { width: 0, height: 8 },
         elevation: 6,
     },
-    loginTxt: { color: "#fff", fontFamily: "BasicMedium", fontSize: 16 },
+    loginTxt: { color: Colors.white, fontFamily: "BasicMedium", fontSize: 16 },
     linkRow: { flexDirection: "row", gap: 8, justifyContent: "flex-end", marginTop: 8 },
     linkMuted: { color: "#6f7285", fontSize: 12, fontFamily: "BasicMedium", textAlign: "right" },
-    linkStrong: { color: "#5865f2", fontSize: 12, fontFamily: "BasicMedium" },
+    linkStrong: { color: Colors.primary, fontSize: 12, fontFamily: "BasicMedium", },
+    suggestionBox: {
+        position: "absolute",
+        top: 70, // 이메일 필드 높이 + margin 만큼
+        left: 0,
+        right: 0,
+        backgroundColor: "rgba(249, 255, 255, 0.8)",
+        borderRadius: 6,
+        zIndex: 10,
+        maxHeight: 150,
+    },
+    suggestionItem: {
+        padding: 10,
+    },
 });

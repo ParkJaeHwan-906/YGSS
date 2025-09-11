@@ -25,7 +25,6 @@ export default function SignupEmail() {
     const ref = useRef<TextInput>(null);
     const insets = useSafeAreaInsets();
 
-    const [showSuggestions, setShowSuggestions] = useState<boolean>(true);
     const [message, setMessage] = useState<string>("");
 
     // 리덕스에 이메일 저장
@@ -43,7 +42,6 @@ export default function SignupEmail() {
     const validFormat = emailRegex.test(email.trim());
 
     // DB에 이메일 중복 확인 요청 보내기
-    // DB 중복 확인 (디바운스)
     useEffect(() => {
         if (!validFormat) {
             setMessage("");
@@ -66,7 +64,7 @@ export default function SignupEmail() {
             if (res.status === 200) {
                 // 서버 규약: true = 사용 가능, false = 이미 사용중/사용불가
                 const isAvailable = res.data === true;
-                setMessage(isAvailable ? "사용 가능한 이메일입니다." : "이미 사용중이거나 사용불가한 메일입니다.");
+                setMessage(isAvailable ? "사용 가능한 이메일입니다." : "이미 사용 중이거나 사용 불가한 메일입니다.");
             }
         } catch (err: any) {
             if (err.response?.status === 400) {
@@ -80,13 +78,6 @@ export default function SignupEmail() {
 
     // 다음 버튼 활성화 여부
     const canNext = validFormat && message === "사용 가능한 이메일입니다.";
-    // const canNext = validFormat
-
-    //추천 도메인 필터링
-    const filteredDomains: string[] = DOMAINS.filter((domain) =>
-        domain.toLowerCase().startsWith(email.toLowerCase()) ||
-        email.includes("@") // 이미 @ 입력했으면 그대로 둠
-    );
 
     return (
         <View style={{ flex: 1, paddingTop: insets.top + 20, paddingBottom: insets.bottom, backgroundColor: "#FBFCFD" }}>
@@ -134,10 +125,10 @@ export default function SignupEmail() {
                             )}
 
                             {/* 추천 이메일 도메인 */}
-                            {email.length > 0 && filteredDomains.length > 0 && (
+                            {email.length > 0 && (
                                 <FlatList<string>
                                     style={styles.suggestionBox}
-                                    data={filteredDomains}
+                                    data={DOMAINS}
                                     keyExtractor={(item) => item}
                                     renderItem={({ item }) => (
                                         <TouchableOpacity
