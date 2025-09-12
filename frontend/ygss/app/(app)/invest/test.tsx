@@ -1,0 +1,283 @@
+// app/(app)/invest/test.tsx
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  Pressable,
+  StatusBar,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { useSelector } from "react-redux";
+import axios from "axios";
+import { Colors } from "@/src/theme/colors";
+import { usePathname } from "expo-router";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+type ApiOption = { no: number; option: string; score: number };
+type ApiQuestion = { no: number; question: string; options: ApiOption[] };
+
+export default function InvestTest() {
+  const router = useRouter();
+  const pathname = usePathname();
+  // 로그인 페이지와 동일 패턴: Redux에서 accessToken 사용
+  const accessToken = useSelector((s: any) => s?.auth?.accessToken);
+
+  const [loading, setLoading] = useState(true);
+  const [questions, setQuestions] = useState<ApiQuestion[]>([]);
+  const [idx, setIdx] = useState(0);                       // 현재 문항 인덱스
+  const [answers, setAnswers] = useState<Record<number, number>>({}); // { [question.no]: option.no }
+  const [selectedNo, setSelectedNo] = useState<number | null>(null);   // 현재 문항에서 누른 옵션 no
+
+  // 총점
+  const totalScore = useMemo(() => {
+    return questions.reduce((sum, q) => {
+      const selNo = answers[q.no];
+      const opt = q.options.find(o => o.no === selNo);
+      return sum + (opt?.score ?? 0);
+    }, 0);
+  }, [answers, questions]);
+
+  // API 호출
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!accessToken) {
+          Alert.alert("로그인이 필요해요", "다시 로그인 후 시도해 주세요.");
+          router.replace("/(auth)/login");
+          return;
+        }
+        const { data } = await axios.get<ApiQuestion[]>(
+          `${API_URL}/investor/personality/test`,
+          { headers: { Authorization: `A103 ${accessToken}` } }
+        );
+        // 방어: 각 문항 옵션은 4개로 제한
+        const normalized = (data ?? []).map(q => ({
+          ...q,
+          options: (q.options ?? []).slice(0, 4),
+        }));
+        setQuestions(normalized);
+      } catch (err: any) {
+        console.error("질문 로드 실패", err);
+        Alert.alert("오류", "질문을 불러오지 못했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [accessToken]);
+
+  // 옵션 선택 → 나머지 연하게 → 200ms 후 다음 문항 or 결과 이동
+  const onSelect = (q: ApiQuestion, o: ApiOption) => {
+    setSelectedNo(o.no);
+    setAnswers(prev => ({ ...prev, [q.no]: o.no }));
+
+    setTimeout(() => {
+      // 마지막 문항이면 결과로 이동
+      if (idx >= questions.length - 1) {
+        const finalScore =
+          totalScore + (answers[q.no] ? 0 : o.score); // 방금 선택 반영
+        router.push({ pathname: "/invest/loading", params: { score: String(finalScore) } });
+        return;
+      }
+      // 다음 문항으로
+      setIdx(i => i + 1);
+      setSelectedNo(null);
+    }, 200);
+  };
+
+  useEffect(() => {
+    console.log("🧭 [test] path:", pathname);
+    console.log("🔑 [test] accessToken 존재?", !!accessToken);
+    console.log("🌐 [test] API_URL:", API_URL);
+  }, [pathname, accessToken]);
+  
+  useEffect(() => {
+    console.log("🧩 [test] questions loaded:", questions.length);
+  }, [questions.length]);
+
+  if (loading) {
+    return (
+      <>
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+        <SafeAreaView style={[styles.safe, { justifyContent: "center", alignItems: "center" }]}>
+          <ActivityIndicator size="large" color={Colors?.primary ?? "#4666FF"} />
+          <Text style={{ marginTop: 10, color: Colors?.gray }}>불러오는 중…</Text>
+        </SafeAreaView>
+      </>
+    );
+  }
+
+  // 질문이 없을 때
+  if (!questions.length) {
+    return (
+      <>
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+        <SafeAreaView style={[styles.safe, { justifyContent: "center", alignItems: "center" }]}>
+          <Text style={{ color: Colors?.gray }}>질문 데이터가 없습니다.</Text>
+        </SafeAreaView>
+      </>
+    );
+  }
+
+  const q = questions[idx];
+  const stepText = `${idx + 1}/${questions.length}`;
+
+  return (
+    <>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <SafeAreaView
+        edges={["top", "bottom"]}
+        style={[styles.safe, { backgroundColor: Colors?.white ?? "#EEF2FF" }]}
+      >
+        {/* titleLogo PNG 그대로 유지 */}
+        <Image
+          source={require("@/assets/icon/titleLogo.png")}
+          style={styles.titleLogo}
+          resizeMode="contain"
+        />
+
+        <View style={styles.container}>
+          <View style={styles.questionWrap}>
+            {/* 진행상황 Bar + 텍스트 */}
+            <View style={styles.progressRow}>
+              <View style={styles.progressTrack}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    { width: `${((idx + 1) / questions.length) * 100}%` },
+                  ]}
+                />
+              </View>
+              <Text style={styles.stepText}>{stepText}</Text>
+            </View>
+
+            {/* 알키 캐릭터 */}
+            <Image
+              source={require("@/assets/char/upsetAlchi.png")}
+              style={styles.hero}
+              resizeMode="contain"
+            />
+
+            {/* 질문 */}
+            <Text style={styles.question}>
+              Q{idx + 1}. {q.question}
+            </Text>
+          </View>
+
+          {/* 옵션 4가지 (API 응답 사용) */}
+          <View>
+            {q.options.map((o) => {
+              const active = selectedNo === o.no || answers[q.no] === o.no;
+              const dimmed =
+                (selectedNo !== null && selectedNo !== o.no) ||
+                (answers[q.no] && answers[q.no] !== o.no);
+
+              return (
+                <Pressable
+                  key={`${q.no}-${o.no}`}
+                  onPress={() => onSelect(q, o)}
+                  style={({ pressed }) => [
+                    styles.cta,
+                    dimmed && styles.ctaDimmed,
+                    pressed && { opacity: 0.9 },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.ctaText,
+                      dimmed && styles.ctaTextDim,
+                      active && styles.ctaTextActive,
+                    ]}
+                  >
+                    {o.option}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      </SafeAreaView>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  titleLogo: {
+    width: 140,
+    height: 60,
+    alignSelf: "center",
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  safe: { flex: 1 },
+  container: {
+    flex: 1,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  questionWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 30,
+  },
+  // 진행바
+  progressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    width: "100%",
+    marginBottom: 8,
+  },
+  progressTrack: {
+    flex: 1,
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: "#EDF1FF",
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: Colors?.primary ?? "#4666FF",
+  },
+  stepText: {
+    fontSize: 14,
+    fontFamily: "BasicMedium",
+    color: Colors?.gray ?? "#8A8AA3",
+  },
+
+  hero: { width: 200, height: 200, marginBottom: 12 },
+  question: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontFamily: "BasicMedium",
+    color: Colors?.black ?? "#121212",
+    textAlign: "center",
+  },
+
+  // 옵션 버튼
+  cta: {
+    marginTop: 8,
+    width: 300,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors?.primary ?? "#4666FF",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: Colors?.primary ?? "#4666FF",
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
+  },
+  ctaDimmed: { backgroundColor: "#BFC8FF" },
+  ctaText: { fontFamily: "BasicBold", fontSize: 16, color: "#FFFFFF" },
+  ctaTextDim: { color: "#F4F6FF" },
+  ctaTextActive: { color: "#FFFFFF" },
+});

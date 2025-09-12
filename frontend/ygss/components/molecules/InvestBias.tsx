@@ -1,6 +1,6 @@
 import { Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { Colors } from "@/src/theme/colors";
-import { useRouter } from "expo-router";
+import { useRouter } from 'expo-router'
 
 export default function InvestBias() {
     const router = useRouter();
@@ -12,7 +12,7 @@ export default function InvestBias() {
         { backgroundColor: Colors?.base ?? "#4666FF" },
       ]}
       activeOpacity={0.9}
-      onPress={() => router.push("/InvestTest")}
+      onPress={() => router.push("/(app)/invest")}
     >
       <Text
         style={[

@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "react-native/Libraries/NewAppScreen";
+import InvestBias from "@/components/molecules/InvestBias";
 
 export default function Mypage() {
     const router = useRouter();
@@ -44,6 +45,9 @@ export default function Mypage() {
             <Pressable onPress={handleLogout} style={styles.logoutButton}>
                 <Text style={styles.logoutText}>로그아웃</Text>
             </Pressable>
+
+            {/* 투자 성향 테스트 */}
+            <InvestBias />
         </SafeAreaView>
     );
 }
