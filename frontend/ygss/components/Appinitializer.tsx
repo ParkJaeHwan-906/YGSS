@@ -23,7 +23,6 @@ export default function AppInitializer() {
 
             if (!refreshToken) {
                 setLoading(false);
-                router.replace("/(auth)/login");
                 return;
             }
 
@@ -34,8 +33,8 @@ export default function AppInitializer() {
                 });
                 console.log("refresh API response:", res.data);
 
-
                 const { accessToken, refreshToken: newRefreshToken } = res.data;
+
                 dispatch(updateAccessToken(accessToken));
                 if (newRefreshToken) {
                     await saveRefreshToken(newRefreshToken);
@@ -47,7 +46,9 @@ export default function AppInitializer() {
                     headers: { Authorization: `A103 ${accessToken}` },
                 });
                 dispatch(setUser(user));
-                router.replace("/(app)/(tabs)/home");
+                setTimeout(() => {
+                    router.replace("/(app)/(tabs)/home");
+                }, 2000);
 
             } catch (err: any) {
                 console.error("앱종료시 로그인자동화 실패", err);

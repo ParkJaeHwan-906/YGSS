@@ -15,7 +15,6 @@ import { setCustomText, setCustomTextInput } from "react-native-global-props";
 SplashScreen.preventAutoHideAsync().catch(() => { });
 
 export default function RootLayout() {
-  // ✅ 훅은 조건 없이 최상단에서 호출
   const pathname = usePathname();
 
   const [fontsLoaded] = useFonts({
