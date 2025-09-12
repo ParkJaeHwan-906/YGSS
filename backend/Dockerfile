@@ -13,4 +13,5 @@ ENTRYPOINT ["java", \
     "-XX:+OptimizeStringConcat", \
     "-XX:+UseStringDeduplication", \
     "-Dspring.profiles.active=prod", \
+    "-Duser.timezone=Asia/Seoul", \
     "-jar", "app.jar"]
