@@ -17,6 +17,7 @@ public class UserAccountsDto {
     private Boolean newEmp;
     private Long salary;
     private Long totalRetirePension;
+    private Long riskGradeId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

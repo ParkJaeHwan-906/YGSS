@@ -12,7 +12,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ProductSummaryResponse {
-    private Long id;
-    private String productName;
+    private PensionProductDto product;
     private List<CategorySummary> summary;
 }

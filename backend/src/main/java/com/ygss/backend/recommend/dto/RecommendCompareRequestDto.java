@@ -4,5 +4,6 @@ import lombok.Data;
 
 @Data
 public class RecommendCompareRequestDto {
-    private Integer investorPersonalityId;
+    private Long investorPersonalityId;
+    private Long salary;
 }
