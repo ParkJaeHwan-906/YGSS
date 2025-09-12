@@ -1,6 +1,7 @@
 package com.ygss.backend.pensionProduct.dto.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class BondSearchRequest {
 
     @Schema(description = "최소 만기 연수", example = "1")
@@ -23,10 +25,12 @@ public class BondSearchRequest {
     private String minPublisherGrade;
 
     @Schema(description = "페이지 번호 (1부터 시작)", example = "1")
+    @Builder.Default
     private Integer page = 1;
 
-    @Schema(description = "페이지 크기", example = "20")
-    private Integer size = 20;
+    @Schema(description = "페이지 크기", example = "30")
+    @Builder.Default
+    private Integer size = 30;
 
     // 페이징을 위한 offset 계산
     public int getOffset() {

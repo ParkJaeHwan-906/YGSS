@@ -1,14 +1,10 @@
 package com.ygss.backend.pensionProduct.repository;
 
-import com.ygss.backend.pensionProduct.dto.entity.Company;
 import com.ygss.backend.pensionProduct.dto.entity.PensionProduct;
-import com.ygss.backend.pensionProduct.dto.entity.ProductType;
-import com.ygss.backend.pensionProduct.dto.entity.Systype;
 import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
 import com.ygss.backend.pensionProduct.dto.response.*;
 import org.apache.ibatis.annotations.*;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -90,7 +86,7 @@ public interface PensionProductRepository {
             @Result(property = "productTypeName", column = "product_type_name"),
             @Result(property = "systypeName", column = "systype_name")
     })
-    List<PensionProduct> searchProducts(SearchCondition condition);
+    List<PensionProduct> selectSearch(SearchCondition condition);
 
     /**
      * 동적 조건으로 상품 검색 총 개수
@@ -216,7 +212,7 @@ public interface PensionProductRepository {
             "SELECT",
             "    b.id AS id,",
             "    b.product AS productName,",
-            "    b.risk_grade_id AS riskGrade",
+            "    b.risk_grade_id AS riskGrade,",
 //            "    prg.grade AS riskGrade,",
             "    b.publisher_grade AS publisherGrade,",
             "    b.publisher,",
@@ -236,7 +232,7 @@ public interface PensionProductRepository {
             "        AND b.maturity_years &lt;= #{maxMaturityYears}",
             "    </if>",
             "    <if test='minRiskGrade != null'>",
-            "        AND b.risk_grade_id &gt;= #{minRiskGrade}",
+            "        AND b.risk_grade_id &lt;= #{minRiskGrade}",
             "    </if>",
             "    <if test='minPublisherGrade != null and minPublisherGrade != \"\"'>",
             "        AND CASE ",
@@ -285,7 +281,7 @@ public interface PensionProductRepository {
             "        AND b.maturity_years &lt;= #{maxMaturityYears}",
             "    </if>",
             "    <if test='minRiskGrade != null'>",
-            "        AND b.risk_grade_id &gt;= #{minRiskGrade}",
+            "        AND b.risk_grade_id &lt;= #{minRiskGrade}",
             "    </if>",
             "    <if test='minPublisherGrade != null and minPublisherGrade != \"\"'>",
             "        AND CASE ",

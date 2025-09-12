@@ -32,13 +32,13 @@ public class PensionProductServiceImpl implements PensionProductService {
      */
     @Override
     public PensionProductSearchResponse searchProducts(SearchCondition condition) {
-        log.info("상품 검색 요청: {}", condition);
+//        log.info("상품 검색 요청: {}", condition);
 
         // 총 개수 조회
         long totalElements = pensionProductRepository.countProducts(condition);
 
         // 상품 목록 조회
-        List<PensionProduct> products = pensionProductRepository.searchProducts(condition);
+        List<PensionProduct> products = pensionProductRepository.selectSearch(condition);
 
         // DTO 변환
         List<PensionProductDto> productDtos = products.stream()
@@ -48,7 +48,7 @@ public class PensionProductServiceImpl implements PensionProductService {
         // 페이지 정보 생성
         PageInfo pageInfo = PageInfo.of(condition.getPage(), condition.getSize(), totalElements);
 
-        log.info("검색 결과: 총 {}개 상품 ({}페이지)", totalElements, condition.getPage());
+//        log.info("검색 결과: 총 {}개 상품 ({}페이지)", totalElements, condition.getPage());
 
         return PensionProductSearchResponse.of(productDtos, pageInfo);
     }
