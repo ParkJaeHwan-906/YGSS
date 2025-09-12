@@ -1,5 +1,11 @@
 package com.ygss.backend.recommend.service;
 
+import com.ygss.backend.pensionProduct.dto.entity.PensionProduct;
+import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
+import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
+import com.ygss.backend.pensionProduct.dto.response.BondDto;
+import com.ygss.backend.pensionProduct.repository.PensionProductRepository;
+import com.ygss.backend.recommend.dto.RecommendCandidateDto;
 import com.ygss.backend.recommend.dto.RecommendCompareRequestDto;
 import com.ygss.backend.recommend.dto.RecommendCompareResponseDto;
 import com.ygss.backend.recommend.dto.RecommendProductDto;
@@ -8,12 +14,14 @@ import com.ygss.backend.user.repository.UserAccountsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class RecommendCompareServiceImpl implements RecommendCompareService {
     private final UserAccountsRepository userAccountsRepository;
+    private final PensionProductRepository pensionProductRepository;
     /**
      * Fast API 를 사용하여, 수익률 예측
      */
@@ -69,5 +77,29 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
         Long year7 = monthPay*7;
         Long year10 = monthPay*10;
         return new Long[] {year3, year5, year7, year10};
+    }
+
+    @Override
+    public RecommendCandidateDto searchProductsByInvestPersonality(Integer InvestPersonality) {
+        if(InvestPersonality== null || InvestPersonality<0 || InvestPersonality.intValue() >5){
+            throw new RuntimeException("Invalid request");
+        }
+
+        SearchCondition productCondition = SearchCondition.builder().riskGradeTo(InvestPersonality).riskGradeFrom(1).size(500).build();
+        BondSearchRequest bondCondition = BondSearchRequest.builder().minRiskGrade(InvestPersonality).size(500).build();
+        List<Long> systypeIds = new ArrayList<>();
+        systypeIds.add(2L);
+        //안정추구형?
+        if(InvestPersonality>3){
+            //비보장형도
+            systypeIds.add(3L);
+
+
+        }
+        productCondition.setSystypeIds(systypeIds);
+        // 상품 목록 조회
+        List<PensionProduct> products = pensionProductRepository.selectSearch(productCondition);
+        List<BondDto> bonds = pensionProductRepository.selectBonds(bondCondition);
+        return RecommendCandidateDto.builder().products(products).bonds(bonds).build();
     }
 }
