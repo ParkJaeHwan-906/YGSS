@@ -24,7 +24,7 @@ public class SearchCondition {
     @Builder.Default
     private Integer page = 1;
     @Builder.Default
-    private Integer size = 10;
+    private Integer size = 30;
 
     // MyBatis용 메서드
     public int getOffset() {
