@@ -48,7 +48,7 @@ export default function AppInitializer() {
                 dispatch(setUser(user));
                 setTimeout(() => {
                     router.replace("/(app)/(tabs)/home");
-                }, 2000);
+                }, 3000);
 
             } catch (err: any) {
                 console.error("앱종료시 로그인자동화 실패", err);
