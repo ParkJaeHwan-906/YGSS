@@ -39,6 +39,7 @@ public class SecurityConfig {
 //                        .requestMatchers("/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/infra/**").permitAll()
+                        .requestMatchers("/product/**").permitAll()
                         .requestMatchers("/investor/personality/list").permitAll()
                         .requestMatchers("/recommend/public/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
