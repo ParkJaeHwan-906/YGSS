@@ -16,8 +16,7 @@ public class BondDto {
     @Schema(description = "채권 상품명", example = "KB국민은행 제1회 무보증사채")
     private String productName;
 
-    @Schema(description = "위험등급", example = "중위험")
-    private String riskGrade;
+    private Integer riskGrade;
 
     @Schema(description = "발행기관 신용등급", example = "AA-")
     private String publisherGrade;
