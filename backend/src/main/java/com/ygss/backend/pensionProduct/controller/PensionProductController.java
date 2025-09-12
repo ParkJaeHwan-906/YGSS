@@ -52,74 +52,23 @@ public class PensionProductController {
             summary = "상품 검색",
             description = "다양한 조건으로 ETF/펀드 상품을 검색합니다. 모든 파라미터는 선택사항입니다."
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "검색 성공",
-                    content = @Content(schema = @Schema(implementation = PensionProductSearchResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "잘못된 요청 파라미터",
-                    content = @Content(
-                            examples = @ExampleObject(
-                                    value = """
-                    {
-                        "error": "INVALID_PARAMETER",
-                        "message": "페이지는 1 이상이어야 합니다. 현재값: 0",
-                        "timestamp": "2024-01-15T10:30:00",
-                        "status": 400
-                    }
-                    """
-                            )
-                    )
-            )
-    })
     @GetMapping("/product/search")
     public ResponseEntity<PensionProductSearchResponse> searchProducts(
-            @Parameter(description = "쉼표로 구분된 상품타입 (ETF,펀드만 가능)", example = "ETF,펀드")
-            @RequestParam(required = false) String productTypes,
+            @ModelAttribute PensionProductSearchRequest request) {
+        try{
+            // 요청 검증
+            request.validate();
+            log.debug(request.toString());
+            // SearchCondition으로 변환
+            SearchCondition condition = request.toSearchCondition();
 
-            @Parameter(description = "쉼표로 구분된 운용사 ID", example = "1,2,3")
-            @RequestParam(required = false) String companyIds,
+            // 검색 실행
+            PensionProductSearchResponse response = pensionProductService.searchProducts(condition);
 
-            @Parameter(description = "최소 위험등급 (1-5)", example = "1")
-            @RequestParam(required = false) String riskGradeFrom,
-
-            @Parameter(description = "최대 위험등급 (1-5)", example = "5")
-            @RequestParam(required = false) String riskGradeTo,
-
-            @Parameter(description = "쉼표로 구분된 시스템타입 ID 2=원리금 보장, 3=비보장", example = "2,3")
-            @RequestParam(required = false) String systypeIds,
-
-            @Parameter(description = "페이지 번호 (1부터 시작)", example = "1")
-            @RequestParam(defaultValue = "1") String page,
-
-            @Parameter(description = "페이지 크기 (1-50)", example = "10")
-            @RequestParam(defaultValue = "10") String size) {
-
-        // Request 객체 생성
-        PensionProductSearchRequest request = new PensionProductSearchRequest();
-        request.setProductTypes(productTypes);
-        request.setCompanyIds(companyIds);
-        request.setRiskGradeFrom(riskGradeFrom);
-        request.setRiskGradeTo(riskGradeTo);
-        request.setSystypeIds(systypeIds);
-        request.setPage(page);
-        request.setSize(size);
-
-//        log.info("상품 검색 요청: {}", request);
-
-        // 요청 검증
-        request.validate();
-
-        // SearchCondition으로 변환
-        SearchCondition condition = request.toSearchCondition();
-
-        // 검색 실행
-        PensionProductSearchResponse response = pensionProductService.searchProducts(condition);
-
-        return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
     }
 
     /**
