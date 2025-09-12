@@ -1,8 +1,9 @@
 import { useAppSelector } from "@/src/store/hooks";
 import { Colors } from "@/src/theme/colors";
+import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import React, { useState } from "react";
-import { Modal, StyleSheet, Text, TextInput, View } from "react-native";
+import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import Button from "../molecules/Button";
 import Toast from "../molecules/Toast";
 
@@ -19,6 +20,7 @@ export default function PasswordConfirmModal({
 }) {
     const accessToken = useAppSelector((s) => s.auth.accessToken);
     const [password, setPassword] = useState("");
+    const [show, setShow] = useState(false);
     const [loading, setLoading] = useState(false);
     const [toastVisible, setToastVisible] = useState(false);
 
@@ -48,14 +50,22 @@ export default function PasswordConfirmModal({
             <View style={styles.overlay}>
                 <View style={styles.modal}>
                     <Text style={styles.title}>비밀번호 확인</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={password}
-                        onChangeText={setPassword}
-                        placeholder="비밀번호 입력"
-                        placeholderTextColor={Colors.gray}
-                        secureTextEntry
-                    />
+                    <View style={styles.inputWrapper}>
+                        <TextInput
+                            style={styles.input}
+                            value={password}
+                            onChangeText={setPassword}
+                            placeholder="비밀번호 입력"
+                            placeholderTextColor={Colors.gray}
+                            secureTextEntry={!show}
+
+                        />
+                        {/* 아이콘 추가 */}
+                        <Pressable onPress={() => setShow((s) => !s)} style={{ padding: 4, position: "absolute", right: 2 }}>
+                            <Ionicons name={show ? "eye-off-outline" : "eye-outline"} size={18} color="#8c8ca1" />
+                        </Pressable>
+                    </View>
+
                     <View style={{ flexDirection: "row", marginTop: 20 }}>
                         <Button
                             label="취소"
@@ -112,5 +122,9 @@ const styles = StyleSheet.create({
         fontFamily: "BasicMedium",
         color: Colors.black,
         paddingVertical: 6,
+        paddingRight: 35
     },
+    inputWrapper: {
+        position: "relative",
+    }
 });

@@ -215,7 +215,6 @@ export default function MyInfo() {
                                     style={styles.input}
                                     value={password}
                                     onChangeText={setPassword}
-                                    secureTextEntry
                                     placeholder="새 비밀번호 입력"
                                     placeholderTextColor={Colors.gray}
                                 />

@@ -6,6 +6,7 @@ import axios from "axios";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
+import { Colors } from "react-native/Libraries/NewAppScreen";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -28,7 +29,7 @@ export default function AppInitializer() {
 
             try {
                 // refreshToken으로 accessToken 재발급
-                const res = await axios.post(`${API_URL}/auth/refresh`, null, {
+                const res = await axios.put(`${API_URL}/auth/refresh`, null, {
                     headers: { Authorization: `A103 ${refreshToken}` },
                 });
                 console.log("refresh API response:", res.data);
@@ -65,8 +66,14 @@ export default function AppInitializer() {
 
     if (loading) {
         return (
-            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                <ActivityIndicator size="large" />
+            <View style={{
+                position: "absolute",
+                top: 0, left: 0, right: 0, bottom: 0,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: Colors.white
+            }}>
+                <ActivityIndicator size="large" color={Colors.primary} />
             </View>
         );
     }

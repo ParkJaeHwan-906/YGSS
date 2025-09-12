@@ -39,7 +39,7 @@ export default function DeleteAccountModal({
             // }
 
             // 탈퇴 요청
-            const res = await axios.delete(`${API_URL}/auth/login`, {
+            const res = await axios.patch(`${API_URL}/user/update/exit`, {}, {
                 headers: { Authorization: `A103 ${accessToken}` },
             });
             console.log("회원탈퇴 응답:", res.status, res.data);
