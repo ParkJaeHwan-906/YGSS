@@ -21,19 +21,4 @@ public class PensionProductDto {
     private Integer riskGrade;
     private Long reserve;
     private Double nextYearProfitRate;
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createdAt;
-
-    public String getRiskGradeText() {
-        if (riskGrade == null) return "알 수 없음";
-        return switch (riskGrade) {
-            case 1 -> "낮은 위험";
-            case 2 -> "보통 위험";
-            case 3 -> "다소 높은 위험";
-            case 4 -> "높은 위험";
-            case 5 -> "매우 높은 위험";
-            default -> "알 수 없음";
-        };
-    }
 }

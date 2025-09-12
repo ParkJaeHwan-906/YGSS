@@ -123,6 +123,7 @@ public class PensionProductServiceImpl implements PensionProductService {
 
     public ProductSummaryResponse getProductSummary(Long productId) {
         // 상품명 조회
+        PensionProductDto product = findById(productId).orElseThrow(() -> new RuntimeException("상품을 찾을 수 없습니다: " ));
         String productName = pensionProductRepository.getProductName(productId);
         if (productName == null) {
             throw new RuntimeException("Product not found with id: " + productId);
@@ -146,9 +147,8 @@ public class PensionProductServiceImpl implements PensionProductService {
         }
 
         return ProductSummaryResponse.builder()
-                .productName(productName)
+                .product(product)
                 .summary(result)
-                .id(productId)
                 .build();
     }
 
@@ -174,7 +174,6 @@ public class PensionProductServiceImpl implements PensionProductService {
                 .riskGrade(product.getRiskGrade())
                 .reserve(product.getReserve())
                 .nextYearProfitRate(product.getNextYearProfitRate())
-                .createdAt(product.getCreatedAt())
                 .build();
     }
 
