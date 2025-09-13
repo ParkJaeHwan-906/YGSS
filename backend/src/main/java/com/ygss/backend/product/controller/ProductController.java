@@ -26,13 +26,23 @@ public class ProductController {
     }
 
     @GetMapping("/dc/etf")
-    public ResponseEntity<?> loadEtcDcProduct() {
-        return ResponseEntity.ok("dc/etf");
+    public ResponseEntity<?> loadEtcDcProduct(ProductListRequestDto request) {
+        try {
+            return ResponseEntity.ok(productService.selectDcEtfProduct(request));
+        } catch (Exception e) {
+            log.error("Load DC ETF Product Failed : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
     }
 
     @GetMapping("/dc/pension")
-    public ResponseEntity<?> loadPensionDcProduct() {
-        return ResponseEntity.ok("dc/pension");
+    public ResponseEntity<?> loadPensionDcProduct(ProductListRequestDto request) {
+        try {
+            return ResponseEntity.ok(productService.selectDcPensionProduct(request));
+        } catch (Exception e) {
+            log.error("Load DC Pension Product Failed : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
     }
 
     @GetMapping("dc/{retirePensionProductId}")
