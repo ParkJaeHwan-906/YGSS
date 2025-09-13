@@ -29,6 +29,22 @@ public interface RetirePensionProductRepository {
             ORDER BY rpp.next_year_profit_rate ${sort};
             """)
     List<RetirePensionProductResponseDto> selectAllDcProduct(String sort);
+    @Select("""
+            SELECT
+            rpp.id AS 'id',
+            rpp.product AS 'product',
+            c.company AS 'company',
+            rppt.product_type AS 'productType',
+            rpp.next_year_profit_rate AS 'profitPrediction',
+            rpp.risk_grade_id AS 'riskGradeId'
+            FROM retire_pension_products rpp
+            JOIN retire_pension_product_type rppt ON rpp.product_type_id = rppt.id
+            JOIN retire_pension_systype rps ON rps.id = rpp.systype_id
+            JOIN companies c ON c.id = rpp.company_id
+            WHERE rpp.product_type_id = #{productTypeId}
+            ORDER BY rpp.next_year_profit_rate ${sort};
+            """)
+    List<RetirePensionProductResponseDto> selectDcProduct(String sort, Long productTypeId);
     /**
      * (ETF/펀드) 상세 조회
      */

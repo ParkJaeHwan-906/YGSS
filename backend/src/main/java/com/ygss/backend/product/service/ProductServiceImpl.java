@@ -25,6 +25,14 @@ public class ProductServiceImpl implements ProductService {
         return retirePensionProductRepository.selectAllDcProduct(request.sortToString());
     }
     @Override
+    public List<RetirePensionProductResponseDto> selectDcEtfProduct(ProductListRequestDto request) {
+        return retirePensionProductRepository.selectDcProduct(request.sortToString(), 1L);
+    }
+    @Override
+    public List<RetirePensionProductResponseDto> selectDcPensionProduct(ProductListRequestDto request) {
+        return retirePensionProductRepository.selectDcProduct(request.sortToString(), 2L);
+    }
+    @Override
     public RetirePensionProductDetailResponseDto selectRetirePensionProductById(Long retirePensionProductId) {
         return retirePensionProductRepository.selectRetirePensionProductById(retirePensionProductId)
                 .orElseThrow(() -> new IllegalArgumentException("Not Found Retire Pension Product"));
