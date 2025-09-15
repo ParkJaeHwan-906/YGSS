@@ -1,59 +1,68 @@
 // app/(app)/(tabs)/dc/dc1.tsx
 
-import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
 import { Colors } from "@/src/theme/colors";
+import { useRouter } from "expo-router";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Dc1() {
   const router = useRouter();
   return (
     <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
+      <View style={styles.container}>
         <View style={styles.topContainer}>
-            {/* 왼쪽 6 */}
-            <View style={styles.colLeft}>
+          {/* 왼쪽 6 */}
+          <View style={styles.colLeft}>
             <TouchableOpacity
-                style={[styles.box, styles.boxLeft]}
-                onPress={() => router.push("/dc/dc2")}
-                activeOpacity={0.9}
+              style={[styles.box, styles.boxLeft]}
+              onPress={() => router.push("/dc/dc2")}
+              activeOpacity={0.9}
             >
-                <Text style={[styles.boxTitle, styles.boxTitleLight]}>맞춤형 DC 상품</Text>
-                <Text style={[styles.boxDesc, styles.boxDescLight]}>
+              <Text style={[styles.boxTitle, styles.boxTitleLight]}>맞춤형 DC 상품</Text>
+              <Text style={[styles.boxDesc, styles.boxDescLight]}>
                 알키가 당신에게 꼭 맞는{"\n"}DC 상품을 추천해드려요!
-                </Text>
-                <Image source={require("@/assets/icon/bills.png")} style={styles.boxIcon} />
+              </Text>
+              <Image source={require("@/assets/icon/bills.png")} style={styles.boxIcon} />
             </TouchableOpacity>
-            </View>
+          </View>
 
-            {/* 오른쪽 4 */}
-            <View style={styles.colRight}>
+          {/* 오른쪽 4 */}
+          <View style={styles.colRight}>
             <TouchableOpacity
-                style={[styles.box, styles.boxRight]}
-                onPress={() => router.push("/dc/dc4")}
-                activeOpacity={0.9}
+              style={[styles.box, styles.boxRight]}
+              onPress={() => router.push("/dc/dc4")}
+              activeOpacity={0.9}
             >
-                <Text style={[styles.boxTitle, { color: Colors?.black ?? "#111" }]}>DB / DC</Text>
-                <Text style={[styles.boxDesc, { color: Colors?.black ?? "#333" }]}>어떤 걸 선택할까?</Text>
-                <Image source={require("@/assets/icon/chart.png")} style={styles.boxIcon} />
+              <Text style={[styles.boxTitle, { color: Colors?.black ?? "#111" }]}>DB / DC</Text>
+              <Text style={[styles.boxDesc, { color: Colors?.black ?? "#333" }]}>어떤 걸 선택할까?</Text>
+              <Image source={require("@/assets/icon/chart.png")} style={styles.boxIcon} />
             </TouchableOpacity>
-            </View>
+          </View>
         </View>
+
+
+        {/* 임시 상세정보 가는 라우터 */}
+        <TouchableOpacity style={{ marginTop: 20 }}
+          onPress={() => router.push({ pathname: "/dc/[id]", params: { id: "5" } })}
+        >
+          <Text>상세정보</Text>
+        </TouchableOpacity>
 
         {/* 알키 설명 박스 */}
         <View style={styles.explainBox}>
-            <View style={styles.alchiBox}>
+          <View style={styles.alchiBox}>
             <Image
-                source={require("@/assets/char/winkAlchi.png")}
-                style={styles.alchiIcon}
+              source={require("@/assets/char/winkAlchi.png")}
+              style={styles.alchiIcon}
             />
-            </View>
+          </View>
         </View>
+
 
         {/* 리스트 영역 */}
         <View style={styles.listContainer} />
-        </View>
-    </SafeAreaView>
+      </View>
+    </SafeAreaView >
   );
 }
 

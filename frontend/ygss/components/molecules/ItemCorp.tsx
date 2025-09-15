@@ -1,11 +1,11 @@
 import { Colors } from "@/src/theme/colors";
 import { StyleSheet, Text, View } from "react-native";
-export default function ItemCorp() {
+
+export default function ItemCorp({ company }: { company: string }) {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>운용사</Text>
-            {/* <Text style={styles.value}>•{product.companyName}</Text> */}
-            <Text style={styles.value}>• 삼성증권</Text>
+            <Text style={styles.value}>• {company}</Text>
         </View>
     );
 }

@@ -56,10 +56,10 @@ export default function Button({
 
 const styles = StyleSheet.create({
     base: {
-        width: '100%',
-        alignSelf: 'stretch',
-        justifyContent: 'center',
-        alignItems: 'center',
+        width: "95%",
+        alignSelf: "center",
+        justifyContent: "center",
+        alignItems: "center",
         paddingVertical: 14,
         paddingHorizontal: 20,
         borderRadius: 16,

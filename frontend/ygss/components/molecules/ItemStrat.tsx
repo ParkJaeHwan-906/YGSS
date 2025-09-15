@@ -1,66 +1,150 @@
-// components/ItemStrat.tsx
 import { Colors } from "@/src/theme/colors";
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, Dimensions, StyleSheet, Text, View } from "react-native";
 
-const leftRatio = 60;
-const rightRatio = 40;
-export default function ItemStrat() {
+type Strategy = {
+    category: string;
+    percentage: number;
+};
+
+export default function ItemStrat({ data }: { data: Strategy[] }) {
+    if (!data || data.length === 0) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.title}>투자전략</Text>
+                <Text style={styles.empty}>데이터가 없습니다</Text>
+            </View>
+        );
+    }
+
+    // 색상 매핑
+    const colors: string[] = ["#5465FF", "#9BB1FF", "#BFD7FF", "#EEF1FF"];
+
+    const screenWidth = Dimensions.get("window").width - 32;
+    const animatedValues = useRef(data.map(() => new Animated.Value(0))).current;
+
+    // 각 블록의 애니메이션 종료 여부 상태
+    const [finished, setFinished] = useState<boolean[]>(
+        Array(data.length).fill(false)
+    );
+
+    useEffect(() => {
+        const animations = data.map((item, idx) =>
+            Animated.timing(animatedValues[idx], {
+                toValue: (screenWidth * item.percentage) / 100,
+                duration: 1000,
+                useNativeDriver: false,
+            })
+        );
+
+        // 순차 실행 + 각 animation 끝나면 finished[idx] 갱신
+        animations.forEach((anim, idx) => {
+            anim.start(() => {
+                setFinished((prev) => {
+                    const copy = [...prev];
+                    copy[idx] = true;
+                    return copy;
+                });
+            });
+        });
+    }, [data]);
+
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>투자전략</Text>
-            <View style={styles.barWrap}>
-                {/* 왼쪽 블록 */}
-                <View style={[styles.block, styles.leftBlock, { flex: leftRatio }]}>
-                    <Text style={styles.blockText}>미국 10년 국채선물</Text>
-                    <Text style={styles.percent}>60%</Text>
-                </View>
+            <Text style={styles.title}>투자전략 (%)</Text>
 
-                {/* 오른쪽 블록 */}
-                <View style={[styles.block, styles.rightBlock, { flex: rightRatio }]}>
-                    <Text style={[styles.blockText, { color: Colors.black }]}>KOSPI200</Text>
-                    <Text style={[styles.percent, { color: Colors.black }]}>40%</Text>
-                </View>
+            {/* 가로 ProgressBar */}
+            <View style={styles.barWrap}>
+                {data.map((item, idx) => {
+                    const bgColor = colors[idx] || "#EEF1FF";
+                    const textColor = bgColor === "#EEF1FF" ? "#ACACAC" : Colors.white;
+
+                    return (
+                        <Animated.View
+                            key={idx}
+                            style={[
+                                styles.block,
+                                {
+                                    backgroundColor: bgColor,
+                                    width: animatedValues[idx],
+                                },
+                            ]}
+                        >
+                            {finished[idx] && (
+                                <Text style={[styles.percent, { color: textColor }]}>
+                                    {item.percentage.toFixed(0)}
+                                </Text>
+                            )}
+                        </Animated.View>
+                    );
+                })}
+            </View>
+
+            {/* 범례 */}
+            <View style={styles.legendWrap}>
+                {data.map((item, idx) => (
+                    <View key={idx} style={styles.legendItem}>
+                        <View
+                            style={[
+                                styles.legendColor,
+                                { backgroundColor: colors[idx] || "#EEF1FF" },
+                            ]}
+                        />
+                        <Text style={styles.legendText}>{item.category}</Text>
+                    </View>
+                ))}
             </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        padding: 16,
-    },
+    container: { padding: 16 },
     title: {
         fontSize: 18,
         fontFamily: "BasicBold",
-        marginBottom: 10,
+        marginBottom: 12,
+    },
+    empty: {
+        fontSize: 14,
+        color: Colors.gray,
+        fontFamily: "BasicMedium",
     },
     barWrap: {
         flexDirection: "row",
-        borderRadius: 30,
-        overflow: "hidden", // 둥근 모서리
+        height: 32,
+        borderRadius: 16,
+        overflow: "hidden",
+        marginBottom: 12,
     },
     block: {
-        flexDirection: "row",
-        justifyContent: "space-between",
+        justifyContent: "center",
         alignItems: "center",
-        paddingHorizontal: 12,
-        height: 40,
-    },
-    leftBlock: {
-        backgroundColor: Colors.primary, // 파란색
-    },
-    rightBlock: {
-        backgroundColor: "#EEF1FF", // 연한 회색
-    },
-    blockText: {
-        fontSize: 13,
-        fontFamily: "BasicMedium",
-        color: Colors.white,
     },
     percent: {
-        fontSize: 13,
-        fontFamily: "BasicMedium",
+        fontSize: 12,
+        fontFamily: "BasicBold",
         color: Colors.white,
+    },
+    legendWrap: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        gap: 12,
+    },
+    legendItem: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    legendColor: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        marginRight: 6,
+    },
+    legendText: {
+        fontSize: 10,
+        fontFamily: "BasicMedium",
+        color: Colors.gray,
     },
 });

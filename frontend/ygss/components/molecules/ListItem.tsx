@@ -5,10 +5,10 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 const RISK_STYLE = {
-  낮음:     { badgeBg: "#7F8AF3", rateColor: "#7F8AF3" },
-  보통:     { badgeBg: "#8FCE6A", rateColor: "#8FCE6A" },
+  낮음: { badgeBg: "#7F8AF3", rateColor: "#7F8AF3" },
+  보통: { badgeBg: "#8FCE6A", rateColor: "#8FCE6A" },
   다소높음: { badgeBg: "#FFDC00", rateColor: "#FFDC00" },
-  높음:     { badgeBg: "#FF9E9E", rateColor: "#FF9E9E" },
+  높음: { badgeBg: "#FF9E9E", rateColor: "#FF9E9E" },
   매우높음: { badgeBg: "#FF7171", rateColor: "#FF7171" },
 } as const;
 
@@ -56,11 +56,11 @@ export default function ListItem({
     <Pressable style={styles.container} onPress={onPress}>
       <View style={styles.textWrap}>
         <MarqueeTitle
-            title={title}
-            duration={8000}
-            delay={600}
-            gap={14}
-            textStyle={styles.title}
+          title={title}
+          // duration={8000}
+          delay={600}
+          gap={14}
+          textStyle={styles.title}
         />
 
         <View style={styles.subRow}>
