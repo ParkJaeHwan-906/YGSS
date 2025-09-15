@@ -1,3 +1,4 @@
+// app/(app)/(tabs)/dc/[id].tsx
 import Button from "@/components/molecules/Button";
 import Caution from "@/components/molecules/Caution";
 import ItemCorp from "@/components/molecules/ItemCorp";
@@ -151,9 +152,11 @@ export default function DcDetail() {
                     <ItemStrat data={graphData.investStrategy} />
                 </View>
 
+                {/* 기간별 수익률 */}
                 <View style={styles.profitContainer}>
                     <ProfitChart data={graphData.priceChart} />
                 </View>
+
                 {/* 운용사 */}
                 <View style={styles.corpContainer}>
                     <ItemCorp company={productDetail.company} />
@@ -169,7 +172,8 @@ export default function DcDetail() {
                     <Text style={styles.pointText}>종목 구성은 이렇게 되어 있어요 !</Text>
                     <Animated.View style={{ transform: [{ translateY }] }}>
                         <Ionicons name="chevron-down-outline" size={24} color="black" />
-                    </Animated.View>                </View>
+                    </Animated.View>
+                </View>
 
                 <View style={styles.ratioContainer}>
                     <ItemRatio data={graphData.doughnutChart} />
