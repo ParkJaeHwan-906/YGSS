@@ -31,4 +31,6 @@ public interface PensionProductService {
     boolean toggleBondLike(Long productId,String email);
 
     AllLikedProductDto getAllLikedProduct(String name);
+
+    List<BestLikedProductDto> getBest9LikedProducts();
 }
