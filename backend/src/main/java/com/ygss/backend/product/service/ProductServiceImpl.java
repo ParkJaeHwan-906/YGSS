@@ -1,9 +1,6 @@
 package com.ygss.backend.product.service;
 
-import com.ygss.backend.product.dto.ProductListRequestDto;
-import com.ygss.backend.product.dto.RetirePensionProductDetailResponseDto;
-import com.ygss.backend.product.dto.RetirePensionProductGraphResponseDto;
-import com.ygss.backend.product.dto.RetirePensionProductResponseDto;
+import com.ygss.backend.product.dto.*;
 import com.ygss.backend.product.repository.ProductDetailRepository;
 import com.ygss.backend.product.repository.ProductInvestStrategyRepository;
 import com.ygss.backend.product.repository.ProductPriceLogRespository;
@@ -49,5 +46,8 @@ public class ProductServiceImpl implements ProductService {
         return retirePensionProductGraphResponseDto;
     }
 
-
+    @Override
+    public List<ProductPriceLogDto> selectRetirePensionDetailPriceLog(Long retirePensionProductId) {
+        return productPriceLogRespository.selectProductPriceLogById(retirePensionProductId);
+    }
 }

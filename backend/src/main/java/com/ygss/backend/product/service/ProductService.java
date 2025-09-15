@@ -30,4 +30,9 @@ public interface ProductService {
      * ETF/펀드 상세 조회 (그래프)
      */
     RetirePensionProductGraphResponseDto selectRetirePensionProductGraphById(Long retirePensionProductId);
+
+    /**
+     * ETF/펀드 시계열 데이터 조회
+     */
+    public List<ProductPriceLogDto> selectRetirePensionDetailPriceLog(Long retirePensionProductId);
 }
