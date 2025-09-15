@@ -3,14 +3,14 @@ pipeline {
 
   environment {
     // 배포 환경
-    DOCKER_IMAGE  = 'ygss-backend'       // 매니페스트의 image 이름과 동일해야 합니다.
+    DOCKER_IMAGE  = 'ygss-backend'
     DOCKER_TAG    = "v${BUILD_NUMBER}"
     K8S_NAMESPACE = 'ygss-prod'
 
-    // k3s kubeconfig (Jenkins 유저가 읽을 수 있어야 함)
+    // k3s kubeconfig
     KUBECONFIG = '/etc/rancher/k3s/k3s.yaml'
 
-    // Jenkins Credentials → 런타임 Secret 생성
+    // Jenkins Credentials
     MYSQL_PASSWORD = credentials('mysql-password')
     JWT_SECRET     = credentials('jwt-secret')
   }
@@ -56,9 +56,30 @@ pipeline {
             echo "🔍 필수 파일 확인"
             [ -f backend/build.gradle ] || { echo "❌ backend/build.gradle 없음"; exit 1; }
             [ -f backend/Dockerfile   ] || { echo "❌ backend/Dockerfile 없음"; exit 1; }
-            [ -d k8s/backend ] && [ -d k8s/shared ] || { echo "❌ k8s 매니페스트 없음"; exit 1; }
+            [ -d k8s/base ] && [ -d k8s/overlays/prod ] || { echo "❌ k8s overlay 구조 없음"; exit 1; }
             echo "✅ 필수 파일 확인 완료"
           '
+        '''
+      }
+    }
+
+    stage('kustomize 설치 확인') {
+      steps {
+        sh '''
+          set -euo pipefail
+          echo "🔧 kustomize 설치 확인"
+          
+          if command -v kustomize &> /dev/null; then
+            echo "✅ kustomize 이미 설치됨: $(kustomize version)"
+          else
+            echo "📦 kustomize v5.7.1 설치 중..."
+            curl -Lo kustomize.tar.gz "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.7.1/kustomize_v5.7.1_linux_amd64.tar.gz"
+            tar -xzf kustomize.tar.gz
+            sudo mv kustomize /usr/local/bin/
+            sudo chmod +x /usr/local/bin/kustomize
+            rm -f kustomize.tar.gz
+            echo "✅ kustomize 설치 완료: $(kustomize version)"
+          fi
         '''
       }
     }
@@ -98,10 +119,7 @@ pipeline {
           echo "📦 Docker → k3s(containerd) import"
 
           docker save "$DOCKER_IMAGE:$DOCKER_TAG" -o "/tmp/$DOCKER_IMAGE-$DOCKER_TAG.tar"
-
-          # sudoers: Cmnd_Alias K3S_IMPORT = /usr/local/bin/k3s ctr images import *
           sudo -n /usr/local/bin/k3s ctr images import "/tmp/$DOCKER_IMAGE-$DOCKER_TAG.tar"
-
           rm -f "/tmp/$DOCKER_IMAGE-$DOCKER_TAG.tar"
           echo "✅ containerd import 완료"
         '''
@@ -125,31 +143,26 @@ pipeline {
       }
     }
 
-    stage('K8s 매니페스트 준비') {
+    stage('Kustomize 매니페스트 준비') {
       steps {
         sh '''
           set -euo pipefail
-          echo "⚙️ 배포 매니페스트 준비"
+          echo "⚙️ Kustomize 매니페스트 준비"
 
-          rm -rf deploy && mkdir -p deploy
-          cp k8s/shared/*.yml        deploy/ 2>/dev/null || true
-          cp k8s/backend/*.yml       deploy/ 2>/dev/null || true
-
-          # namespace 라인 삭제(라인 시작 기준으로만)
-          find deploy/ -name "*.yml" -exec sed -i -E "/^[[:space:]]*namespace:[[:space:]]*/d" {} \\;
-
-          # image 줄 치환 (들여쓰기 보존)
-          if [ -f deploy/deployment.yml ]; then
-            sed -i -E "s|^([[:space:]]*)image:[[:space:]]*.*$|\\1image: ${DOCKER_IMAGE}:${DOCKER_TAG}|g" deploy/deployment.yml
-          fi
-
-          echo "=== 매니페스트 준비 완료 ==="
-          ls -la deploy/ || true
-          echo "=== 이미지 태그 확인 ==="
-          grep -nE "^[[:space:]]*image:" deploy/deployment.yml || echo "이미지 설정 없음"
-
+          cd k8s/overlays/prod
+          
+          # 이미지 태그 동적 설정
+          kustomize edit set image ygss-backend:${DOCKER_TAG}
+          
+          echo "=== kustomization.yml 확인 ==="
+          cat kustomization.yml
+          
+          echo "=== 최종 매니페스트 미리보기 ==="
+          kustomize build . | head -50
+          
           # dry-run으로 사전 검증
-          kubectl -n ${K8S_NAMESPACE} apply --dry-run=client -f deploy/
+          kustomize build . | kubectl apply --dry-run=client -f -
+          echo "✅ 매니페스트 검증 완료"
         '''
       }
     }
@@ -158,10 +171,10 @@ pipeline {
       steps {
         sh '''
           set -euo pipefail
-          echo '🚢 Kubernetes 배포'
-          # 네임스페이스는 -n 옵션으로만 강제(매니페스트 내부 namespace 미사용)
-          kubectl -n $K8S_NAMESPACE apply -f deploy/
-          kubectl -n $K8S_NAMESPACE set image deploy/backend backend=$DOCKER_IMAGE:$DOCKER_TAG || true
+          echo '🚢 Kubernetes 배포 (Kustomize)'
+          
+          cd k8s/overlays/prod
+          kubectl apply -k .
           kubectl -n $K8S_NAMESPACE rollout status deployment/backend --timeout=300s
 
           echo '=== 리소스 현황 ==='
@@ -174,7 +187,7 @@ pipeline {
       steps {
         script {
           echo '⏳ Pod 시작 대기 중...'
-          sleep(time: 10, unit: 'SECONDS')  // 10초 대기
+          sleep(time: 10, unit: 'SECONDS')
           
           echo '🏥 서비스 헬스체크'
           timeout(time: 3, unit: 'MINUTES') {
@@ -202,7 +215,6 @@ pipeline {
         sh '''
           set -euo pipefail
           echo '🧹 이전 이미지 정리'
-          # $DOCKER_IMAGE: v접두 태그 중 최신 3개만 남기고 삭제
           KEEP=3
           TAGS=$(docker images "$DOCKER_IMAGE" --format '{{.Tag}}' | grep -E '^v[0-9]+' | sort -V -r || true)
           COUNT=0
@@ -226,6 +238,7 @@ pipeline {
 • 커밋: ${env.GIT_COMMIT}
 • 이미지: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
 • 네임스페이스: ${env.K8S_NAMESPACE}
+• 배포 방식: Kustomize Overlay
 
 """
     }
@@ -239,10 +252,11 @@ pipeline {
         kubectl -n $K8S_NAMESPACE logs -l app=backend --tail=50 || true
         echo '=== Deployment 설명 ==='
         kubectl -n $K8S_NAMESPACE describe deployment backend || true
+        echo '=== kustomize 빌드 확인 ==='
+        cd k8s/overlays/prod && kustomize build . || true
       '''
     }
     always {
-      sh 'rm -rf deploy || true'
       cleanWs()
     }
   }
