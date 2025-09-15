@@ -45,7 +45,7 @@ public class ProductController {
         }
     }
 
-    @GetMapping("dc/{retirePensionProductId}")
+    @GetMapping("/dc/{retirePensionProductId}")
     public ResponseEntity<?> loadRetirePensionProductDetail(@PathVariable Long retirePensionProductId) {
         try {
             return ResponseEntity.ok(productService.selectRetirePensionProductById(retirePensionProductId));
@@ -54,12 +54,21 @@ public class ProductController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
-    @GetMapping("dc/{retirePensionProductId}/graph")
+    @GetMapping("/dc/{retirePensionProductId}/graph")
     public ResponseEntity<?> loadRetirePensionProductDetailForGraph(@PathVariable Long retirePensionProductId) {
         try {
             return ResponseEntity.ok(productService.selectRetirePensionProductGraphById(retirePensionProductId));
         } catch (Exception e) {
             log.error("Load Retire Pension Product Detail Failed : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+    }
+    @GetMapping("/dc/{retirePensionProductId}/timeline")
+    public ResponseEntity<?> loadRetirePensionTimeLine(@PathVariable Long retirePensionProductId) {
+        try {
+            return ResponseEntity.ok(productService.selectRetirePensionDetailPriceLog(retirePensionProductId));
+        } catch(Exception e) {
+            log.error("Load Retire Pension Product Detail Time Line Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
