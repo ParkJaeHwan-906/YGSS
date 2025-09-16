@@ -12,4 +12,6 @@ public class EditUserInfoResponseDto {
     private Boolean newEmp;
     private Long salary;
     private Long totalRetirePension;
+    private Long riskGradeId;
+    private String riskGrade;
 }
