@@ -2,6 +2,7 @@ package com.ygss.backend.pensionPlan.repository;
 
 import com.ygss.backend.pensionPlan.dto.request.PensionPlanSearchRequest;
 import com.ygss.backend.pensionPlan.dto.response.PensionPlanSearchResponse;
+import com.ygss.backend.pensionPlan.dto.response.PensionPlanSimpleResponse;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -44,6 +45,21 @@ public interface PensionPlanRepository {
             "</script>"
     })
     List<PensionPlanSearchResponse> selectPensionPlans(PensionPlanSearchRequest searchDto);
+
+    @Select({
+            "SELECT ",
+            "    r.id,",
+            "    c.company AS companyName,",
+            "    s.systype AS systype,",
+            "    r.earn_rate AS earnRate",
+            "FROM retire_pension_rate r",
+            "INNER JOIN companies c ON r.company_id = c.id",
+            "INNER JOIN retire_pension_systype s ON r.systype_id = s.id",
+            "WHERE r.systype_id =#{systemType}",
+            "ORDER BY r.earn_rate DESC"
+    })
+    List<PensionPlanSimpleResponse> selectAllPlanOf(int systemType);
+
 
     @Select({
             "SELECT",
