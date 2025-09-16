@@ -1,8 +1,11 @@
 package com.ygss.backend.product.repository;
 
+import com.ygss.backend.pensionProduct.dto.response.BondDto;
+import com.ygss.backend.product.dto.BondProductResponseDto;
 import com.ygss.backend.product.dto.RetirePensionProductDetailResponseDto;
 import com.ygss.backend.product.dto.RetirePensionProductResponseDto;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import javax.swing.text.html.Option;
@@ -71,4 +74,40 @@ public interface RetirePensionProductRepository {
             """)
     Optional<RetirePensionProductDetailResponseDto> selectRetirePensionProductById(Long retirePensionProductId);
 
+    /**
+     * BOND 전체 상품 조회
+     */
+    @Select({
+            "SELECT",
+            "    b.id AS id,",
+            "    b.product AS productName,",
+            "    b.publisher_grade AS publisherGrade,",
+            "    b.publisher,",
+            "    b.coupon_rate AS couponRate,",
+            "    b.maturity_years AS maturityYears",
+            "FROM bond_products b",
+            "ORDER by b.coupon_rate ${sort}"
+    })
+    List<BondProductResponseDto> selectAllBond(String sort);
+
+    /**
+     * BOND 단건 조회
+     */
+    @Select({
+            "SELECT",
+            "    b.id AS id,",
+            "    b.product AS productName,",
+            "    b.risk_grade_id AS riskGrade,",
+            "    b.publisher_grade AS publisherGrade,",
+            "    b.publisher,",
+            "    b.coupon_rate AS couponRate,",
+            "    b.published_rate AS publishedRate,",
+            "    b.evalution_rate AS evaluationRate,",
+            "    b.maturity_years AS maturityYears,",
+            "    b.expired_day AS expiredDay,",
+            "    b.final_profit_rate AS finalProfitRate",
+            "FROM bond_products b",
+            "WHERE b.id = #{bondId}"
+    })
+    Optional<BondDto> selectBondById(@Param("bondId") Long bondId);
 }
