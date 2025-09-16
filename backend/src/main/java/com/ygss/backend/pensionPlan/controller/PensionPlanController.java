@@ -6,24 +6,58 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "퇴직연금 상품", description = "퇴직연금 상품 조회 API")
 @RestController
-@RequestMapping("/pension/plan")
+@RequestMapping("/plan")
 @RequiredArgsConstructor
 public class PensionPlanController {
 
     private final PensionPlanServiceImpl pensionPlanService;
 
     @Operation(summary = "퇴직연금 상품 목록 조회", description = "검색 조건에 따라 퇴직연금 상품 목록을 조회합니다.")
-    @GetMapping()
+    @GetMapping("search")
     public ResponseEntity<?> getAllPensionPlans(@ModelAttribute PensionPlanSearchRequest request) {
         try {
             return ResponseEntity.ok().body(pensionPlanService.searchAll(request));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/safe-dc")
+    public ResponseEntity<?> getPensionSafeDCPlan(){
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(pensionPlanService.getAllPlanOf(2));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+    @GetMapping("/db")
+    public ResponseEntity<?> getPensionDBPlan(){
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(pensionPlanService.getAllPlanOf(1));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+    @GetMapping("/irp")
+    public ResponseEntity<?> getPensionIRPPlan(){
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(pensionPlanService.getAllPlanOf(4));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+    @GetMapping("/dc")
+    public ResponseEntity<?> getPensionDCPlan(){
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(pensionPlanService.getAllPlanOf(3));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
