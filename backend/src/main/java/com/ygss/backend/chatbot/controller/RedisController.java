@@ -1,27 +1,27 @@
 package com.ygss.backend.chatbot.controller;
 
-import com.ygss.backend.chatbot.service.TermDictionaryServiceImpl;
+import com.ygss.backend.chatbot.service.RedisServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/term")
-public class TermDictionaryController {
-    private final TermDictionaryServiceImpl termDictionaryService;
+@RequestMapping("/redis")
+public class RedisController {
+    private final RedisServiceImpl redisService;
 
-    @GetMapping("/list")
-    public ResponseEntity<?> selectAllTerm() {
+    @PostMapping("/update")
+    public ResponseEntity<?> updateRedisTermDic() {
         try {
-            return ResponseEntity.ok(termDictionaryService.selectAllTerm());
+            return ResponseEntity.ok(redisService.updateRedisTermDIc());
         } catch (Exception e) {
-            log.error("Select All Term Failed : {}", e.getMessage());
+            log.error("Update Redis Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
