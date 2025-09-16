@@ -30,7 +30,10 @@ export default function Landing2() {
       return;
     }
     // 다음 화면으로 넘길 때 쿼리로 전달 (원하면 전역 상태/스토어로 교체 가능)
-    router.push("/(auth)/landing/landing3");
+    router.push({
+      pathname: "/(auth)/landing/landing3",
+      params: { salary: clean, pid: "1" }, // pid 기본 1이면 생략 가능
+    });
   };
 
   return (
@@ -61,17 +64,22 @@ export default function Landing2() {
             </View>
 
             {/* 입력 */}
-            <TextInput
-              value={salary}
-              onChangeText={(t) => setSalary(t.replace(/[^\d,]/g, ""))}
-              keyboardType="number-pad"
-              placeholder="연봉 입력"
-              placeholderTextColor="#B8B8B8"
-              style={styles.input}
-              returnKeyType="done"
-              onSubmitEditing={onSubmit}
-              accessibilityLabel="연봉 입력"
-            />
+            <View style={styles.inputRow}>
+              <View style={styles.inputWrap}>
+                <TextInput
+                  value={salary}
+                  onChangeText={(t) => setSalary(t.replace(/[^\d]/g, ""))}
+                  keyboardType="number-pad"
+                  placeholder="연봉 입력"
+                  placeholderTextColor="#B8B8B8"
+                  style={styles.input}
+                  returnKeyType="done"
+                  onSubmitEditing={onSubmit}
+                  accessibilityLabel="연봉 입력"
+                />
+                <Text style={styles.inputSuffix}>만원</Text>
+              </View>
+            </View>
 
             {/* 버튼 */}
             <Pressable style={styles.primaryBtn} onPress={onSubmit} accessibilityRole="button">
@@ -113,21 +121,35 @@ const styles = StyleSheet.create({
   
     coinImg: { position: "absolute", right: 6, top: -6, width: 70, height: 70 },
   
-    input: {
+    inputRow: {
+      alignSelf: "stretch",
       marginTop: 16,
+    },
+    inputWrap: {
+      flexDirection: "row",
+      alignItems: "center",
       backgroundColor: Colors.base,
       borderRadius: 16,
       paddingHorizontal: 16,
-      paddingVertical: 16,
-      fontFamily: "BasicMedium",
-      fontSize: 18,
-      color: Colors.black,
+      paddingVertical: 12,
       shadowColor: "#000",
       shadowOpacity: 0.08,
       shadowRadius: 16,
       shadowOffset: { width: 0, height: 8 },
       elevation: 3,
-      alignSelf: "stretch",
+    },
+    input: {
+      flex: 1, // ✅ 입력창이 왼쪽에서 최대 채우기
+      fontFamily: "BasicMedium",
+      fontSize: 18,
+      color: Colors.black,
+      padding: 0, // iOS 기본 padding 제거
+    },
+    inputSuffix: {
+      marginLeft: 6,
+      fontSize: 16,
+      fontFamily: "BasicMedium",
+      color: Colors.black,
     },
   
     primaryBtn: {
