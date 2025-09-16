@@ -38,9 +38,9 @@ spec:
               value: "ygss"
             - name: MYSQL_USER
               value: "admin"
-            - name: REDIS_HOST
+            - name: SPRING_REDIS_HOST
               value: "172.26.7.217"
-            - name: REDIS_PORT
+            - name: SPRING_REDIS_PORT
               value: "6379"
             - name: SPRING_DATASOURCE_PASSWORD
               valueFrom:
