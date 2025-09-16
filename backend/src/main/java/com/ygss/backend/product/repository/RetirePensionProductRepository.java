@@ -81,7 +81,7 @@ public interface RetirePensionProductRepository {
             "SELECT",
             "    b.id AS id,",
             "    b.product AS productName,",
-            "    b.risk_grade_id AS riskGrade,",
+            "    b.publisher_grade AS publisherGrade,",
             "    b.publisher,",
             "    b.coupon_rate AS couponRate,",
             "    b.maturity_years AS maturityYears",
