@@ -73,7 +73,22 @@ public class ProductController {
         }
     }
     @GetMapping("/dc/bond")
-    public ResponseEntity<?> loadBondDcProduct() {
-        return ResponseEntity.ok("dc/bond");
+    public ResponseEntity<?> loadbondProduct(ProductListRequestDto request) {
+        try {
+            return ResponseEntity.ok(productService.selectAllBondProduct(request));
+        } catch (Exception e) {
+            log.error("Load DC BOND Product Failed : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+    }
+
+    @GetMapping("/dc/bond/{bondId}")
+    public ResponseEntity<?> loadbondProduct(@PathVariable Long bondId) {
+        try {
+            return ResponseEntity.ok(productService.selectBondDetailById(bondId));
+        } catch (Exception e) {
+            log.error("Load DC BOND Product Detail Failed : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
     }
 }
