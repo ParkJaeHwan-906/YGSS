@@ -18,8 +18,8 @@ metadata:
   name: main-ingress
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
-    # 동일 네임스페이스의 CRD 미들웨어를 연결
-    traefik.ingress.kubernetes.io/router.middlewares: ygss-prod-strip-prefixes@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: default-namespace-strip-prefixes@kubernetescrd
+
 spec:
   ingressClassName: traefik
   tls:
