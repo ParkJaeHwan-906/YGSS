@@ -14,18 +14,28 @@ import {
 } from "react-native";
 import { Colors } from "@/src/theme/colors";
 import { MotiView } from "moti";
+import { useLocalSearchParams } from "expo-router";
 
 export default function Landing3() {
   const router = useRouter();
+  const { salary, pid } = useLocalSearchParams<{ salary?: string; pid?: string }>();
 
   useEffect(() => {
-    // 2.5초 후 다음 화면으로 자동 이동
-    const timer = setTimeout(() => {
-      router.replace("/(auth)/landing/landing4");
-    }, 2500);
+    if (!salary || isNaN(parseInt(String(salary), 10))) {
+      router.replace("/(auth)/landing/landing2");
+      return;
+    }
 
-    return () => clearTimeout(timer);
-  }, [router]);
+    const t = setTimeout(() => {
+      // ✅ 파라미터 *그대로* 전달
+      router.replace({
+        pathname: "/(auth)/landing/landing4",
+        params: { salary: String(salary), pid: String(pid ?? "1") },
+      });
+    }, 800); // 스피너 살짝 보이게
+
+    return () => clearTimeout(t);
+  }, [router, salary, pid]);
 
   return (
     <>
