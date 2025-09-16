@@ -47,6 +47,11 @@ spec:
                 secretKeyRef:
                   name: backend-secrets
                   key: MYSQL_PASSWORD
+            - name: GMS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: GMS_SECRET_KEY
           resources:
             requests:
               cpu: "200m"

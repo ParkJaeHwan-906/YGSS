@@ -13,6 +13,7 @@ pipeline {
     // Jenkins Credentials
     MYSQL_PASSWORD = credentials('mysql-password')
     JWT_SECRET     = credentials('jwt-secret')
+    GMS_SECRET_KEY = credentials('gms-secret-key')
   }
 
   options {
@@ -136,6 +137,7 @@ pipeline {
           kubectl -n $K8S_NAMESPACE create secret generic backend-secrets \
             --from-literal=MYSQL_PASSWORD="$MYSQL_PASSWORD" \
             --from-literal=JWT_SECRET="$JWT_SECRET" \
+            --from-literal=GMS_SECRET_KEY="$GMS_SECRET_KEY" \
             --dry-run=client -o yaml | kubectl apply -f -
 
           echo '✅ Secret 생성 완료'
