@@ -13,11 +13,11 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class MarketDataResponse {
     private LocalDate date;
-    private Long kospi;
-    private Long oilPrice;
-    private Long interestRate;
-    private Long priceIndex;
-    private Long cnyRate;
-    private Long usdRate;
-    private Long jpyRate;
+    private Double kospi;
+    private Double oilPrice;
+    private Double interestRate;
+    private Double priceIndex;
+    private Double cnyRate;
+    private Double usdRate;
+    private Double jpyRate;
 }
