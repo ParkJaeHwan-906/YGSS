@@ -8,6 +8,8 @@ export type User = {
     newEmp: boolean;
     salary: number | null;
     totalRetirePension: number | null;
+    risk_grade_id: number | null;
+    riskGrade?: string | null;
 };
 
 type AuthState = {

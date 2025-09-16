@@ -1,15 +1,15 @@
-import { Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { Colors } from "@/src/theme/colors";
-import { useRouter } from 'expo-router'
+import { useRouter } from 'expo-router';
+import { Image, StyleSheet, Text, TouchableOpacity } from "react-native";
 
 export default function InvestBias() {
-    const router = useRouter();
+  const router = useRouter();
 
   return (
     <TouchableOpacity
       style={[
         styles.box,
-        { backgroundColor: Colors?.base ?? "#4666FF" },
+        { backgroundColor: '#FFFCA8' },
       ]}
       activeOpacity={0.9}
       onPress={() => router.push("/(app)/invest")}
@@ -43,10 +43,6 @@ const styles = StyleSheet.create({
     padding: 16,
     overflow: "hidden",
     position: "relative",
-    shadowColor: Colors?.primary ?? "#4666FF",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 10,
   },
   boxTitle: { fontFamily: "BasicBold", fontSize: 18, marginBottom: 6 },
   boxDesc: { fontFamily: "BasicMedium", fontSize: 12, lineHeight: 18 },

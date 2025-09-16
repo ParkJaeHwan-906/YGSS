@@ -43,7 +43,7 @@ export default function Dc1() {
 
         {/* 임시 상세정보 가는 라우터 */}
         <TouchableOpacity style={{ marginTop: 20 }}
-          onPress={() => router.push({ pathname: "/dc/[id]", params: { id: "5" } })}
+          onPress={() => router.push({ pathname: "/dc/[id]", params: { id: "9" } })}
         >
           <Text>상세정보</Text>
         </TouchableOpacity>

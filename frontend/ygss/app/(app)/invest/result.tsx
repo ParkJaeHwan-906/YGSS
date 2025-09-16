@@ -1,16 +1,21 @@
-import React from "react";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { setUser } from "@/src/store/slices/authSlice";
+import { Colors } from "@/src/theme/colors";
+import axios from "axios";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { MotiView } from "moti";
+import React, { useEffect } from "react";
 import {
-  View,
-  Text,
   Image,
-  StyleSheet,
-  StatusBar,
   Pressable,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Colors } from "@/src/theme/colors";
-import { MotiView } from "moti";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 // 캐릭터 매핑 (파일명 확인: "nuetralAlchi.png" 철자 실제 자산명과 일치해야 함)
 const ALCHI_BY_GRADE: Record<string, any> = {
@@ -30,6 +35,26 @@ function pickAlchiByGrade(grade?: string | null) {
 export default function InvestResult() {
   const router = useRouter();
   const { grade } = useLocalSearchParams<{ grade?: string }>();
+  const dispatch = useAppDispatch();
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
+
+  // 🔹 페이지 진입 시 유저 정보 다시 불러오기
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const { data } = await axios.get(`${API_URL}/user/load/detail`, {
+          headers: { Authorization: `A103 ${accessToken}` },
+        });
+        dispatch(setUser(data));
+      } catch (err) {
+        console.error("유저 정보 갱신 실패", err);
+      }
+    };
+
+    if (accessToken) {
+      fetchUser();
+    }
+  }, [accessToken, dispatch]);
 
   return (
     <>
