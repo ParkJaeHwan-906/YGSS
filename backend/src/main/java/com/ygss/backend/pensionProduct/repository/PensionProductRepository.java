@@ -510,4 +510,17 @@ public interface PensionProductRepository {
             "WHERE rppl.user_account_id = #{userId}"
     })
     List<PensionProduct> selectLikedProducts(@Param("userId") Long userId);
+
+
+    @Select({
+            "SELECT rpp.id, rpp.product, c.company, rppt.product_type ,rpp.next_year_profit_rate,rpp.risk_grade_id",
+                    "FROM retire_pension_products rpp",
+                    "JOIN retire_pension_product_like rppl ON rppl.retire_pension_product_id = rpp.id",
+                    "JOIN companies c ON c.id = rpp.company_id",
+                    "JOIN retire_pension_product_type rppt on rppt.id = rpp.product_type_id",
+                    "GROUP BY rpp.id",
+                    "ORDER BY COUNT(*) DESC",
+                    "LIMIT 9"
+    })
+    List<BestLikedProductDto> selectBest9LikedProducts();
 }
