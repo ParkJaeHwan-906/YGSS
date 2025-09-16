@@ -45,9 +45,6 @@ export default function DcDetail() {
                     },
                 }
             );
-
-            console.log("res.data", res.data);
-            console.log(url)
             // API 응답이 true/false
             setLiked(res.data === true);
         } catch (err: any) {

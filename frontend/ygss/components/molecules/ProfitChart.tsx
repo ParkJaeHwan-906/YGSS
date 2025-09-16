@@ -1,170 +1,157 @@
 // components/molecules/ProfitChart.tsx
-import React, { useMemo, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { Colors } from "@/src/theme/colors";
+import React, { useMemo } from "react";
+import { Dimensions, StyleSheet, Text, View } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 
-type ApiResponse = {
-    date: string;       // "YYYY-MM-DD"
+type PriceData = {
+    date: string;
     initPrice: number;
     finalPrice: number;
     dailyRate: number;
 };
 
-const TABS = ["1M", "3M", "6M", "12M", "YTD"];
-const SECTIONS = 4;       // Y축 구간 수
-const CHART_HEIGHT = 220; // 탭마다 동일한 높이
-const PADDING_H = 16;     // 좌우 컨테이너 padding(부모와 일치)
-
-const toDate = (str: string) => {
-    const [y, m, d] = str.split("-");
-    return new Date(Number(y), Number(m) - 1, Number(d));
-};
-
-export default function ProfitChart({ data }: { data: ApiResponse[] }) {
-    const [activeTab, setActiveTab] = useState("1M");
-    const { width: winWidth } = useWindowDimensions();
-    const chartWidth = Math.max(0, winWidth - PADDING_H * 2); // 화면 가로에 ‘딱’ 맞춤
-
-    // 안전하게 정렬(보장용)
-    const sorted = useMemo(
-        () => [...data].sort((a, b) => (a.date < b.date ? -1 : 1)),
-        [data]
-    );
-
-    // 기준일 = 응답 마지막 날짜
-    const baseDate = toDate(sorted[sorted.length - 1].date);
-
-    // 시작일 계산
-    const getStartDate = (tab: string) => {
-        const start = new Date(baseDate);
-        switch (tab) {
-            case "1M": start.setMonth(start.getMonth() - 1); break;
-            case "3M": start.setMonth(start.getMonth() - 3); break;
-            case "6M": start.setMonth(start.getMonth() - 6); break;
-            case "12M": start.setFullYear(start.getFullYear() - 1); break; // 정확히 1년 전 같은 날짜
-            case "YTD": return new Date(baseDate.getFullYear(), 0, 1);
-            default: start.setMonth(start.getMonth() - 1);
-        }
-        return start;
-    };
-
-    // 기간 필터 + 누적 수익률(소수) + X축 라벨 간소화
-    const filteredData = useMemo(() => {
-        const start = getStartDate(activeTab);
-        const selected = sorted.filter(d => {
-            const dd = toDate(d.date);
-            return dd >= start && dd <= baseDate;
-        });
-        if (selected.length === 0) return [];
-
-        const basePrice = selected[0].finalPrice;
-        // X축 라벨 과밀 방지(대략 6개만 노출)
-        const labelStep = Math.max(1, Math.floor(selected.length / 6));
-
-        return selected.map((d, i) => {
-            const dd = toDate(d.date);
-            const rate = (d.finalPrice / basePrice) - 1; // 0.05 = 5%
-            const showLabel = i === 0 || i % labelStep === 0 || i === selected.length - 1;
-            return {
-                value: rate,
-                label: showLabel ? `${dd.getMonth() + 1}/${dd.getDate()}` : "",
-            };
-        });
-    }, [activeTab, sorted]);
-
-    // Y축 스케일(소수, 둘째 자리 고정) + 변동폭 작으면 확대
-    const yValues = filteredData.map(d => d.value);
-    let minValue = Math.min(...yValues);
-    let maxValue = Math.max(...yValues);
-
-    // 변동폭 최소 확보(1M 직선화 방지) : 최소 20% 범위
-    const MIN_SPAN = 0.2;
-    let span = maxValue - minValue;
-    if (!isFinite(span) || span < MIN_SPAN) {
-        const mid = isFinite(minValue + maxValue) ? (maxValue + minValue) / 2 : 0;
-        minValue = mid - MIN_SPAN / 2;
-        maxValue = mid + MIN_SPAN / 2;
-        span = MIN_SPAN;
+export default function ProfitChart({ data }: { data: PriceData[] }) {
+    if (!data || data.length === 0) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.empty}>그래프 데이터 없음</Text>
+            </View>
+        );
     }
 
-    // 위/아래 여백(그래프가 경계에 붙지 않도록)
-    const yPadding = Math.max(span * 0.1, 0.01);
-    const yMin = minValue - yPadding;
-    const yMax = maxValue + yPadding;
+    // 기준일 (예: 2025-09-01)
+    const baseDate = "2025-09-01";
 
-    // Y축 라벨 텍스트(항상 소수 둘째 자리)
-    const yAxisLabelTexts = Array.from({ length: SECTIONS + 1 }, (_, i) => {
-        const v = yMin + ((yMax - yMin) * i) / SECTIONS;
-        return v.toFixed(2); // ✅ 두 자리 고정
-    });
+    // 3개월 전 ~ 기준일까지 필터링
+    const filteredData = useMemo(() => {
+        const end = new Date(baseDate);
+        const start = new Date(end);
+        start.setMonth(end.getMonth() - 3); // 3개월 전
 
-    // X축: 스크롤 없이 화면 폭에 꽉 차게 + 첫 라벨 안 잘림 + 마지막 점은 오른쪽 끝
-    const n = filteredData.length;
-    const leftPad = 12;  // 첫 라벨 잘림 방지
-    const rightPad = 0;  // 기준일(마지막 점) 오른쪽 끝 고정
-    const spacing =
-        n > 1 ? (chartWidth - leftPad - rightPad) / (n - 1) : chartWidth - leftPad - rightPad;
+        return data.filter((d) => {
+            const current = new Date(d.date);
+            return current >= start && current <= end;
+        });
+    }, [data]);
+
+    // 기준점 가격 = 구간 첫 initPrice
+    const basePrice = useMemo(() => {
+        return filteredData.length > 0 ? filteredData[0].initPrice : data[0].initPrice;
+    }, [filteredData, data]);
+
+    // 누적 수익률 계산 (모든 시점에서 initPrice 기준으로)
+    const chartData = useMemo(() => {
+        return filteredData.map((d) => {
+            const cumReturn = ((d.initPrice / basePrice) - 1) * 100;
+            return {
+                value: Number(cumReturn.toFixed(2)),
+                label: d.date.slice(2, 4) + "." + d.date.slice(5, 7), // 'MM-DD'
+                labelComponent: () => (
+                    <Text
+                        style={{
+                            position: "absolute",
+                            top: -20,          // 그래프 위쪽으로 올리기
+                            fontSize: 10,
+                            color: Colors.black,
+                            textAlign: "center",
+                            width: 40,         // 글자 폭 보정
+                        }}
+                    >
+                        {d.date.slice(5)}
+                    </Text>
+                ),
+            };
+        });
+    }, [filteredData, basePrice]);
+
+    // y축 스케일링
+    const yValues = chartData.map((d) => d.value);
+    let minY = Math.min(...yValues);
+    let maxY = Math.max(...yValues);
+    minY = Math.min(minY, 0);
+    maxY = Math.max(maxY, 0);
+    const range = maxY - minY;
+
+    let step = 1;
+    if (range <= 2) step = 0.5;
+    else if (range <= 5) step = 1;
+    else step = 5;
+
+    const yAxisLabelTexts: string[] = [];
+    for (
+        let y = Math.floor(minY / step) * step;
+        y <= Math.ceil(maxY / step) * step;
+        y += step
+    ) {
+        yAxisLabelTexts.push(Number(y.toFixed(2)).toString());
+    }
+
+    // x축 스케일링
+    const screenWidth = Dimensions.get("window").width - 60; // padding 고려
+    const spacing = useMemo(() => {
+        const n = filteredData.length;
+        return screenWidth / (n > 1 ? n - 1 : 1);
+    }, [filteredData]);
+
 
     return (
         <View style={styles.container}>
-            {/* 탭 */}
-            <View style={styles.tabContainer}>
-                {TABS.map(tab => (
-                    <TouchableOpacity
-                        key={tab}
-                        style={[styles.tab, activeTab === tab && styles.activeTab]}
-                        onPress={() => setActiveTab(tab)}
-                    >
-                        <Text style={{ color: activeTab === tab ? "#fff" : "#333" }}>{tab}</Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-
-            {/* 차트 */}
+            <Text style={styles.title}>3개월 누적 수익률</Text>
+            <Text style={{ fontFamily: "BasicMedium", fontSize: 10, color: Colors.black, alignSelf: "flex-end" }}>기준일 : {baseDate}</Text>
             <LineChart
-                data={filteredData}
-                width={chartWidth}        // ✅ 스크롤 없음
-                height={CHART_HEIGHT}     // ✅ 탭마다 동일 높이
-                spacing={spacing}         // ✅ 데이터 개수에 맞춰 정확 분배
-                initialSpacing={leftPad}  // ✅ 첫 라벨 안 잘림
-                endSpacing={rightPad}     // ✅ 마지막 점(기준일) 오른쪽 끝
-
-                // 샘플 스타일 반영
+                data={chartData}
                 curved
+                thickness={2}
+                color={"#e74c3c"}
+                areaChart
+                height={200}
+                startFillColor={"rgba(231,76,60,0.25)"}
+                endFillColor={"rgba(231,76,60,0.05)"}
+                startOpacity={0.8}
+                endOpacity={0.05}
                 hideDataPoints
-                thickness={5}
-                hideRules
-                showVerticalLines
-                verticalLinesColor="rgba(14,164,164,0.25)"
-                yAxisColor="#0BA5A4"
-                xAxisColor="#0BA5A4"
-                color="#0BA5A4"
-
-                // Y축(둘째 자리 고정)
-                noOfSections={SECTIONS}
-                yAxisLabel=""
-                yAxisTextStyle={{ color: "#999" }}
+                xAxisLabelTextStyle={{ color: Colors.black, fontSize: 10 }}
+                yAxisTextStyle={{ color: Colors.black, fontSize: 10 }}
+                yAxisLabelWidth={40}
                 yAxisLabelTexts={yAxisLabelTexts}
-                yAxisTextNumberOfTicks={SECTIONS + 1}
-                minValue={yMin}
-                maxValue={yMax}
+                hideRules={false}
+                rulesColor="#eee"
+                rulesType="solid"
 
-                // X축
-                xAxisLabelTextStyle={{ color: "#999" }}
+                /** 👇 포커스 관련 옵션 추가 */
+                focusEnabled
+                showDataPointOnFocus
+                showStripOnFocus
+                stripColor="rgba(46, 212, 207, 0.3)"   // 라인 색상
+                stripWidth={1}                 // 라인 두께
+                stripOpacity={1}               // 라인 투명도
+                stripHeight={200}
+
+                showReferenceLine1
+                referenceLine1Position={0}
+                referenceLine1Config={{ color: Colors.black, thickness: 1 }}
+                adjustToWidth
+                width={screenWidth}
             />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { paddingHorizontal: PADDING_H, paddingTop: 16, paddingBottom: 12 },
-    tabContainer: { flexDirection: "row", marginBottom: 12 },
-    tab: {
-        paddingVertical: 6,
-        paddingHorizontal: 14,
-        borderRadius: 16,
-        backgroundColor: "#eee",
-        marginRight: 8,
+    container: {
+        alignItems: "center",
+        justifyContent: "center",
     },
-    activeTab: { backgroundColor: "#FF6B6B" },
+    title: {
+        fontSize: 16,
+        fontFamily: "BasicBold",
+        marginBottom: 10,
+        padding: 10,
+        color: Colors.black,
+    },
+    empty: {
+        fontSize: 12,
+        color: Colors.gray,
+    },
 });
