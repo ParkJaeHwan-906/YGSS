@@ -207,4 +207,13 @@ public class PensionProductController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @GetMapping("/best")
+    public ResponseEntity<?> getBest9LikedProduct(){
+        try {
+            return ResponseEntity.ok(pensionProductService.getBest9LikedProducts());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
 }

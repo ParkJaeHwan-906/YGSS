@@ -215,4 +215,9 @@ public class PensionProductServiceImpl implements PensionProductService {
 
         return AllLikedProductDto.builder().likedProduct(products).likedBond(bonds).build();
     }
+
+    @Override
+    public List<BestLikedProductDto> getBest9LikedProducts() {
+        return pensionProductRepository.selectBest9LikedProducts();
+    }
 }
