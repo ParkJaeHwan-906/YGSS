@@ -42,8 +42,17 @@ function handleNumberChange(
     format = false
 ) {
     const onlyNum = val.replace(/,/g, "").replace(/[^0-9]/g, "");
-    if (val !== "" && onlyNum === "") setError("숫자로 입력해 주세요.");
-    else setError("");
+
+    if (val !== "" && onlyNum === "") {
+        setError("숫자로 입력해 주세요.");
+    }
+    // 6자리 이상일 경우 경고
+    else if (onlyNum.length >= 6) {
+        setError("큰 숫자 입니다. 만원 단위 확인해주세요");
+    }
+    else {
+        setError("");
+    }
 
     setRaw(onlyNum);
     if (format && onlyNum) setDisplay(Number(onlyNum).toLocaleString("ko-KR"));
@@ -240,7 +249,7 @@ const styles = StyleSheet.create({
     },
     inlineRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     suffix: { fontFamily: "BasicMedium", fontSize: 16, color: "#555", marginLeft: 4 },
-    errorText: { fontFamily: "BasicMedium", fontSize: 12, color: "red", marginTop: 6 },
+    errorText: { fontFamily: "BasicLight", fontSize: 12, color: "red", marginTop: 6 },
 
     // 경력여부 섹션
     empRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
