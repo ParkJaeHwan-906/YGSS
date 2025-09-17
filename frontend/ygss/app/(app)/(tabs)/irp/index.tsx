@@ -50,12 +50,12 @@ const styles = StyleSheet.create({
         color: Colors.white,
     },
     boxDesc: {
-        fontSize: 12,
+        fontSize: 11,
         fontFamily: "BasicMedium",
-        color: Colors.gray,
+        color: Colors.white,
     },
     boxIcon: {
-        width: 100,
+        width: 90,
         height: 90,
         alignSelf: "flex-end",
         resizeMode: "contain",
