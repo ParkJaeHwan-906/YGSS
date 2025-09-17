@@ -1,7 +1,7 @@
 // components/molecules/ProfitChart.tsx
 import { Colors } from "@/src/theme/colors";
-import React, { useMemo } from "react";
-import { Dimensions, StyleSheet, Text, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 
 type PriceData = {
@@ -11,7 +11,18 @@ type PriceData = {
     dailyRate: number;
 };
 
+type RangeType = "1M" | "3M" | "6M" | "1Y" | "YTD";
+const RANGE_LABELS: Record<RangeType, string> = {
+    "1M": "1개월",
+    "3M": "3개월",
+    "6M": "6개월",
+    "1Y": "1년",
+    "YTD": "연초 이후",
+};
+
 export default function ProfitChart({ data }: { data: PriceData[] }) {
+    const [month, setMonth] = useState<RangeType>("3M");
+
     if (!data || data.length === 0) {
         return (
             <View style={styles.container}>
@@ -97,8 +108,37 @@ export default function ProfitChart({ data }: { data: PriceData[] }) {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>3개월 누적 수익률</Text>
-            <Text style={{ fontFamily: "BasicMedium", fontSize: 10, color: Colors.black, alignSelf: "flex-end" }}>기준일 : {baseDate}</Text>
+            <Text style={styles.title}>누적 수익률</Text>
+            {/* 👇 탭 버튼 */}
+            <View style={styles.tabContainer}>
+                {(Object.keys(RANGE_LABELS) as RangeType[]).map((key) => (
+                    <TouchableOpacity
+                        key={key}
+                        style={[
+                            styles.tabButton,
+                            month === key && styles.tabButtonActive,
+                        ]}
+                        onPress={() => setMonth(key)}
+                    >
+                        <Text
+                            style={[
+                                styles.tabText,
+                                month === key && styles.tabTextActive,
+                            ]}
+                        >
+                            {RANGE_LABELS[key]}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+            <Text style={{
+                fontFamily: "BasicMedium",
+                fontSize: 10,
+                color: Colors.black,
+                marginRight: 10,
+                alignSelf: "flex-end"
+            }}>기준일 : {baseDate}</Text>
+
             <LineChart
                 data={chartData}
                 curved
@@ -144,7 +184,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     title: {
-        fontSize: 16,
+        fontSize: 18,
         fontFamily: "BasicBold",
         marginBottom: 10,
         padding: 10,
@@ -153,5 +193,32 @@ const styles = StyleSheet.create({
     empty: {
         fontSize: 12,
         color: Colors.gray,
+    },
+    tabContainer: {
+        flexDirection: "row",
+        marginBottom: 10,
+    },
+    tabButton: {
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        marginHorizontal: 4,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: Colors.gray,
+        backgroundColor: "#fff",
+    },
+    tabButtonActive: {
+        backgroundColor: Colors.white,
+        borderWidth: 2,
+        borderColor: Colors.primary,
+    },
+    tabText: {
+        fontSize: 12,
+        color: Colors.gray,
+        fontFamily: "BasicMedium",
+    },
+    tabTextActive: {
+        color: Colors.primary,
+        fontFamily: "BasicBold",
     },
 });
