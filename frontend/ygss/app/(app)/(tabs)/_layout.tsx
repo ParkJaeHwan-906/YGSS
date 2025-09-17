@@ -9,6 +9,12 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { LogBox } from 'react-native';
+
+// 특정 경고 메시지를 무시하도록 설정
+LogBox.ignoreLogs([
+  'Warning: GiftedChat uses the legacy childContextTypes API'
+]);
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();

@@ -18,7 +18,6 @@ import ChatBotScreen from "@/components/chatbot/ChatBotScreen";
 import FloatingChatButton from "@/components/chatbot/FloatingChatButton";
 import { useState } from "react";
 
-console.log(ChatBotScreen,FloatingChatButton); 
 
 export default function Home() {
   const insets = useSafeAreaInsets();
