@@ -265,6 +265,17 @@ export default function ItemRatio({ data }: { data: DoughnutItem[] }) {
   const pieData = chartData.map((it, i) => ({
     ...it,
     focused: i === focusedIndex,
+    onPress: () => {
+      prevIndexRef.current = focusedIndex;   // 이전 index 기억
+      setFocusedIndex(i);                    // 눌린 index로 이동
+
+      // 애니메이션 초기화 후 실행
+      progress.value = 0;
+      progress.value = withTiming(1, {
+        duration: SWITCH_DURATION,
+        easing: Easing.inOut(Easing.cubic),
+      });
+    },
   }));
 
   const prevIdx = prevIndexRef.current;
@@ -275,14 +286,14 @@ export default function ItemRatio({ data }: { data: DoughnutItem[] }) {
   const currentStyle = useAnimatedStyle(() => {
     const t = enter.value * progress.value;
     return {
-      opacity: t,
+      // opacity: t,
       transform: [{ scale: interpolate(t, [0, 1], [0.96, 1]) }],
     };
   });
   const prevStyle = useAnimatedStyle(() => {
     const t = enter.value * progress.value;
     return {
-      opacity: 1 - t,
+      // opacity: 1 - t,
       transform: [{ scale: interpolate(t, [0, 1], [1, 0.98]) }],
       position: "absolute",
       left: 0, right: 0, top: 0, bottom: 0,

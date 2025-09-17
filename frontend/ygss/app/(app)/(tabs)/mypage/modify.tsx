@@ -43,7 +43,7 @@ export default function Modify() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 16 },
+    container: { flex: 1, padding: 16, marginTop: 10 },
     deleteButton: {
         position: "absolute",
         bottom: 20,

@@ -1,14 +1,16 @@
 // components/InvestChar.tsx
+import { useAppSelector } from "@/src/store/hooks";
 import { Colors } from "@/src/theme/colors";
+import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, Animated as RNAnimated, Easing as RNEasing, StyleSheet, Text, View } from "react-native";
 import { PieChart } from "react-native-gifted-charts";
 import Animated, {
-    Easing,
-    interpolate,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 
 type Slice = { label: "ETF" | "펀드" | "채권"; amount: number; color?: string };
@@ -19,23 +21,63 @@ const INTERVAL = 2800;
 
 const toMan = (n: number) => Math.round(n / 10_000);
 const fmtMan = (n: number) => new Intl.NumberFormat("ko-KR").format(toMan(n)) + "만원";
-
 interface InvestCharProps {
   slices?: Slice[];
-  userName?: string;
-  investType?: string;
 }
 
-export default function InvestChar({
-    slices,
-    userName = "알키",
-    investType = "위험중립형",
-  }: InvestCharProps) {
-    const palette = {
-      ETF: "#8BB6FF",
-      펀드: "#A8B7D1",
-      채권: "#FFE9B7",
-    } as const;
+export default function InvestChar({ slices }: InvestCharProps) {
+  const user = useAppSelector((state) => state.auth.user);
+
+  const userName = user?.name ?? "유저";
+  const investType = user?.riskGrade ?? "?????";
+
+  const translateY = useRef(new RNAnimated.Value(0)).current;
+
+  useEffect(() => {
+    RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(translateY, {
+          toValue: 6,
+          duration: 600,
+          easing: RNEasing.inOut(RNEasing.quad),
+          useNativeDriver: true,
+        }),
+        RNAnimated.timing(translateY, {
+          toValue: 0,
+          duration: 600,
+          easing: RNEasing.inOut(RNEasing.quad),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [translateY]);
+
+  // risk_grade_id 없으면 차트 안 보여줌
+  if (investType === "?????") {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.titleText}>
+          {userName}님은{"\n"}
+          <Text style={styles.highlight}>{investType}</Text> 입니다.
+        </Text>
+        <Image
+          source={require("@/assets/char/pointAlchi.png")}
+          style={styles.emptyIcon}
+          resizeMode="contain"
+        />
+        <Text style={styles.emptyText}>투자 성향 테스트를 해보세요!</Text>
+        <RNAnimated.View style={[{ transform: [{ translateY: translateY }] }, styles.arrowStyle]}>
+          <Ionicons name="chevron-down-outline" size={24} color="black" />
+        </RNAnimated.View>
+      </View>
+    );
+  }
+
+  const palette = {
+    ETF: "#8BB6FF",
+    펀드: "#A8B7D1",
+    채권: "#FFE9B7",
+  } as const;
 
   const baseData = useMemo(
     () =>
@@ -218,10 +260,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 24,
-    shadowColor: Colors.primary,
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 10,
+
   },
   titleText: {
     fontSize: 20,
@@ -234,7 +273,7 @@ const styles = StyleSheet.create({
   },
   highlight: {
     fontFamily: "BasicBold",
-    fontSize: 24,
+    fontSize: 28,
     color: Colors.primary,  // 강조 색상
   },
   chartWrapper: {
@@ -268,4 +307,23 @@ const styles = StyleSheet.create({
   },
   dot: { width: 10, height: 10, borderRadius: 5, marginRight: 6 },
   legendText: { fontSize: 13, color: Colors?.black ?? "#111", fontFamily: "BasicMedium" },
+  emptyIcon: {
+    width: 200,
+    height: 200,
+    alignSelf: "center",
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  emptyText: {
+    textAlign: "center",
+    marginTop: 6,
+    fontSize: 16,
+    color: Colors.gray,
+    fontFamily: "BasicMedium",
+  },
+  arrowStyle: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 16,
+  },
 });

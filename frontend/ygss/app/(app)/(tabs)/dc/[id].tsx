@@ -6,6 +6,7 @@ import ItemProperty from "@/components/molecules/ItemProperty";
 import ItemRatio from "@/components/molecules/ItemRatio";
 import ItemStrat from "@/components/molecules/ItemStrat";
 import ProfitChart from "@/components/molecules/ProfitChart";
+import { useAppSelector } from "@/src/store/hooks";
 import { Colors } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
@@ -26,12 +27,38 @@ export default function DcDetail() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const numericId = Number(id); // params는 string으로 받아오기 때문에 숫자로 변환
     const [loading, setLoading] = useState(true);
+    const [liked, setLiked] = useState<boolean | null>(null);
+    const [loadingLike, setLoadingLike] = useState(false);
+    const accessToken = useAppSelector((s) => s.auth.accessToken);
+
+    const handleLikeToggle = async () => {
+        try {
+            setLoadingLike(true);
+            const url = `${API_URL}/pension/product/${numericId}/like`;
+
+            const res = await axios.post(
+                url,
+                {},
+                {
+                    headers: {
+                        Authorization: `A103 ${accessToken}`,
+                    },
+                }
+            );
+            // API 응답이 true/false
+            setLiked(res.data === true);
+        } catch (err: any) {
+            console.log(err)
+            console.error("찜하기 요청 실패:", err.response?.status);
+        } finally {
+            setLoadingLike(false);
+        }
+    };
 
     // 상품 상세정보
     const [productDetail, setProductDetail] = useState<any>(null);
     // 그래프
     const [graphData, setGraphData] = useState<any>(null);
-
 
     useEffect(() => {
         const fetchData = async () => {
@@ -186,7 +213,11 @@ export default function DcDetail() {
             </ScrollView>
 
             {/* 상품 찜하기 버튼 fixed 고정 */}
-            <Button style={styles.button} label="찜하기"></Button>
+            {/* 찜 해제하기 색깔 변경 */}
+            <Button onPress={() => { handleLikeToggle() }} style={[
+                styles.button,
+                liked ? { backgroundColor: "#AA00FF" } : {},
+            ]} label={liked ? "찜 해제하기" : "찜하기"} disabled={loadingLike}></Button>
         </SafeAreaView>
     );
 }
