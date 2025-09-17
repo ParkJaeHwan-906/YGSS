@@ -1,6 +1,6 @@
 // app/(app)/(tabs)/dc/dc4.tsx
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Image,
   StatusBar,
   Platform,
+  Alert,
 } from "react-native";
 import { MotiView } from "moti";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -220,7 +221,7 @@ const styles = StyleSheet.create({
 
   mascot: {
     position: "absolute",
-    right: 0,
+    right: -16,
     top: -8,
     width: 180,
     height: 180,
