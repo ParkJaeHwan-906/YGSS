@@ -13,7 +13,6 @@ export default function MyInfo() {
     const user = useAppSelector((s) => s.auth.user);
     const accessToken = useAppSelector((s) => s.auth.accessToken);
     const dispatch = useAppDispatch();
-
     const [isEditing, setIsEditing] = useState(false);
     const [toastVisible, setToastVisible] = useState(false);
     const [changePassword, setChangePassword] = useState(false);

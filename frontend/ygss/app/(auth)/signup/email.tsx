@@ -141,7 +141,7 @@ export default function SignupEmail() {
                                                 ))
                                             }
                                         >
-                                            <Text>
+                                            <Text style={styles.suggestionText}>
                                                 {email.includes("@")
                                                     ? `${email.split("@")[0]}@${item}`
                                                     : `${email}@${item}`}
@@ -202,5 +202,10 @@ const styles = StyleSheet.create({
     suggestionItem: {
         padding: 10,
         fontFamily: "BasicLight"
+    },
+    suggestionText: {
+        fontSize: 12,
+        fontFamily: "BasicMedium",
+        color: Colors.black,
     },
 });

@@ -29,7 +29,7 @@ export default function MyMoney({ rate, amount }: MyMoneyProps) {
         {/* 오른쪽 정보 */}
         <View style={styles.info}>
           <Text style={[styles.rate, { color: rateColor }]}>
-            {rate > 0 ? "+" : ""}
+            + {rate > 0 ? "+" : ""}
             {rate.toFixed(1)}%
           </Text>
           <Text style={styles.amount}>{toMan(amount)} 만원</Text>
@@ -46,6 +46,9 @@ const styles = StyleSheet.create({
   wrap: {
     paddingHorizontal: 20,
     marginTop: 16,
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
   },
   title: {
     fontSize: 20,
@@ -62,7 +65,6 @@ const styles = StyleSheet.create({
   icon: {
     width: 80,
     height: 80,
-    marginRight: 20,
   },
   info: {
     flex: 1,
@@ -74,7 +76,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   amount: {
-    fontSize: 30,
+    fontSize: 25,
     fontFamily: "BasicBold",
     textAlign: "right",
     color: Colors.black,
