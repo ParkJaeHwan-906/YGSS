@@ -1,6 +1,6 @@
 // app/(app)/(tabs)/dc/dc4.tsx
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,10 +12,13 @@ import {
   StatusBar,
   Platform,
   Alert,
-} from "react-native";
+  } from "react-native";
 import { MotiView } from "moti";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "@/src/theme/colors";
+import { useRouter } from "expo-router";
+import { useSelector } from "react-redux";
+import { Picker } from "@react-native-picker/picker";
 
 // 간단한 빈 차트 박스(Placeholders)
 function ChartBox() {
@@ -27,6 +30,32 @@ function ChartBox() {
 }
 
 export default function Dc4() {
+  const router = useRouter();
+  const accessToken = useSelector((state: any) => state.auth.accessToken);
+  const [year, setYear] = useState<number>(3);
+
+  // 로그인 가드
+  useEffect(() => {
+    if (!accessToken) {
+      Alert.alert("로그인이 필요해요", "로그인 후 이용해 주세요.");
+      router.replace("/(auth)/login");
+    }
+  }, [accessToken, router]);
+
+  // 리다이렉트 직전 표시
+  if (!accessToken) {
+    return (
+      <SafeAreaView
+        edges={["top", "left", "right"]}
+        style={[styles.safeArea, { backgroundColor: Colors?.back ?? "#F4F6FF", alignItems: "center", justifyContent: "center" }]}
+      >
+        <StatusBar barStyle="dark-content" backgroundColor={Colors?.back ?? "#F4F6FF"} />
+        <Text style={{ fontSize: 16, color: "#666" }}>로그인 페이지로 이동 중…</Text>
+      </SafeAreaView>
+    );
+  }
+
+
   return (
     <SafeAreaView
       edges={["top", "left", "right"]}
@@ -49,7 +78,19 @@ export default function Dc4() {
           <View style={styles.titleBlock}>
             {/* 1줄: 배지 + '년 후,' */}
             <View style={styles.inlineRow}>
-              <Text style={styles.badge}>3</Text>
+              <View style={styles.badgeWrap}>
+                <Picker
+                  selectedValue={year}
+                  onValueChange={(v) => setYear(v)}
+                  dropdownIconColor= "#fff"
+                  style={styles.picker}
+                >
+                  <Picker.Item label="3" value={3} />
+                  <Picker.Item label="5" value={5} />
+                  <Picker.Item label="7" value={7} />
+                  <Picker.Item label="10" value={10} />
+                </Picker>
+              </View>
               <Text style={styles.headerTitle1}>년 후,</Text>
             </View>
             {/* 2줄: '나의 퇴직연금은?' */}
@@ -189,21 +230,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
   },
-  badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  badgeWrap: {
     borderRadius: 10,
     backgroundColor: "#FFFFFF",
-    fontSize: 18,
-    fontFamily: "BasicBold",
-    color: "#3D3D4E",
-    textAlign: "center",
-    marginRight: 8,
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
+    marginRight: 8,
+  },
+  picker: {
+    width: 80,
+    height: 40,
+    color: Colors?.black ?? "#111",
+    fontSize: 18,
+    fontFamily: "BasicBold",
+    textAlign: "center",
   },
   headerTitle1: {
     fontSize: 28,
