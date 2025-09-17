@@ -2,10 +2,10 @@
 import Button from "@/components/molecules/Button";
 import Caution from "@/components/molecules/Caution";
 import ItemCorp from "@/components/molecules/ItemCorp";
-import ItemProperty from "@/components/molecules/ItemProperty";
 import ItemRatio from "@/components/molecules/ItemRatio";
 import ItemStrat from "@/components/molecules/ItemStrat";
 import ProfitChart from "@/components/molecules/ProfitChart";
+import ItemInfo from "@/components/organisms/ItemInfo";
 import { useAppSelector } from "@/src/store/hooks";
 import { Colors } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
@@ -105,35 +105,6 @@ export default function DcDetail() {
         ).start();
     }, [translateY]);
 
-    const getProductIcon = (type: string) => {
-        switch (type?.toLowerCase()) {
-            case "etf":
-                return etfIcon;
-            case "bond":
-                return bondIcon;
-            case "펀드":
-            case "fund":
-                return fundIcon;
-            default:
-                return fireIcon;
-        }
-    };
-
-    const getRiskColor = (risk: string) => {
-        switch (risk) {
-            case "매우높은위험":
-                return "#FA9090";
-            case "높은위험":
-                return "#FF955C";
-            case "다소높은위험":
-                return "#FFDC00";
-            case "보통위험":
-                return "#8FCE6A";
-            default:
-                return "#7F8AF3";
-        }
-    };
-
     if (loading) return <ActivityIndicator size="large" color={Colors.primary} />;
     if (!productDetail) return <Text>상품 정보를 불러올 수 없습니다.</Text>;
     if (!graphData) return <Text>그래프 데이터를 불러올 수 없습니다.</Text>;
@@ -143,36 +114,8 @@ export default function DcDetail() {
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
 
-                <View style={styles.topContainer}>
-                    <Text style={styles.topText}>{productDetail.productSystypeSummary}</Text>
-                </View>
-
-                <View style={styles.productContainer}>
-                    <Text style={styles.productText}>{productDetail.product}</Text>
-                </View>
-
-                {/* 상품 기본 속성 */}
-                <View style={styles.propertyContainer}>
-                    <ItemProperty
-                        icon={fireIcon}
-                        label="위험등급"
-                        value={productDetail.riskGrade}
-                        valueColor={getRiskColor(productDetail.riskGrade)}
-                    />
-                    <ItemProperty
-                        icon={getProductIcon(productDetail.productType)}
-                        label="상품유형"
-                        value={productDetail.productType}
-                    />
-                    <ItemProperty
-                        icon={interestIcon}
-                        label="예상수익률"
-                        value={`${productDetail.profitPrediction}%`}
-                        valueColor="#FF0000"
-                    />
-                </View>
-
-                {/* 세부 컴포넌트 */}
+                {/* 상품 기본 정보 */}
+                <ItemInfo productDetail={productDetail} />
 
                 {/* 투자 전략 */}
                 <View style={styles.stratContainer}>
@@ -226,45 +169,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: Colors.back,
-    },
-    topContainer: {
-        alignSelf: "center",
-        backgroundColor: Colors.white,
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        marginTop: 30,
-        // 그림자 
-        shadowColor: Colors.primary,
-        shadowOpacity: 0.5,
-        shadowOffset: { width: 0, height: 4 }, // 아래쪽으로 퍼지게
-        shadowRadius: 10,
-        elevation: 6,
-        marginBottom: 15,
-    },
-    topText: {
-        fontFamily: "BasicBold",
-        fontSize: 12,
-        color: Colors.black,
-    },
-    productContainer: {
-        alignSelf: "center",
-        marginTop: 8,
-        marginBottom: 20,
-    },
-    productText: {
-        fontFamily: "BasicBold",
-        fontSize: 25,
-        color: Colors.black,
-        textAlign: "center",
-    },
-    propertyContainer: {
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "flex-start",
-        paddingVertical: 20,
-        backgroundColor: Colors.back,
-        marginBottom: 20,
     },
     stratContainer: { backgroundColor: Colors.white, marginBottom: 10 },
     corpContainer: { backgroundColor: Colors.white, marginBottom: 10 },
