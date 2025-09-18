@@ -8,7 +8,7 @@ interface Message {
   id: string;
   text: string;
   isUser: boolean;
-  timestamp: Date;
+  timestamp: string; // Date → string으로 변경
   isTyping?: boolean;
   displayText?: string;
 }
@@ -53,7 +53,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             styles.timestamp,
             message.isUser ? styles.userTimestamp : styles.botTimestamp
           ]}>
-            {message.timestamp.toLocaleTimeString('ko-KR', { 
+            {new Date(message.timestamp).toLocaleTimeString('ko-KR', { 
               hour: '2-digit', 
               minute: '2-digit',
               hour12: false 

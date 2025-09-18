@@ -6,11 +6,13 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface ChatHeaderProps {
   onClose: () => void;
+  onSearchPress: () => void;
   title?: string;
 }
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({ 
   onClose, 
+  onSearchPress,
   title = "알키 상담 봇" 
 }) => {
   return (
@@ -19,7 +21,9 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
       <Text style={styles.headerTitle}>{title}</Text>
-      <View style={styles.headerRight} />
+      <TouchableOpacity onPress={onSearchPress} style={styles.searchButton}>
+        <Ionicons name="search" size={24} color="#fff" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -45,8 +49,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 16,
   },
-  headerRight: {
-    width: 32,
+  searchButton: {
+    padding: 4,
   },
 });
 

@@ -1,5 +1,5 @@
 // app/(app)/(tabs)/_layout.tsx
-import { Tabs } from 'expo-router';
+import { Tabs, usePathname } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
 
@@ -11,6 +11,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { LogBox } from 'react-native';
 
+// 챗봇 관련 imports
+
+import { useChatbot } from '@/hooks/useChatbot';
+import ChatBotScreen from "@/components/chatbot/ChatBotScreen";
+import FloatingChatButton from "@/components/chatbot/FloatingChatButton";
+import { Modal } from 'react-native';
+
 // 특정 경고 메시지를 무시하도록 설정
 LogBox.ignoreLogs([
   'Warning: GiftedChat uses the legacy childContextTypes API'
@@ -19,8 +26,12 @@ LogBox.ignoreLogs([
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
+  const { isChatVisible, openChat, closeChat } = useChatbot();
+  const pathname = usePathname();
 
+  const shouldShowChatbot = !pathname.includes('/mypage');
   return (
+    <>
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
@@ -87,5 +98,21 @@ export default function TabLayout() {
       <Tabs.Screen name="dc/dc4" options={{ href: null }} />
 
     </Tabs>
+
+      {/* 조건부로 플로팅 챗봇 버튼 표시 - home, dc, irp에서만 */}
+      {shouldShowChatbot && (
+        <FloatingChatButton onPress={openChat} />
+      )}
+
+      {/* 챗봇 모달 */}
+      <Modal
+        visible={isChatVisible}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={closeChat}
+      >
+        <ChatBotScreen onClose={closeChat} />
+      </Modal>
+      </>
   );
 }
