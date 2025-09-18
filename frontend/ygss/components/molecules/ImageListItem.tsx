@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
   rowCenter: { flex: 1 },
   rowTitle: { fontFamily: "BasicMedium", fontSize: 16, color: Colors.black },
   rowSub: { fontFamily: "BasicMedium", fontSize: 12, color: Colors.gray, marginTop: 4 },
-  rowRateUp: { fontFamily: "BasicBold", fontSize: 13, color: "#FF2C2C" },
-  rowRateDown: { fontFamily: "BasicBold", fontSize: 13, color: "#2F6FFF" },
+  rowRateUp: { fontFamily: "BasicBold", fontSize: 14, color: "#FF2C2C" },
+  rowRateDown: { fontFamily: "BasicBold", fontSize: 14, color: "#2F6FFF" },
   divider: { height: 1, backgroundColor: "#E5E5E5" },
 });
