@@ -32,8 +32,8 @@ export default function Mypage() {
 
     const handleLogout = async () => {
         await deleteRefreshToken();     // SecureStore 비우기
-        dispatch(signOut());            // 전역 상태 초기화
         router.replace("/(auth)/login"); // 뒤로가기 못하게 교체 이동
+        dispatch(signOut());            // 전역 상태 초기화
     };
 
     //  찜한 상품 불러오기
