@@ -3,6 +3,7 @@ package com.ygss.backend.pensionProduct.repository;
 import com.ygss.backend.pensionProduct.dto.entity.PensionProduct;
 import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
+import com.ygss.backend.pensionProduct.dto.request.UpdateProfitRequest;
 import com.ygss.backend.pensionProduct.dto.response.*;
 import org.apache.ibatis.annotations.*;
 import org.springframework.stereotype.Repository;
@@ -523,4 +524,18 @@ public interface PensionProductRepository {
                     "LIMIT 9"
     })
     List<BestLikedProductDto> selectBest9LikedProducts();
+
+
+    @Update("<script>" +
+            "UPDATE retire_pension_products SET next_year_profit_rate = CASE id " +
+            "<foreach collection='items' item='item'>" +
+            "WHEN #{item.id} THEN #{item.profit} " +
+            "</foreach>" +
+            "END " +
+            "WHERE id IN " +
+            "<foreach collection='items' item='item' open='(' separator=',' close=')'>" +
+            "#{item.id}" +
+            "</foreach>" +
+            "</script>")
+    int batchUpdateProfit(@Param("items") List<UpdateProfitRequest> items);
 }

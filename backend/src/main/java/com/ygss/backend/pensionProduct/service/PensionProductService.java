@@ -5,6 +5,7 @@ import com.ygss.backend.pensionProduct.dto.entity.ProductType;
 import com.ygss.backend.pensionProduct.dto.entity.Systype;
 import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
+import com.ygss.backend.pensionProduct.dto.request.UpdateProfitRequest;
 import com.ygss.backend.pensionProduct.dto.response.*;
 
 import java.util.List;
@@ -33,4 +34,6 @@ public interface PensionProductService {
     AllLikedProductDto getAllLikedProduct(String name);
 
     List<BestLikedProductDto> getBest9LikedProducts();
+
+    Boolean updateProfit(List<UpdateProfitRequest> request);
 }

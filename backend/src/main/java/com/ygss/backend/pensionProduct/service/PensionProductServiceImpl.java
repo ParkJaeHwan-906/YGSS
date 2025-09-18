@@ -3,6 +3,7 @@ package com.ygss.backend.pensionProduct.service;
 import com.ygss.backend.global.exception.UserNotFoundException;
 import com.ygss.backend.pensionProduct.dto.entity.PensionProduct;
 import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
+import com.ygss.backend.pensionProduct.dto.request.UpdateProfitRequest;
 import com.ygss.backend.pensionProduct.dto.response.*;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
 import com.ygss.backend.pensionProduct.repository.PensionProductRepository;
@@ -10,11 +11,12 @@ import com.ygss.backend.user.repository.UserAccountsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 퇴직연금 상품 서비스
@@ -219,5 +221,23 @@ public class PensionProductServiceImpl implements PensionProductService {
     @Override
     public List<BestLikedProductDto> getBest9LikedProducts() {
         return pensionProductRepository.selectBest9LikedProducts();
+    }
+
+    @Override
+    @Transactional(
+            isolation = Isolation.READ_COMMITTED,  // 격리 수준
+            propagation = Propagation.REQUIRED,    // 전파 방식
+            readOnly = false                       // 읽기 전용 여부
+    )
+    public Boolean updateProfit(List<UpdateProfitRequest> items) {
+        // 바로 업데이트 - affected rows로 검증
+        int updatedCount = pensionProductRepository.batchUpdateProfit(items);
+
+        // 업데이트된 행 수로 검증
+        if (updatedCount != items.size()) {
+            throw new RuntimeException("Invalid ID found");
+        }
+
+        return true;
     }
 }
