@@ -1,10 +1,17 @@
-// components/InvestChar.tsx
 import InvestBias from "@/components/molecules/InvestBias";
 import { useAppSelector } from "@/src/store/hooks";
 import { Colors } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Image, Pressable, Animated as RNAnimated, Easing as RNEasing, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  Pressable,
+  Animated as RNAnimated,
+  Easing as RNEasing,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { PieChart } from "react-native-gifted-charts";
 import Animated, {
   Easing,
@@ -14,14 +21,16 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-type Slice = { label: "ETF" | "펀드" | "채권"; amount: number; color?: string };
+export type Slice = {
+  label: "ETF" | "펀드" | "채권";
+  amount: number; // 👉 count(개수)
+  color?: string;
+};
 
-const ENTER_DURATION = 900;  // 최초 등장
-const SWITCH_DURATION = 1100; // 초점 전환
+const ENTER_DURATION = 900;
+const SWITCH_DURATION = 1100;
 const INTERVAL = 2800;
 
-const toMan = (n: number) => Math.round(n / 10_000);
-const fmtMan = (n: number) => new Intl.NumberFormat("ko-KR").format(toMan(n)) + "만원";
 interface InvestCharProps {
   slices?: Slice[];
 }
@@ -31,11 +40,12 @@ export default function InvestChar({ slices }: InvestCharProps) {
 
   const userName = user?.name ?? "유저";
   const investType = user?.riskGrade ?? "?????";
-  const [showBias, setShowBias] = useState(false); // 투자성향 컴포넌트 보여주는지 
-  const translateY = useRef(new RNAnimated.Value(0)).current;
 
+  const [showBias, setShowBias] = useState(false);
+  const translateY = useRef(new RNAnimated.Value(0)).current;
   const slide = useSharedValue(0);
 
+  // 위아래로 화살표 애니메이션
   useEffect(() => {
     RNAnimated.loop(
       RNAnimated.sequence([
@@ -55,22 +65,18 @@ export default function InvestChar({ slices }: InvestCharProps) {
     ).start();
   }, [translateY]);
 
-
+  // Bias 토글 애니메이션
   useEffect(() => {
     slide.value = withTiming(showBias ? 1 : 0, { duration: 300 });
   }, [showBias]);
 
   const biasStyle = useAnimatedStyle(() => ({
     opacity: slide.value,
-    transform: [
-      {
-        translateY: slide.value === 1 ? 0 : -20, // 🔹 위에서 아래로
-      },
-    ],
-    height: slide.value === 1 ? "auto" : 0, // 안 보일 땐 높이 0
+    transform: [{ translateY: slide.value === 1 ? 0 : -20 }],
+    height: slide.value === 1 ? "auto" : 0,
   }));
 
-  // risk_grade_id 없으면 차트 안 보여줌
+  // 투자 성향 미정일 때
   if (investType === "?????") {
     return (
       <View style={styles.card}>
@@ -97,11 +103,9 @@ export default function InvestChar({ slices }: InvestCharProps) {
           </Pressable>
         </RNAnimated.View>
 
-        {/* 🔹 슬라이드 애니메이션 InvestBias */}
         <Animated.View style={[{ overflow: "hidden" }, biasStyle]}>
           <InvestBias />
         </Animated.View>
-
       </View>
     );
   }
@@ -112,19 +116,30 @@ export default function InvestChar({ slices }: InvestCharProps) {
     채권: "#FFE9B7",
   } as const;
 
-  const baseData = useMemo(
-    () =>
-      (slices ?? [
-        { label: "ETF", amount: 6_000_000 },
-        { label: "펀드", amount: 2_500_000 },
-        { label: "채권", amount: 1_500_000 },
-      ]).map((it) => ({ ...it, color: it.color ?? palette[it.label] })),
-    [slices]
-  );
+  // slices 없으면 더미 데이터
+  const baseData = useMemo(() => {
+    if (!slices || slices.length === 0) {
+      // 🔹 아무것도 찜 안했을 경우 → 회색 1개
+      return [{ label: "없음" as any, amount: 1, color: "#D3D3D3" }];
+    }
+
+    return slices.map((it) => ({
+      ...it,
+      color: it.color ?? palette[it.label],
+    }));
+  }, [slices]);
+
+  if (baseData.length === 0) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.emptyText}>찜한 상품이 없습니다.</Text>
+      </View>
+    );
+  }
 
   const total = baseData.reduce((a, c) => a + (c.amount || 0), 0) || 1;
+  const pct = (amt: number) => Math.round((amt / total) * 100);
 
-  // 차트에 넣을 원본 값(금액 그대로)
   const chartBase = baseData.map((it) => ({
     value: it.amount,
     color: it.color!,
@@ -134,14 +149,10 @@ export default function InvestChar({ slices }: InvestCharProps) {
   const [focusedIndex, setFocusedIndex] = useState(0);
   const prevIndexRef = useRef(0);
 
-  // 중앙 라벨용 진행도
   const labelProgress = useSharedValue(0);
-
-  // 도넛 자체 펄스/웨이블 진행도
   const ringProgress = useSharedValue(0);
 
   useEffect(() => {
-    // 최초 등장 애니메이션
     labelProgress.value = withTiming(1, {
       duration: ENTER_DURATION,
       easing: Easing.inOut(Easing.cubic),
@@ -156,14 +167,12 @@ export default function InvestChar({ slices }: InvestCharProps) {
       const next = (focusedIndex + 1) % baseData.length;
       setFocusedIndex(next);
 
-      // 라벨 크로스페이드
       labelProgress.value = 0;
       labelProgress.value = withTiming(1, {
         duration: SWITCH_DURATION,
         easing: Easing.inOut(Easing.cubic),
       });
 
-      // 도넛 펄스 + 살짝 회전 웨이블
       ringProgress.value = 0;
       ringProgress.value = withTiming(1, {
         duration: SWITCH_DURATION,
@@ -172,15 +181,11 @@ export default function InvestChar({ slices }: InvestCharProps) {
     }, INTERVAL);
 
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusedIndex, baseData.length]);
 
-  // 중앙 라벨 크로스페이드
   const prevIdx = prevIndexRef.current;
   const current = baseData[focusedIndex];
   const previous = baseData[prevIdx];
-
-  const pct = (amt: number) => Math.round((amt / total) * 100);
 
   const currentStyle = useAnimatedStyle(() => ({
     opacity: labelProgress.value,
@@ -198,24 +203,17 @@ export default function InvestChar({ slices }: InvestCharProps) {
     justifyContent: "center",
   }));
 
-  // 도넛 펄스/웨이블: 반지름/내부반지름/회전값 보간
   const baseRadius = 85;
   const baseInner = 55;
 
   const animatedChartStyle = useAnimatedStyle(() => {
-    // 0→1 구간에서 살짝 커졌다(1.0→1.04) 돌아오는 느낌
     const scale = interpolate(ringProgress.value, [0, 0.6, 1], [1, 1.04, 1]);
-    const rotate = interpolate(ringProgress.value, [0, 0.5, 1], [0, 0.06, 0]); // 라디안
+    const rotate = interpolate(ringProgress.value, [0, 0.5, 1], [0, 0.06, 0]);
     return {
       transform: [{ rotateZ: `${rotate}rad` }, { scale }],
     };
   });
 
-  // radius / innerRadius도 동시에 펄스
-  const animatedRadius = useSharedValue(baseRadius);
-  const animatedInner = useSharedValue(baseInner);
-
-  // ringProgress 의 값으로 radius/innerRadius를 도출
   const radius = () =>
     interpolate(ringProgress.value, [0, 0.6, 1], [baseRadius, baseRadius + 6, baseRadius]);
   const innerRadius = () =>
@@ -223,8 +221,6 @@ export default function InvestChar({ slices }: InvestCharProps) {
 
   return (
     <View style={styles.card}>
-
-      {/* 🔹 타이틀 */}
       <Text style={styles.titleText}>
         {userName}님은{"\n"}
         <Text style={styles.highlight}>'{investType}'</Text> 입니다.
@@ -246,20 +242,16 @@ export default function InvestChar({ slices }: InvestCharProps) {
             showGradient
             labelsPosition="outward"
             centerLabelComponent={() => (
-              <View
-                style={{ width: 140, height: 60, alignItems: "center", justifyContent: "center" }}
-              >
+              <View style={{ width: 140, height: 60, alignItems: "center", justifyContent: "center" }}>
                 {/* 이전 라벨 */}
                 <Animated.View style={prevStyle}>
                   <Text style={styles.centerTitle}>{previous.label}</Text>
-                  <Text style={styles.centerAmount}>{fmtMan(previous.amount)}</Text>
                   <Text style={styles.centerPct}>{pct(previous.amount)}%</Text>
                 </Animated.View>
 
                 {/* 현재 라벨 */}
                 <Animated.View style={[{ alignItems: "center" }, currentStyle]}>
                   <Text style={styles.centerTitle}>{current.label}</Text>
-                  <Text style={styles.centerAmount}>{fmtMan(current.amount)}</Text>
                   <Text style={styles.centerPct}>{pct(current.amount)}%</Text>
                 </Animated.View>
               </View>
@@ -268,39 +260,22 @@ export default function InvestChar({ slices }: InvestCharProps) {
         </Animated.View>
       </View>
 
-      {/* 총합 (만원 단위) */}
-      <Text style={styles.totalText}>총합: {fmtMan(total)}</Text>
-
-      {/* 범례 (만원 단위) */}
+      {/* 범례 */}
       <View style={styles.legendContainer}>
-        {baseData.map((item, idx) => (
-          <View key={idx} style={styles.legendItem}>
-            <View style={[styles.dot, { backgroundColor: item.color }]} />
-            <Text style={styles.legendText}>
-              {item.label}: {fmtMan(item.amount)} ({pct(item.amount)}%)
-            </Text>
-          </View>
-        ))}
+        {baseData[0].label === "없음" ? (
+          <Text style={styles.emptyText}>찜한 상품이 없습니다.</Text>
+        ) : (
+          baseData.map((item, idx) => (
+            <View key={idx} style={styles.legendItem}>
+              <View style={[styles.dot, { backgroundColor: item.color }]} />
+              <Text style={styles.legendText}>
+                {item.label}: {pct(item.amount)}%
+              </Text>
+            </View>
+          ))
+        )}
       </View>
 
-
-      <RNAnimated.View
-        style={[{ transform: [{ translateY: translateY }] }, styles.arrowStyle]}
-      >
-        <Pressable onPress={() => setShowBias(!showBias)}>
-          <Ionicons
-            name={showBias ? "chevron-up-outline" : "chevron-down-outline"}
-            size={24}
-            color="black"
-          />
-        </Pressable>
-      </RNAnimated.View>
-      {!showBias && <Text style={styles.retakeText}>투자 성향 검사 다시 하러가기</Text>}
-
-      {/* 🔹 슬라이드 애니메이션 InvestBias */}
-      <Animated.View style={[{ overflow: "hidden" }, biasStyle]}>
-        <InvestBias />
-      </Animated.View>
     </View>
   );
 }
@@ -328,7 +303,7 @@ const styles = StyleSheet.create({
   highlight: {
     fontFamily: "BasicBold",
     fontSize: 28,
-    color: Colors.primary,  // 강조 색상
+    color: Colors.primary,
   },
   chartWrapper: {
     alignItems: "center",
@@ -337,15 +312,7 @@ const styles = StyleSheet.create({
     marginBottom: 26,
   },
   centerTitle: { fontSize: 16, fontFamily: "BasicBold", color: Colors.black },
-  centerAmount: { fontSize: 12, fontFamily: "BasicMedium", color: "#444", marginTop: 2 },
   centerPct: { fontSize: 11, fontFamily: "BasicMedium", color: "#8A8AA3", marginTop: 1 },
-  totalText: {
-    textAlign: "center",
-    marginTop: 6,
-    fontSize: 12,
-    color: "#666",
-    fontFamily: "BasicMedium",
-  },
   legendContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -379,12 +346,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginVertical: 16,
-  },
-  retakeText: {
-    textAlign: "center",
-    marginTop: 6,
-    fontSize: 12,
-    color: Colors.gray,
-    fontFamily: "BasicMedium",
   },
 });
