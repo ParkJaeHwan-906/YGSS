@@ -60,6 +60,7 @@ export default function DcDetail() {
                 });
                 console.log(detailRes.data)
                 setProductDetail(detailRes.data);
+                setLiked(detailRes.data.isLiked);
             } catch (err: any) {
                 console.error("상품 상세 불러오기 실패");
                 console.error("상태코드:", err.response?.status);
