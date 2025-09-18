@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ScrollView } from "react-native";
+import { ScrollView, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 import ListItem from "@/components/molecules/ListItem";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import Tab, { AssetGroup, CurrentTab } from "@/components/organisms/Tab";
@@ -55,6 +55,22 @@ export default function Dc1() {
     if (tab === "펀드") return "FUND";
     return "ALL";
   }, [group, tab]);
+
+  // 스크롤 상태 추가
+  const scrollRef = useRef<ScrollView>(null);
+  const [showTop, setShowTop] = useState(false);
+  const pressedMoreRef = useRef(false);
+
+  // 스크롤 핸들러
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = e.nativeEvent.contentOffset.y;
+  
+    // 일정 이상 내려가면 표시 (예: 400px)
+    if (y > 400 && !showTop) setShowTop(true);
+    // 충분히 위로 올라오면 숨김 (단, '더보기'를 누른 적이 없을 때만 자동 숨김)
+    if (y <= 150 && showTop && !pressedMoreRef.current) setShowTop(false);
+  };
+
 
   // 초기 로드(상태 변경 시 1회 요청하여 버퍼 채우고 첫 10개 세팅)
   const fetchInitial = async () => {
@@ -114,12 +130,37 @@ export default function Dc1() {
     setItems((prev) => [...prev, ...slice]);
     setPage(nextPage);
     setHasMore(end < buf.length);
+
+    // 버튼 누를 시, top 버튼 생성
+    pressedMoreRef.current = true;
+    setShowTop(true);
+  };
+
+  // 최상단 이동 핸들러
+  const handlePressToTop = () => {
+    // 스크롤 맨 위로
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  
+    // 리스트를 "처음 상태(10개)"로 복귀
+    const buf = bufferRef.current ?? [];
+    setItems(buf.slice(0, PAGE_SIZE));
+    setPage(0);
+    setHasMore(buf.length > PAGE_SIZE);
+  
+    // ‘더보기’ 플래그 초기화 & 버튼 숨김
+    pressedMoreRef.current = false;
+    setShowTop(false);
   };
 
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
+      <ScrollView
+        ref={scrollRef}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ padding: 20 }}
+      >
         {/* 상단 카드 */}
         <View style={styles.topContainer}>
           {/* 왼쪽 6 */}
@@ -150,21 +191,6 @@ export default function Dc1() {
             </TouchableOpacity>
           </View>
         </View>
-
-
-        {/* 임시 etf/fund 상세정보 가는 라우터 */}
-        <TouchableOpacity style={{ marginTop: 20 }}
-          onPress={() => router.push({ pathname: "/dc/etf_fund/[id]", params: { id: "35" } })}
-        >
-          <Text>etf/fund 상세정보</Text>
-        </TouchableOpacity>
-
-        {/* 임시 bond 상세정보 가는 라우터 */}
-        <TouchableOpacity style={{ marginTop: 20 }}
-          onPress={() => router.push({ pathname: "/dc/bond/[id]", params: { id: "35" } })}
-        >
-          <Text>bond 상세정보</Text>
-        </TouchableOpacity>
 
         {/* 알키 설명 박스 */}
         <View style={styles.explainBox}>
@@ -198,25 +224,32 @@ export default function Dc1() {
             <Text style={{ padding: 16, color: "#666" }}>표시할 항목이 없어요.</Text>
           ) : (
             // ✅ ListItem으로 렌더링
-            items.map((it) => (
-              <ListItem
-                key={String(it.id)}
-                title={it.title}
-                subTitle={it.subTitle}
-                rate={it.rate}
-                risk={it.risk}
-                onPress={() =>
-                  router.push({ pathname: "/dc/[id]", params: { id: String(it.id) } })
+            items.map((it) => {
+              const destPath = it.kind === "BOND" ? "/dc/bond/[id]" : "/dc/etf_fund/[id]";
+
+              return (
+                <ListItem
+                  key={String(it.id)}
+                  title={it.title}
+                  subTitle={it.subTitle}
+                  rate={it.rate}
+                  risk={it.risk}
+                  onPress={() =>
+                  router.push({
+                    pathname: destPath,
+                    params: { id: String(it.id) },
+                  })
                 }
               // rateColorBy="risk" // 기본이 risk라 생략 가능
               />
-            ))
-          )}
+            )
+          })
+        )}
 
           {/* 🔹 스크롤 힌트(더 보기) */}
           {hasMore && (
             <Pressable onPress={loadMore} style={styles.moreHint}>
-              <Text style={styles.moreHintText}>더 보기 · {PAGE_SIZE}개</Text>
+              <Text style={styles.moreHintText}>더보기</Text>
             </Pressable>
           )}
           {!hasMore && (
@@ -226,6 +259,13 @@ export default function Dc1() {
           )}
         </View>
       </ScrollView>
+
+      {/* ▼ 우하단 위로가기 FAB */}
+      {showTop && (
+        <TouchableOpacity style={styles.fab} onPress={handlePressToTop} activeOpacity={0.85}>
+          <Text style={styles.fabText}>↑</Text>
+        </TouchableOpacity>
+      )}
     </SafeAreaView >
   );
 }
@@ -238,7 +278,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors?.back ?? "#F4F6FF",
-    padding: 20,
+    padding: 16,
   },
   topContainer: {
     flexDirection: "row",
@@ -281,7 +321,7 @@ const styles = StyleSheet.create({
   },
   // 알키 설명 박스
   explainBox: {
-    height: 600,
+    height: 300,
     padding: 10,
     marginTop: 10,
     alignItems: "center",
@@ -305,7 +345,6 @@ const styles = StyleSheet.create({
   moreHint: {
     marginTop: 8,
     borderRadius: 10,
-    borderWidth: 1,
     borderColor: Colors?.gray ?? "#E5E7EB",
     backgroundColor: Colors?.white ?? "#FFF",
     alignItems: "center",
@@ -316,5 +355,26 @@ const styles = StyleSheet.create({
     fontFamily: "BasicMedium",
     fontSize: 14,
     color: Colors?.black ?? "#111827",
+  },
+  fab: {
+    position: "absolute",
+    right: 16,
+    bottom: 24,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors?.primary ?? "#4666FF",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  fabText: {
+    fontSize: 20,
+    color: "#fff",
+    fontFamily: "BasicBold",
+    lineHeight: 40,
   },
 });

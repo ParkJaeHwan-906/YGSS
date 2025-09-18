@@ -89,6 +89,17 @@ export default function Tab({
     [group, riskyTabs, safeTabs]
   );
 
+
+  useEffect(() => {
+    // 그룹 변경 시 기본 탭을 강제 세팅
+    if (group === "위험자산" && tab !== "전체") {
+      onTabChange("전체");
+    } else if (group === "안전자산" && tab !== "채권") {
+      onTabChange("채권");
+    }
+  }, [group]); // group 바뀔 때만 동작
+
+
   return (
     <View style={[styles.wrap, style]}>
       {/* 상단 그룹 토글(슬라이드바) */}

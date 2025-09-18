@@ -24,7 +24,7 @@ export default function DcDetail() {
     const handleLikeToggle = async () => {
         try {
             setLoadingLike(true);
-            const url = `${API_URL}/pension/bond/${numericId}/like`;
+            const url = `${API_URL}/product/dc/bond/${numericId}/like`;
 
             const res = await axios.post(
                 url,
@@ -53,7 +53,7 @@ export default function DcDetail() {
         const fetchData = async () => {
             try {
                 // 상품 기본 정보
-                const detailUrl = `${API_URL}/pension/bond/${numericId}`;
+                const detailUrl = `${API_URL}/product/dc/bond/${numericId}`;
                 const detailRes = await axios.get(detailUrl, {
                     headers: { Authorization: `A103 ${accessToken}` }
                 });
