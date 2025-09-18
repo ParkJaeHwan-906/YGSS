@@ -1,14 +1,54 @@
 // app/(app)/(tabs)/dc/dc3.tsx
 
+import ImageList, { ImageListData } from "@/components/organisms/ImageList";
 import ItemCarousel from "@/components/organisms/ItemCarousel";
+import { useAppSelector } from "@/src/store/hooks";
 import { Colors } from "@/src/theme/colors";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+const API_URL = process.env.EXPO_PUBLIC_API_URL as string;
+
 export default function Dc3() {
+  const [top3, setTop3] = useState<ImageListData[]>([]);
+  const [rest, setRest] = useState<ImageListData[]>([]);
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
+
+  useEffect(() => {
+    const fetchRecommend = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/recommend/product`, {
+          headers: {
+            Authorization: `A103 ${accessToken}`,
+          },
+        });
+        console.log("추천상품 응답:", res.data);
+
+        // 예시 응답 구조: [{ productName, companyName, finalProfitRate, type }]
+        const mapped: ImageListData[] = res.data.map((it: any) => ({
+          logo:
+            it.type === "BOND"
+              ? require("@/assets/icon/bond.png")
+              : require("@/assets/icon/etf.png"),
+          title: it.productName,
+          subTitle: it.companyName,
+          rate: it.finalProfitRate ?? 0,
+        }));
+
+        setTop3(mapped.slice(0, 3));
+        setRest(mapped.slice(3));
+      } catch (err: any) {
+        console.error("추천상품 불러오기 실패:", err.response?.status, err.message);
+      }
+    };
+
+    fetchRecommend();
+  }, [accessToken]);
+
   return (
     <SafeAreaView
-      edges={['top', 'left', 'right']}                             // ✅ 상단/좌우 세이프엣지
       style={[styles.safeArea, { backgroundColor: Colors?.back ?? "#F4F6FF" }]}
     >
       <ScrollView
@@ -21,57 +61,24 @@ export default function Dc3() {
             <Text style={styles.headerTitleLine2}>알키의 상품 추천</Text>
           </View>
           <Image
-            source={require("@/assets/icon/search.png")} // 없으면 임시로 다른 아이콘 사용
+            source={require("@/assets/icon/search.png")}
             style={styles.headerIcon}
           />
         </View>
+
+        {/* ===== Carousel (Top3) ===== */}
         <View style={styles.carouselTrack}>
-          <ItemCarousel />
-          {/* 캡션 */}
+          <ItemCarousel items={top3} />
           <Text style={styles.caption}>대표 수익률은 3개월 기준입니다.</Text>
         </View>
 
-        {/* ===== Section: 더 많은 상품 확인하기 ===== */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>더 많은 상품 확인하기</Text>
-        </View>
-
-        {/* 리스트 placeholder */}
-        <View style={styles.list}>
-          <View style={styles.row}>
-            <View style={styles.logoStub}><Text style={styles.logoTxt}>let:</Text></View>
-            <View style={styles.rowCenter}>
-              <Text style={styles.rowTitle}>롯데손해보험</Text>
-              <Text style={styles.rowSub}>롯데손해보험</Text>
-            </View>
-            <Text style={styles.rowRateUp}>+10.5%</Text>
-          </View>
-          <View style={styles.divider} />
-
-          <View style={styles.row}>
-            <View style={styles.logoStub}><Text style={styles.logoTxt}>let:</Text></View>
-            <View style={styles.rowCenter}>
-              <Text style={styles.rowTitle}>롯데손해보험</Text>
-              <Text style={styles.rowSub}>롯데손해보험</Text>
-            </View>
-            <Text style={styles.rowRateUp}>+10.5%</Text>
-          </View>
-          <View style={styles.divider} />
-
-          <View style={styles.row}>
-            <View style={styles.logoStub}><Text style={styles.logoTxt}>let:</Text></View>
-            <View style={styles.rowCenter}>
-              <Text style={styles.rowTitle}>미국ETF</Text>
-              <Text style={styles.rowSub}>롯데손해보험</Text>
-            </View>
-            <Text style={styles.rowRateDown}>-2.4%</Text>
-          </View>
-
-          {/* 아래 화살표 아이콘 영역(임시) */}
-          <View style={{ alignItems: "center", paddingVertical: 12 }}>
-            <Text style={{ fontSize: 18 }}>⌄</Text>
-          </View>
-        </View>
+        <ImageList
+          items={rest}
+          header="추천 상품"
+          emptyText="추천 가능한 상품이 없습니다."
+          initialCount={5}
+          step={5}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -129,11 +136,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 10,
   },
-
-  /* Section */
-  sectionHeader: { marginTop: 16, marginBottom: 10 },
-  sectionTitle: { fontFamily: "BasicBold", fontSize: 20, color: "#111" },
-
   /* List */
   list: {
     backgroundColor: Colors?.white ?? "#FFF",
