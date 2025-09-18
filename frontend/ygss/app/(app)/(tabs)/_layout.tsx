@@ -1,15 +1,12 @@
 // app/(app)/(tabs)/_layout.tsx
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
-
 import { HapticTab } from '@/components/HapticTab';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { LogBox } from 'react-native';
+import { Tabs, usePathname, useRouter } from 'expo-router';
+import React from 'react';
+import { LogBox, Platform } from 'react-native';
 
 // 특정 경고 메시지를 무시하도록 설정
 LogBox.ignoreLogs([
@@ -19,6 +16,7 @@ LogBox.ignoreLogs([
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
+  const pathname = usePathname();
 
   return (
     <Tabs
@@ -54,8 +52,12 @@ export default function TabLayout() {
             <Ionicons name="compass-outline" size={size} color={focused ? "skyblue" : color} />
           ),
         }}
-        listeners={{ focus: () => router.replace("/(app)/(tabs)/dc/dc1") }}
-
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault(); // 기본 이동 막기
+            router.replace("/(app)/(tabs)/dc/dc1");
+          },
+        }}
       />
       <Tabs.Screen
         name="irp"
@@ -65,8 +67,12 @@ export default function TabLayout() {
             <Ionicons name="search" size={size} color={focused ? "skyblue" : color} />
           ),
         }}
-        listeners={{ focus: () => router.replace("/(app)/(tabs)/irp") }}
-      />
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.replace("/(app)/(tabs)/irp/irp1");
+          },
+        }} />
       <Tabs.Screen
         name="mypage"
         options={{
