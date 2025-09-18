@@ -37,6 +37,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         //인증 없이 허용할 엔드포인트들
 //                        .requestMatchers("/**").permitAll()
+
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/infra/**").permitAll()
                         .requestMatchers("/market/**").permitAll()
@@ -46,7 +47,12 @@ public class SecurityConfig {
                         .requestMatchers("/term").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         //비허용 엔드포인트
+                        .requestMatchers("/pension/product/*/like").authenticated()
+                        .requestMatchers("/pension/bond/*/like").authenticated()
+                        .requestMatchers("/pension/liked-product").authenticated()
+                        .requestMatchers("/pension/**").permitAll()
                         .anyRequest().authenticated()
+
                 )
 //                .httpBasic(Customizer.withDefaults())
                 // JWT 필터들을 필터 체인에 추가
