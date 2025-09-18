@@ -6,11 +6,14 @@ import com.ygss.backend.pensionProduct.dto.entity.Systype;
 import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.PensionProductSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
+import com.ygss.backend.pensionProduct.dto.request.UpdateProfitRequest;
 import com.ygss.backend.pensionProduct.dto.response.*;
 import com.ygss.backend.pensionProduct.service.PensionProductService;
 import com.ygss.backend.pensionProduct.service.PensionProductServiceImpl;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.Response;
+import org.apache.ibatis.annotations.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -216,4 +219,14 @@ public class PensionProductController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
+
+    @PutMapping("/update-profit")
+    public ResponseEntity<?> updateNextYearProfitRate(@RequestBody List<UpdateProfitRequest> request){
+        try{
+            return ResponseEntity.ok(pensionProductService.updateProfit(request));
+        }catch (RuntimeException e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
 }
