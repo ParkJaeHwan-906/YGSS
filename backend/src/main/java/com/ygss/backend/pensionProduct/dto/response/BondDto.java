@@ -2,6 +2,7 @@ package com.ygss.backend.pensionProduct.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -9,6 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class BondDto {
 
     @Schema(description = "채권 상품 id", example = "1")
@@ -41,4 +43,6 @@ public class BondDto {
 
     @Schema(description = "최종 수익률 (%)", example = "3.42")
     private Double finalProfitRate;
+
+    private Boolean isLiked;
 }

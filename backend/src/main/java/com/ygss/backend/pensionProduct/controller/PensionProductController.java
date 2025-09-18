@@ -146,14 +146,13 @@ public class PensionProductController {
     @GetMapping("/bond/{id}")
     public ResponseEntity<BondDto> searchBondById(
             @Parameter(description = "채권 ID", example = "1", required = true)
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            Principal principal ) {
 
         try {
-            Optional<BondDto> result = pensionProductService.searchBondById(id);
+            BondDto result = pensionProductService.searchBondById(id,principal.getName());
 
-            return result.map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
-
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
@@ -172,7 +171,7 @@ public class PensionProductController {
 
     @Operation(summary = "상품 단건 상세 정보 제공", description = "상품의 상세 정보를 제공합니다.")
     @GetMapping("/product/{id}/detail")
-    public ResponseEntity<List<ProductDetailResponse>> getProductDetails(@PathVariable Long id) {
+    public ResponseEntity<List<ProductDetailResponse>> getProductDetails(@PathVariable Long id,Principal principal) {
         try {
             List<ProductDetailResponse> details = pensionProductService.getProductDetails(id);
             return ResponseEntity.ok(details);
