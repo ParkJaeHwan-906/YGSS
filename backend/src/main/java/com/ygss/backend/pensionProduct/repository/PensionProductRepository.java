@@ -472,7 +472,7 @@ public interface PensionProductRepository {
             "SELECT",
             "    b.id AS id,",
             "    b.product AS productName,",
-            "    prg.grade AS riskGrade,",
+            "    b.risk_grade_id AS riskGrade,",
             "    b.publisher_grade AS publisherGrade,",
             "    b.publisher,",
             "    b.coupon_rate AS couponRate,",
@@ -482,7 +482,6 @@ public interface PensionProductRepository {
             "    b.expired_day AS expiredDay,",
             "    b.final_profit_rate AS finalProfitRate",
             "FROM bond_products b",
-            "INNER JOIN product_risk_grade prg ON b.risk_grade_id = prg.id",
             "INNER JOIN bond_product_like bpl ON b.id = bpl.bond_product_id",
             "WHERE bpl.user_account_id = #{userId}"
     })
