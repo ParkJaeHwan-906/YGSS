@@ -1,6 +1,4 @@
 // app/_layout.tsx
-import "react-native-gesture-handler";
-import "react-native-reanimated";
 
 import { store } from "@/src/store";
 import { Slot, usePathname } from "expo-router";

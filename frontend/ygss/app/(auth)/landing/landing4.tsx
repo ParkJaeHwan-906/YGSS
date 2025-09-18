@@ -19,8 +19,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MotiView } from "moti";
 import axios from "axios";
 import { Colors } from "@/src/theme/colors";
+import { LineChart } from "react-native-gifted-charts";
+import { Dimensions } from "react-native";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const screenW = Dimensions.get("window").width;
 
 // ====== 타입 ======
 type CompareResp = {
@@ -42,25 +45,45 @@ const toManWon = (won: number) => {
 // 2) 3·5·7·10년 레이블
 const YEAR_LABELS = ["3년", "5년", "7년", "10년"] as const;
 
-// 간단 차트 박스(미니 막대)
-function ChartBox({ series = [] as number[] }) {
-  const max = Math.max(...series, 1);
-  return (
-    <View style={styles.chartBox}>
-      <View style={styles.barWrap}>
-        {series.map((v, idx) => {
-          const h = Math.max(8, (v / max) * 140); // 최소 8, 최대 140
-          return (
-            <View key={idx} style={styles.barCol}>
-              <View style={[styles.bar, { height: h }]} />
-              <Text style={styles.barLabel}>{YEAR_LABELS[idx]}</Text>
-            </View>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
+// 라인 차트
+const lcomp = (txt: string) => (
+  <Text style={{ color: "lightgray", fontSize: 11, fontFamily: "BasicMedium" }}>{txt}</Text>
+);
+
+// 데이터 포인트(원)
+const dPoint = () => (
+  <View
+    style={{
+      width: 12,
+      height: 12,
+      backgroundColor: "#fff",
+      borderWidth: 3,
+      borderRadius: 6,
+      borderColor: Colors.primary, // 테마 색 사용
+    }}
+  />
+);
+
+// 보기 좋은 max 값으로 올림
+const niceMax = (v: number) => {
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  const ceilNorm = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+  return ceilNorm * mag;
+};
+
+// (추가) gifted-charts용 데이터 변환기
+const toLineSeries = (arr?: number[]) => {
+  const a = Array.isArray(arr) ? arr.slice(0, 4) : [];
+  while (a.length < 4) a.push(0);
+  return a.map((value, idx) => ({
+    value,
+    labelComponent: () => lcomp(YEAR_LABELS[idx]),
+    customDataPoint: dPoint,
+  }));
+};
+
 
 export default function Landing4() {
   const router = useRouter();
@@ -122,10 +145,20 @@ export default function Landing4() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [investorPersonalityId, yearlySalary]);
 
-  const dcSeries = data?.dcCalculateGraph ?? [0, 0, 0, 0];
-  const dbSeries = data?.dbCalculateGraph ?? [0, 0, 0, 0];
   const dcFinal = data?.dcCalculate ?? 0;
   const dbFinal = data?.dbCalculate ?? 0;
+  const dcChartData = toLineSeries(data?.dcCalculateGraph);
+  const dbChartData = toLineSeries(data?.dbCalculateGraph);
+  const dcMaxVal = niceMax(Math.max(...(data?.dcCalculateGraph ?? [0])) * 1.1);
+  const dbMaxVal = niceMax(Math.max(...(data?.dbCalculateGraph ?? [0])) * 1.1);
+
+  // 컴포넌트 내부 (return 위)
+  const horizontalPad = 24;
+  const bleedStyle = {
+    marginLeft: -(horizontalPad + insets.left),
+    width: screenW + horizontalPad * 2 + insets.left + insets.right,
+  };
+
 
   return (
     <>
@@ -142,11 +175,22 @@ export default function Landing4() {
           ]}
         >
           {/* ===== DC 섹션 ===== */}
-          <View style={styles.section}>
+          <View style={[styles.section, styles.dcSection, bleedStyle]}>
             <View style={styles.sectionHeader}>
-              <View style={styles.pill}><Text style={styles.pillText}>DC</Text></View>
-              <Text style={styles.sectionTitle}>를 선택했을 때,</Text>
-              <Image source={require("@/assets/icon/chart.png")} style={styles.sectionIcon} />
+              {/* 왼쪽 배치 */}
+              <View style={styles.headerLeft}>
+                <View style={styles.pill}>
+                  <Text style={styles.pillText}>DC</Text>
+                </View>
+                <Text style={styles.sectionTitle}>를 선택했을 때,</Text>
+              </View>
+
+              {/* 오른쪽 아이콘 */}
+              <Image
+                source={require("@/assets/icon/chart2.png")}
+                style={styles.sectionIcon}
+                resizeMode="contain"
+              />
             </View>
 
             {loading ? (
@@ -161,18 +205,60 @@ export default function Landing4() {
             ) : (
               <>
                 <Text style={styles.bigNumber}>{toManWon(dcFinal)}</Text>
-                <Text style={styles.smallCaption}>3·5·7·10년 평균치 기반 간략 차트</Text>
-                <ChartBox series={dcSeries} />
+                <Text style={styles.smallCaption}>근속년수 '10년' 기준 퇴직연금 입니다.</Text>
+                <View style={[styles.chartBox, { overflow: "hidden" }]}>
+                  <LineChart
+                    isAnimated
+                    animateOnDataChange
+                    animationDuration={800}
+                    onDataChangeAnimationDuration={600}
+                    color={Colors.red}
+                    thickness={2}
+                    areaChart
+                    startFillColor={Colors.red}
+                    endFillColor={Colors.red}
+                    startOpacity={0.4}
+                    endOpacity={0.05}
+                    data={dcChartData}
+                    maxValue={dcMaxVal}
+                    noOfSections={4}
+                    hideDataPoints // 기본 점 숨기고 customDataPoint만 노출
+                    spacing={80}
+                    initialSpacing={40}
+                    endSpacing={40}
+                    width={300}
+                    yAxisTextStyle={{
+                      color: Colors.gray,
+                      fontSize: 10,
+                      fontFamily: "BasicMedium",
+                    }}
+                    yAxisColor={Colors.gray}
+                    xAxisColor={Colors.gray}
+                    rulesColor={Colors.gray}
+                    rulesType="solid"
+                    backgroundColor={Colors.white} // 차트 캔버스 배경
+                  />
+                </View>
               </>
             )}
           </View>
 
           {/* ===== DB 섹션 ===== */}
-          <View style={styles.section}>
+          <View style={[styles.section, styles.dbSection, bleedStyle]}>
             <View style={styles.sectionHeader}>
-              <View style={styles.pill}><Text style={styles.pillText}>DB</Text></View>
-              <Text style={styles.sectionTitle}>를 선택했을 때,</Text>
-              <Image source={require("@/assets/icon/chart.png")} style={styles.sectionIcon} />
+              {/* 왼쪽 배치 */}
+              <View style={styles.headerLeft}>
+                <View style={styles.pill}>
+                  <Text style={styles.pillText}>DB</Text>
+                </View>
+                <Text style={styles.sectionTitle}>를 선택했을 때,</Text>
+              </View>
+              {/* 오른쪽 배치 */}
+              <Image
+                source={require("@/assets/icon/chart2.png")}
+                style={styles.sectionIcon}
+                resizeMode="contain"
+              />
             </View>
 
             {loading ? (
@@ -187,8 +273,40 @@ export default function Landing4() {
             ) : (
               <>
                 <Text style={styles.bigNumber}>{toManWon(dbFinal)}</Text>
-                <Text style={styles.smallCaption}>3·5·7·10년 평균치 기반 간략 차트</Text>
-                <ChartBox series={dbSeries} />
+                <Text style={styles.smallCaption}>근속년수 '10년' 기준 퇴직연금 입니다.</Text>
+                <View style={[styles.chartBox, { overflow: "hidden" }]}>
+                  <LineChart
+                    isAnimated
+                    animateOnDataChange
+                    animationDuration={800}
+                    onDataChangeAnimationDuration={600}
+                    color={Colors.red}
+                    thickness={2}
+                    areaChart
+                    startFillColor={Colors.red}
+                    endFillColor={Colors.red}
+                    startOpacity={0.4}
+                    endOpacity={0.05}
+                    data={dbChartData}
+                    maxValue={dbMaxVal}
+                    noOfSections={4}
+                    hideDataPoints // 기본 점 숨기고 customDataPoint만 노출
+                    spacing={80}
+                    initialSpacing={40}
+                    endSpacing={40}
+                    width={300}
+                    yAxisTextStyle={{
+                      color: Colors.gray,
+                      fontSize: 10,
+                      fontFamily: "BasicMedium",
+                    }}
+                    yAxisColor={Colors.gray}
+                    xAxisColor={Colors.gray}
+                    rulesColor={Colors.gray}
+                    rulesType="solid"
+                    backgroundColor={Colors.white} // 차트 캔버스 배경
+                  />
+                </View>
               </>
             )}
           </View>
@@ -236,123 +354,175 @@ export default function Landing4() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: Colors.white },
+wrap: { flex: 1, backgroundColor: Colors.white },
 
-  // 스크롤 컨텐츠
-  scrollContent: {
-    marginTop: 40,
-    paddingHorizontal: 24,
-    paddingTop: 32,        // 시작 여백
-    alignItems: "center",
-    rowGap: 24,
-  },
+// 스크롤 컨텐츠
+scrollContent: {
+  marginTop: 10,
+  paddingHorizontal: 24,
+  paddingTop: 32,        // 시작 여백
+  alignItems: "stretch",
+  rowGap: 24,
+},
 
-  caption: {
-    fontSize: 16,
-    fontFamily: "BasicMedium",
-    color: Colors.black,
-    textAlign: "center",
-  },
+caption: {
+  fontSize: 16,
+  fontFamily: "BasicMedium",
+  color: Colors.black,
+  textAlign: "center",
+},
 
-  alkiWrap: { 
-    marginTop: 30,
-    alignSelf: "center" },
-  alki: { width: 260, height: 260 },
+alkiWrap: { 
+  marginTop: 30,
+  alignSelf: "center" },
+alki: { width: 260, height: 260 },
 
-  ctaBtn: {
-    width: 300,
-    paddingVertical: 16,
-    borderRadius: 16,
-    backgroundColor: Colors.primary,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 6 },
-      },
-      android: { elevation: 4 },
-    }),
-  },
-  ctaText: {
-    textAlign: "center",
-    color: Colors.white,
-    fontSize: 16,
-    fontFamily: "BasicMedium",
-  },
+ctaBtn: {
+  width: 300,
+  paddingVertical: 16,
+  borderRadius: 16,
+  backgroundColor: Colors.primary,
+  alignSelf: "center",
+  ...Platform.select({
+    ios: {
+      shadowColor: "#000",
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 6 },
+    },
+    android: {
+      shadowColor: Colors.primary,
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 10,
+    },
+  }),
+},
+ctaText: {
+  textAlign: "center",
+  color: Colors.white,
+  fontSize: 16,
+  fontFamily: "BasicMedium",
+},
 
-  // footer (스크롤 내부)
-  footer: {
+// footer (스크롤 내부)
+footer: {
+  marginTop: 30,
+  backgroundColor: Colors.white,
+  paddingVertical: 20,
+},
+footerTitle: {
+  fontSize: 14,
+  fontFamily: "BasicMedium",
+  color: "#999999",
+  textAlign: "left",
+  marginBottom: 8,
+},
+footerText: {
+  fontSize: 11,
+  fontFamily: "BasicLight",
+  color: "#999999",
+  lineHeight: 18,
+  textAlign: "left",
+},
+
+// 차트 박스(placeholder)
+chartBox: {
+  width: 360,
+  height: 280,
+  borderRadius: 12,
+  backgroundColor: Colors.white,
+  alignItems: "center",
+  justifyContent: "center",
+  alignSelf: "stretch",
+  shadowColor: Colors.primary,
+  shadowOpacity: 0.08,
+  shadowRadius: 8,
+  elevation: 10,
+},
+chartPlaceholder: { fontSize: 14, color: "#B1B1C7" },
+
+  // 섹션 공통
+  section: {
     width: "100%",
-    paddingHorizontal: 20,
-    marginTop: 20,
-  },
-  footerTitle: {
-    fontSize: 14,
-    fontFamily: "BasicMedium",
-    color: "#999999",
-    textAlign: "left",
-    marginBottom: 8,
-  },
-  footerText: {
-    fontSize: 11,
-    fontFamily: "BasicLight",
-    color: "#999999",
-    lineHeight: 18,
-    textAlign: "left",
-  },
-
-  // 차트 박스(placeholder)
-  chartBox: {
-    height: 180,
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E9E9F2",
-    alignItems: "center",
-    justifyContent: "center",
     alignSelf: "stretch",
+    paddingHorizontal: 24,
+    paddingVertical: 20,
   },
-  chartPlaceholder: { fontSize: 14, color: "#B1B1C7" },
 
-    // 섹션 공통
-    section: { width: "100%" },
-    sectionHeader: {
-      width: "100%",
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 10,
-    },
-    pill: {
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      backgroundColor: "#FFF7D6",
-      borderRadius: 10,
-      marginRight: 8,
-    },
-    pillText: { fontSize: 16, fontFamily: "BasicBold", color: "#2E2E3A" },
-    sectionTitle: { fontSize: 18, fontFamily: "BasicBold", color: "#2E2E3A" },
-    sectionIcon: { width: 28, height: 28, marginLeft: 8 },
-    bigNumber: { marginTop: 6, fontSize: 36, fontFamily: "BasicBold", color: "#141416" },
-    smallCaption: { marginTop: 6, marginBottom: 10, fontFamily: "BasicMedium", fontSize: 12, color: "#8A8AA3" },
-  
-    // 에러/리트라이
-    errorBox: {
-      alignSelf: "stretch",
-      borderRadius: 12,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "#F1C2C2",
-      backgroundColor: "#FFF5F5",
-      padding: 12,
-      gap: 10,
-    },
-    errorText: { color: "#CC3B3B", fontFamily: "BasicMedium", fontSize: 13 },
-    retryBtn: {
-      alignSelf: "flex-start",
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: 8,
-      backgroundColor: "#FFE1E1",
-    },
-    retryText: { fontSize: 12, color: "#B22B2B", fontFamily: "BasicMedium" },
-  });
+  dcSection: {
+    backgroundColor: Colors.back,
+  },
+  dbSection: {
+    backgroundColor: Colors.base,
+  },
+
+  sectionHeader: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    position: "relative",
+    marginBottom: 10,
+  },
+
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexShrink: 1,
+    paddingRight: 44,
+  },
+
+  iconWrap: {
+    position: "absolute",
+    right: 0,
+    top: "50%",
+    transform: [{ translateY: -14 }],
+  },
+
+  pill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: Colors.white,
+    borderRadius: 10,
+    marginRight: 8,
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  pillText: { fontSize: 16, fontFamily: "BasicBold", color: "#2E2E3A" },
+  sectionTitle: { fontSize: 18, fontFamily: "BasicBold", color: "#2E2E3A", flexShrink: 1 },
+  sectionIcon: {
+    position: "absolute",
+    right: 60,
+    top: "50%",
+    transform: [{ translateY: -12 }],
+    width: 60,
+    height: 60,
+    overflow: "visible",
+  },
+  bigNumber: { marginTop: 6, fontSize: 36, fontFamily: "BasicBold", color: "#141416" },
+  smallCaption: { marginTop: 6, marginBottom: 10, fontFamily: "BasicMedium", fontSize: 12, color: "#8A8AA3" },
+
+  // 에러/리트라이
+  errorBox: {
+    alignSelf: "stretch",
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#F1C2C2",
+    backgroundColor: "#FFF5F5",
+    padding: 12,
+    gap: 10,
+  },
+  errorText: { color: "#CC3B3B", fontFamily: "BasicMedium", fontSize: 13 },
+  retryBtn: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#FFE1E1",
+  },
+  retryText: { fontSize: 12, color: "#B22B2B", fontFamily: "BasicMedium" },
+});

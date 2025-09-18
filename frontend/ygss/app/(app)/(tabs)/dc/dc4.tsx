@@ -1,6 +1,6 @@
 // app/(app)/(tabs)/dc/dc4.tsx
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,22 +10,155 @@ import {
   TouchableOpacity,
   Image,
   StatusBar,
-  Platform,
-} from "react-native";
+  Alert,
+  } from "react-native";
 import { MotiView } from "moti";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "@/src/theme/colors";
+import { useRouter } from "expo-router";
+import { useSelector } from "react-redux";
+import { Picker } from "@react-native-picker/picker";
+import { ActionSheetIOS, Platform } from "react-native";
+import { LineChart } from "react-native-gifted-charts";
+import { Dimensions } from "react-native";
+import axios from "axios";
+import { ActivityIndicator } from "react-native";
 
-// 간단한 빈 차트 박스(Placeholders)
-function ChartBox() {
-  return (
-    <View style={styles.chartBox}>
-      <Text style={styles.chartPlaceholder}>차트 영역</Text>
-    </View>
-  );
-}
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const screenW = Dimensions.get("window").width;
+
+// ===== 타입 (landing4에서 사용한 응답 타입)
+type CompareResp = {
+  dbCalculate: number;          // 최종 금액(원)
+  dbCalculateRate: number;
+  dbCalculateGraph: number[];   // [3y,5y,7y,10y] (원)
+  dcCalculate: number;
+  dcCalculateRate: number;
+  dcCalculateGraph: number[];   // [3y,5y,7y,10y] (원)
+  recommendProductList: any[] | null;
+};
+
+// ===== 숫자 표기/변환 유틸 (만원↔원)
+const toManWonLabel = (won: number) => {
+  const man = Math.round(won / 10000);
+  return man.toLocaleString("ko-KR") + " 만원";
+};
+const toWon = (man?: string) => {
+  const n = Number((man ?? "0").replace(/\D/g, ""));
+  return n * 10000;
+};
+const toMan = (won: number) => {
+  const man = Math.round(won / 10000);
+  return man.toLocaleString("ko-KR");
+};
+
+// ===== 차트 유틸
+const YEAR_LABELS = ["3년", "5년", "7년", "10년"] as const;
+const lcomp = (txt: string) => (
+  <Text style={{ color: "lightgray", fontSize: 11, fontFamily: "BasicMedium" }}>{txt}</Text>
+);
+const dPoint = () => (
+  <View style={{ width: 12, height: 12, backgroundColor: "#fff", borderWidth: 3, borderRadius: 6, borderColor: Colors.primary }} />
+);
+const toLineSeries = (arr?: number[]) => {
+  const a = Array.isArray(arr) ? arr.slice(0, 4) : [];
+  while (a.length < 4) a.push(0);
+  return a.map((value, idx) => ({
+    value,
+    labelComponent: () => lcomp(YEAR_LABELS[idx]),
+    customDataPoint: dPoint,
+  }));
+};
+const niceMax = (v: number) => {
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  const ceilNorm = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+  return ceilNorm * mag;
+};
+
+// 연도별로 금액 넣기
+const YEAR_ORDER = [3, 5, 7, 10] as const;
+const getYearIndex = (y: number) => Math.max(0, YEAR_ORDER.indexOf(y as any));
+const pickByYear = (arr: number[] | undefined, y: number) =>
+  Array.isArray(arr) ? (arr[getYearIndex(y)] ?? 0) : 0;
 
 export default function Dc4() {
+  const router = useRouter();
+  const accessToken = useSelector((state: any) => state.auth.accessToken);
+  const salary = useSelector((state: any) => state.auth.user?.salary);
+  const salaryWon = useSelector((state: any) => state.auth.user?.salary); // DB의 '원' 값
+  const [inputSalary, setInputSalary] = useState<string>(salary?.toString() ?? "");
+  const [inputSalaryMan, setInputSalaryMan] = useState<string>("");
+  
+  const [selectedYear, setSelectedYear] = useState<number>(3); // 피커에서 보여줄 값
+  const [appliedYear, setAppliedYear] = useState<number | null>(null); // '비교하기'를 눌렀을 때 확정되는 값
+
+  // ===== 상태 추가 (Dc4 컴포넌트 내부)
+  const [loading, setLoading] = useState(false);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
+  const [cmp, setCmp] = useState<CompareResp | null>(null);
+
+  // (선택) 투자성향 ID가 리덕스에 있다면 사용
+  const investorPersonalityId = useSelector((s: any) => s.auth.user?.investorPersonalityId) ?? null;
+
+  const handleCompare = async () => {
+    try {
+      setLoading(true);
+      setErrMsg(null);
+      const salaryWon = toWon(inputSalaryMan);
+  
+      if (!API_URL) throw new Error("API_URL이 설정되지 않았습니다.");
+      if (!Number.isFinite(salaryWon) || salaryWon <= 0) throw new Error("연봉을 올바르게 입력하세요.");
+  
+      const params: any = {};
+      const { data } = await axios.get<CompareResp>(`${API_URL}/recommend/compare`, {
+        params,
+        headers: { Authorization: `A103 ${accessToken}` },
+      });
+  
+      setCmp(data);
+      setAppliedYear(selectedYear);   // ★ 여기서만 연도 확정!
+    } catch (e: any) {
+      console.error("[dc4] compare error:", e?.message || e);
+      setErrMsg("예상 수익 데이터를 불러오지 못했어요.");
+    } finally {
+      setLoading(false);
+    }
+  };  
+
+  // 연도별 금액
+  const dcValue = React.useMemo(() => pickByYear(cmp?.dcCalculateGraph, appliedYear ?? selectedYear), [cmp?.dcCalculateGraph, appliedYear, selectedYear]);
+  const dbValue = React.useMemo(() => pickByYear(cmp?.dbCalculateGraph, appliedYear ?? selectedYear), [cmp?.dbCalculateGraph, appliedYear, selectedYear]);
+
+  // 로그인 가드
+  useEffect(() => {
+    if (!accessToken) {
+      Alert.alert("로그인이 필요해요", "로그인 후 이용해 주세요.");
+      router.replace("/(auth)/login");
+    }
+  }, [accessToken, router]);
+
+  // 리다이렉트 직전 표시
+  if (!accessToken) {
+    return (
+      <SafeAreaView
+        edges={["top", "left", "right"]}
+        style={[styles.safeArea, { backgroundColor: Colors?.back ?? "#F4F6FF", alignItems: "center", justifyContent: "center" }]}
+      >
+        <StatusBar barStyle="dark-content" backgroundColor={Colors?.back ?? "#F4F6FF"} />
+        <Text style={{ fontSize: 16, color: "#666" }}>로그인 페이지로 이동 중…</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // 마운트 시, redux 값으로 초기화
+  useEffect(() => {
+    if (salaryWon) {
+      setInputSalaryMan(toMan(salaryWon));
+    }
+  }, [salaryWon]);
+
   return (
     <SafeAreaView
       edges={["top", "left", "right"]}
@@ -48,7 +181,47 @@ export default function Dc4() {
           <View style={styles.titleBlock}>
             {/* 1줄: 배지 + '년 후,' */}
             <View style={styles.inlineRow}>
-              <Text style={styles.badge}>3</Text>
+              <View style={styles.badgeWrap}>
+                {Platform.OS === "android" ? (
+                  <>
+                    {/* 보이는 큰 숫자 */}
+                    <Text style={styles.displayedYear}>{selectedYear}</Text>
+
+                    {/* 터치/선택은 이 투명 Picker가 담당 */}
+                    <Picker
+                      selectedValue={selectedYear}
+                      onValueChange={(v) => setSelectedYear(v)}
+                      mode="dropdown"
+                      dropdownIconColor="transparent"
+                      style={styles.androidPickerOverlay}
+                    >
+                      <Picker.Item label="3" value={3} />
+                      <Picker.Item label="5" value={5} />
+                      <Picker.Item label="7" value={7} />
+                      <Picker.Item label="10" value={10} />
+                    </Picker>
+                  </>
+                ) : (
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() =>
+                      ActionSheetIOS.showActionSheetWithOptions(
+                        {
+                          options: ["취소", "3", "5", "7", "10"],
+                          cancelButtonIndex: 0,
+                          userInterfaceStyle: "light",
+                        },
+                        (i) => {
+                          const map = [null, 3, 5, 7, 10] as const;
+                          if (i > 0) setSelectedYear(map[i]!);
+                        }
+                      )
+                    }
+                  >
+                    <Text style={styles.displayedYear}>{selectedYear}</Text>
+                </TouchableOpacity>
+                )}
+              </View>
               <Text style={styles.headerTitle1}>년 후,</Text>
             </View>
             {/* 2줄: '나의 퇴직연금은?' */}
@@ -84,14 +257,17 @@ export default function Dc4() {
             <TextInput
               style={styles.input}
               keyboardType="numeric"
-              placeholder="5500"
-              placeholderTextColor="#B7B7C2"
+              value={inputSalaryMan}
+              onChangeText={(v) => {
+                const onlyDigits = v.replace(/\D/g, "");
+                setInputSalaryMan(onlyDigits.replace(/^0+(?=\d)/, ""));
+              }}
             />
             <Text style={styles.inputSuffix}>만원</Text>
           </View>
         </View>
 
-        <TouchableOpacity activeOpacity={0.8} style={styles.primaryBtn}>
+        <TouchableOpacity activeOpacity={0.8} style={styles.primaryBtn} onPress={handleCompare}>
           <Text style={styles.primaryBtnText}>비교하기</Text>
         </TouchableOpacity>
 
@@ -99,35 +275,117 @@ export default function Dc4() {
         <Text style={styles.scrollHint}>⌄</Text>
 
         {/* ===== DC 섹션 ===== */}
-        <View style={styles.section}>
+        <View style={[styles.section]}>
           <View style={styles.sectionHeader}>
             <View style={styles.pill}>
               <Text style={styles.pillText}>DC</Text>
             </View>
             <Text style={styles.sectionTitle}>를 선택했을 때,</Text>
-            <Image source={require("@/assets/icon/chart.png")} style={styles.sectionIcon} />
+            <Image source={require("@/assets/icon/chart2.png")} style={styles.sectionIcon} resizeMode="contain" />
           </View>
 
-          <Text style={styles.bigNumber}>999 만원</Text>
-          <Text style={styles.smallCaption}>10년 기준 평균치를 계산한 값이에요</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color={Colors.primary} />
+          ) : errMsg ? (
+            <>
+              <Text style={{ color: "#CC3B3B", fontFamily: "BasicMedium" }}>{errMsg}</Text>
+              <TouchableOpacity onPress={handleCompare} style={{ paddingVertical: 6 }}>
+                <Text style={{ color: Colors.primary, fontFamily: "BasicMedium" }}>다시 시도</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.bigNumber}>{toManWonLabel(dcValue)}</Text>
+              <Text style={styles.smallCaption}>근속년수 '{selectedYear}년' 기준 퇴직연금이에요.</Text>
 
-          <ChartBox />
+              <View style={[styles.chartBox, { overflow: "hidden", alignSelf: "center" }]}>
+                <LineChart
+                  isAnimated
+                  animateOnDataChange
+                  animationDuration={800}
+                  onDataChangeAnimationDuration={600}
+                  color={Colors.red}
+                  thickness={2}
+                  areaChart
+                  startFillColor={Colors.red}
+                  endFillColor={Colors.red}
+                  startOpacity={0.4}
+                  endOpacity={0.05}
+                  data={toLineSeries(cmp?.dcCalculateGraph)}
+                  maxValue={niceMax(Math.max(...(cmp?.dcCalculateGraph ?? [0])) * 1.1)}
+                  noOfSections={4}
+                  hideDataPoints
+                  spacing={80}
+                  initialSpacing={40}
+                  endSpacing={40}
+                  width={300}
+                  yAxisTextStyle={{ color: Colors.gray, fontSize: 10, fontFamily: "BasicMedium" }}
+                  yAxisColor={Colors.gray}
+                  xAxisColor={Colors.gray}
+                  rulesColor={Colors.gray}
+                  rulesType="solid"
+                  backgroundColor={Colors.white}
+                />
+              </View>
+            </>
+          )}
         </View>
 
         {/* ===== DB 섹션 ===== */}
-        <View style={styles.section}>
+        <View style={[styles.section]}>
           <View style={styles.sectionHeader}>
             <View style={styles.pill}>
               <Text style={styles.pillText}>DB</Text>
             </View>
             <Text style={styles.sectionTitle}>를 선택했을 때,</Text>
-            <Image source={require("@/assets/icon/chart.png")} style={styles.sectionIcon} />
+            <Image source={require("@/assets/icon/chart2.png")} style={styles.sectionIcon} resizeMode="contain" />
           </View>
 
-          <Text style={styles.bigNumber}>3,456 만원</Text>
-          <Text style={styles.smallCaption}>10년 기준 평균치를 계산한 값이에요</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color={Colors.primary} />
+          ) : errMsg ? (
+            <>
+              <Text style={{ color: "#CC3B3B", fontFamily: "BasicMedium" }}>{errMsg}</Text>
+              <TouchableOpacity onPress={handleCompare} style={{ paddingVertical: 6 }}>
+                <Text style={{ color: Colors.primary, fontFamily: "BasicMedium" }}>다시 시도</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.bigNumber}>{toManWonLabel(dbValue)}</Text>
+              <Text style={styles.smallCaption}>근속년수 '{selectedYear}년' 기준 퇴직연금이에요.</Text>
 
-          <ChartBox />
+              <View style={[styles.chartBox, { overflow: "hidden", alignSelf: "center" }]}>
+                <LineChart
+                  isAnimated
+                  animateOnDataChange
+                  animationDuration={800}
+                  onDataChangeAnimationDuration={600}
+                  color={Colors.red}
+                  thickness={2}
+                  areaChart
+                  startFillColor={Colors.red}
+                  endFillColor={Colors.red}
+                  startOpacity={0.4}
+                  endOpacity={0.05}
+                  data={toLineSeries(cmp?.dbCalculateGraph)}
+                  maxValue={niceMax(Math.max(...(cmp?.dbCalculateGraph ?? [0])) * 1.1)}
+                  noOfSections={4}
+                  hideDataPoints
+                  spacing={80}
+                  initialSpacing={40}
+                  endSpacing={40}
+                  width={300}
+                  yAxisTextStyle={{ color: Colors.gray, fontSize: 10, fontFamily: "BasicMedium" }}
+                  yAxisColor={Colors.gray}
+                  xAxisColor={Colors.gray}
+                  rulesColor={Colors.gray}
+                  rulesType="solid"
+                  backgroundColor={Colors.white}
+                />
+              </View>
+            </>
+          )}
         </View>
 
         {/* ===== IRP 깨우기 CTA ===== */}
@@ -188,27 +446,49 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
   },
-  badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  badgeWrap: {
     borderRadius: 10,
     backgroundColor: "#FFFFFF",
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 10,
+    marginRight: 8,
+    height: 44,
+    minWidth: 80,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  displayedYear: {
+    fontSize: 22,
+    lineHeight: 26,         // 안드로이드에서 베이스라인 잘림 방지
+    fontFamily: "BasicBold",
+    color: Colors?.black ?? "#111",
+    textAlign: "center",
+  },
+  androidPickerOverlay: {
+    ...StyleSheet.absoluteFillObject, // 전체 덮어서 터치 잡기
+    opacity: 0,                        // 보이지 않게
+  },
+  picker: {
+    width: 80,
+    height: 40,
+    color: Colors?.black ?? "#111",
     fontSize: 18,
     fontFamily: "BasicBold",
-    color: "#3D3D4E",
     textAlign: "center",
-    marginRight: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
   },
   headerTitle1: {
     fontSize: 28,
     lineHeight: 34,
     fontFamily: "BasicBold",
     color: Colors?.black ?? "#111",
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 10,
   },
   headerTitle2: {
     marginTop: 4,
@@ -216,11 +496,15 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     fontFamily: "BasicBold",
     color: Colors?.black ?? "#111",
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 10,
   },
 
   mascot: {
     position: "absolute",
-    right: 0,
+    right: -16,
     top: -8,
     width: 180,
     height: 180,
@@ -243,11 +527,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    elevation: 10,
   },
   input: { flex: 1, fontSize: 18, fontFamily: "BasicMedium", color: "#2E2E3A" },
   inputSuffix: { marginLeft: 8, fontSize: 16, fontFamily: "BasicBold", color: "#73738C" },
@@ -261,43 +544,114 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
+    shadowColor: Colors.primary,
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    elevation: 10,
   },
   primaryBtnText: { color: "#FFFFFF", fontSize: 18, fontFamily: "BasicMedium", letterSpacing: 0.2 },
 
   scrollHint: { alignSelf: "center", marginVertical: 12, fontSize: 18, color: "#8A8AA3" },
 
+  // 차트 박스(placeholder)
+chartBox: {
+  width: 360,
+  height: 280,
+  borderRadius: 12,
+  backgroundColor: Colors.white,
+  alignItems: "center",
+  justifyContent: "center",
+  alignSelf: "stretch",
+  shadowColor: Colors.primary,
+  shadowOpacity: 0.08,
+  shadowRadius: 8,
+  elevation: 10,
+},
+chartPlaceholder: { fontSize: 14, color: "#B1B1C7" },
+
   // 섹션 공통
-  section: { marginTop: 30, marginBottom: 20, },
-  sectionHeader: { width: "100%", flexDirection: "row", alignItems: "center", marginBottom: 10 },
+  section: {
+    width: "100%",
+    alignSelf: "stretch",
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+  },
+
+  dcSection: {
+    backgroundColor: Colors.back,
+  },
+  dbSection: {
+    backgroundColor: Colors.base,
+  },
+
+  sectionHeader: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    position: "relative",
+    marginBottom: 10,
+  },
+
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexShrink: 1,
+    paddingRight: 44,
+  },
+
+  iconWrap: {
+    position: "absolute",
+    right: 0,
+    top: "50%",
+    transform: [{ translateY: -14 }],
+  },
+
   pill: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: "#FFF7D6",
+    backgroundColor: Colors.white,
     borderRadius: 10,
     marginRight: 8,
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 10,
   },
   pillText: { fontSize: 16, fontFamily: "BasicBold", color: "#2E2E3A" },
-  sectionTitle: { fontSize: 18, fontFamily: "BasicBold", color: "#2E2E3A" },
-  sectionIcon: { width: 28, height: 28, marginLeft: 8 },
+  sectionTitle: { fontSize: 18, fontFamily: "BasicBold", color: "#2E2E3A", flexShrink: 1 },
+  sectionIcon: {
+    position: "absolute",
+    right: 60,
+    top: "50%",
+    transform: [{ translateY: -12 }],
+    width: 60,
+    height: 60,
+    overflow: "visible",
+  },
   bigNumber: { marginTop: 6, fontSize: 36, fontFamily: "BasicBold", color: "#141416" },
   smallCaption: { marginTop: 6, marginBottom: 10, fontFamily: "BasicMedium", fontSize: 12, color: "#8A8AA3" },
 
-  // 차트 박스(placeholder)
-  chartBox: {
-    height: 180,
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
+  // 에러/리트라이
+  errorBox: {
+    alignSelf: "stretch",
+    borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E9E9F2",
-    alignItems: "center",
-    justifyContent: "center",
+    borderColor: "#F1C2C2",
+    backgroundColor: "#FFF5F5",
+    padding: 12,
+    gap: 10,
   },
-  chartPlaceholder: { fontSize: 14, color: "#B1B1C7" },
+  errorText: { color: "#CC3B3B", fontFamily: "BasicMedium", fontSize: 13 },
+  retryBtn: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#FFE1E1",
+  },
+  retryText: { fontSize: 12, color: "#B22B2B", fontFamily: "BasicMedium" },
 
   // IRP 카드
   irpCard: {
