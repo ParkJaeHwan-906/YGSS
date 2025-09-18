@@ -4,7 +4,7 @@ import ImageListItem from "@/components/molecules/ImageListItem";
 import { Colors } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export type ImageListData = {
   logo?: any;
@@ -34,28 +34,50 @@ export default function ImageList({
 
   return (
     <View style={styles.wrap}>
-      {sliced.map((it, idx) => (
-        <ImageListItem
-          key={`${it.title}-${idx}`}
-          logo={it.logo}
-          title={it.title}
-          subTitle={it.subTitle}
-          rate={it.rate}
-          showDivider={idx < sliced.length - 1}
-        />
-      ))}
+      <Text style={styles.header}>나의 찜 상품</Text>
 
-      {hasMore && (
-        <Pressable style={styles.moreBtn} onPress={onMore} android_ripple={{ color: "#ddd" }}>
-            <Ionicons name="chevron-down" size={16} color={Colors.black} />
-        </Pressable>
+      {items.length === 0 ? (
+        <Text style={styles.emptyText}>찜한 상품이 없습니다.</Text>
+      ) : (
+        <>
+          {sliced.map((it, idx) => (
+            <ImageListItem
+              key={`${it.title}-${idx}`}
+              logo={it.logo}
+              title={it.title}
+              subTitle={it.subTitle}
+              rate={it.rate}
+              showDivider={idx < sliced.length - 1}
+            />
+          ))}
+
+          {hasMore && (
+            <Pressable style={styles.moreBtn} onPress={onMore} android_ripple={{ color: "#ddd" }}>
+              <Ionicons name="chevron-down" size={16} color={Colors.black} />
+              <Text style={styles.moreText}>{remain}개 더보기</Text>
+            </Pressable>
+          )}
+        </>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { width: "100%" },
+  wrap: { width: "100%", backgroundColor: Colors.white, padding: 16 },
+  header: {
+    fontSize: 18,
+    fontFamily: "BasicBold",
+    marginBottom: 8,
+    color: Colors.black,
+  },
+  emptyText: {
+    fontSize: 14,
+    fontFamily: "BasicMedium",
+    color: Colors.gray,
+    textAlign: "center",
+    paddingVertical: 16,
+  },
   moreBtn: {
     alignSelf: "center",
     marginTop: 6,
@@ -64,5 +86,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+  },
+  moreText: {
+    fontSize: 13,
+    fontFamily: "BasicMedium",
+    color: Colors.black,
   },
 });

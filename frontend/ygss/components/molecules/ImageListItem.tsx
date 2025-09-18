@@ -43,7 +43,7 @@ export default function ImageListItem({
 }
 
 const styles = StyleSheet.create({
-  itemWrap: { width: "100%" }, // ✅ 항상 View 하나만 반환
+  itemWrap: { width: "100%" },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -54,11 +54,11 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
     marginRight: 12,
   },
-  logoImg: { width: "100%", height: "100%" },
+  logoImg: { width: 60, height: 60 },
   rowCenter: { flex: 1 },
-  rowTitle: { fontFamily: "BasicMedium", fontSize: 18, color: Colors.black },
+  rowTitle: { fontFamily: "BasicMedium", fontSize: 16, color: Colors.black },
   rowSub: { fontFamily: "BasicMedium", fontSize: 12, color: Colors.gray, marginTop: 4 },
-  rowRateUp: { fontFamily: "BasicBold", fontSize: 18, color: "#FF2C2C" },
-  rowRateDown: { fontFamily: "BasicBold", fontSize: 18, color: "#2F6FFF" },
-  divider: { height: 1, backgroundColor: Colors.gray },
+  rowRateUp: { fontFamily: "BasicBold", fontSize: 13, color: "#FF2C2C" },
+  rowRateDown: { fontFamily: "BasicBold", fontSize: 13, color: "#2F6FFF" },
+  divider: { height: 1, backgroundColor: "#E5E5E5" },
 });

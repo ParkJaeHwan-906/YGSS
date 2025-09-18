@@ -1,26 +1,31 @@
 // app/(app)/(tabs)/mypage/index.tsx
-import InvestBias from "@/components/molecules/InvestBias";
 import InvestChar from "@/components/molecules/InvestChar";
 import MyMoney from "@/components/molecules/MyMoney";
+import ImageList, { ImageListData } from "@/components/organisms/ImageList";
 import PasswordConfirmModal from "@/components/organisms/PasswordConfirmModal";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { signOut } from "@/src/store/slices/authSlice";
 import { Colors } from "@/src/theme/colors";
 import { deleteRefreshToken } from "@/src/utils/secureStore";
 import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL as string;
 
 export default function Mypage() {
     const router = useRouter();
     const dispatch = useAppDispatch()
     const user = useAppSelector((state) => state.auth.user);
-    console.log(user)
+    const accessToken = useAppSelector((s) => s.auth.accessToken);
+
     const [modalVisible, setModalVisible] = useState(false);
 
     const insets = useSafeAreaInsets();
+    const [likedItems, setLikedItems] = useState<ImageListData[]>([]);
 
     const handleLogout = async () => {
         await deleteRefreshToken();     // SecureStore 비우기
@@ -28,6 +33,39 @@ export default function Mypage() {
         router.replace("/(auth)/login"); // 뒤로가기 못하게 교체 이동
     };
 
+    //  찜한 상품 불러오기
+    useEffect(() => {
+        const fetchLiked = async () => {
+            try {
+                const res = await axios.get(`${API_URL}/pension/liked-product`, {
+                    headers: { Authorization: `A103 ${accessToken}` },
+                });
+
+                const { likedProduct = [], likedBond = [] } = res.data;
+
+                const mapped: ImageListData[] = [
+                    ...likedProduct.map((it: any) => ({
+                        logo: require("@/assets/icon/etf.png"), // ETF 아이콘 예시
+                        title: it.product,
+                        subTitle: it.companyName,
+                        rate: it.nextYearProfitRate ?? 0,
+                    })),
+                    ...likedBond.map((it: any) => ({
+                        logo: require("@/assets/icon/bond.png"), // 채권 아이콘 예시
+                        title: it.productName,
+                        subTitle: it.publisher,
+                        rate: it.finalProfitRate ?? 0,
+                    })),
+                ];
+
+                setLikedItems(mapped);
+            } catch (err: any) {
+                console.error("찜한 상품 조회 실패:", err.response?.status, err.message);
+            }
+        };
+
+        fetchLiked();
+    }, [accessToken]);
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
             <ScrollView
@@ -42,7 +80,7 @@ export default function Mypage() {
                     <Ionicons name="chevron-forward-outline" size={22} color="#333" />
                 </Pressable>
 
-                <View style={{ marginBottom: 10 }}>
+                <View style={styles.moneyContainer}>
                     {/* 내 자산 현황 */}
                     {user?.totalRetirePension !== null && user?.totalRetirePension !== undefined && (
                         <MyMoney
@@ -61,10 +99,8 @@ export default function Mypage() {
                 <View style={{ marginBottom: 10 }}>
                     <InvestChar />
                 </View>
-                <View style={{ marginBottom: 10 }}>
-                    {/* 투자 성향 테스트 */}
-                    <InvestBias />
-                </View>
+
+                <ImageList items={likedItems} initialCount={3} step={5} />
 
                 {/* 로그아웃 버튼 */}
                 <Pressable onPress={handleLogout} style={styles.logoutButton}>
@@ -78,8 +114,11 @@ export default function Mypage() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
         backgroundColor: Colors.back,
+    },
+    moneyContainer: {
+        marginBottom: 10,
+        paddingHorizontal: 16,
     },
     profileButton: {
         flexDirection: "row",
@@ -87,7 +126,7 @@ const styles = StyleSheet.create({
         marginTop: 20,
         marginBottom: 10,
         alignSelf: "flex-start",
-        paddingLeft: 8,
+        paddingLeft: 16,
     },
     profileName: {
         fontSize: 22,
