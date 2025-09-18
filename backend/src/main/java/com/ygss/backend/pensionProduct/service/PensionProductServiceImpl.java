@@ -59,8 +59,8 @@ public class PensionProductServiceImpl implements PensionProductService {
      * 상품 상세 조회
      */
     @Override
-    public Optional<PensionProductDto> findById(Long id) {
-        return pensionProductRepository.findById(id)
+    public Optional<PensionProductDto> findById(Long productId) {
+        return pensionProductRepository.findById(productId)
                 .map(this::convertToDto);
     }
 
@@ -109,17 +109,14 @@ public class PensionProductServiceImpl implements PensionProductService {
     }
 
     @Override
-    public Optional<BondDto> searchBondById(Long bondId) {
+    public BondDto searchBondById(Long bondId, String email) {
 //        log.info("채권 단건 조회 - ID: {}", bondId);
+        Long userId = usersAccountsRepository.selectUserIdByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
+        boolean exist = pensionProductRepository.getBondLike(userId, bondId) != 0;
 
-        Optional<BondDto> result = pensionProductRepository.selectBondById(bondId);
-
-        if (result.isPresent()) {
-//            log.info("채권 단건 조회 완료 - {}", result.get().getProductName());
-        } else {
-//            log.warn("채권 정보 없음 - ID: {}", bondId);
-        }
-
+        BondDto result = pensionProductRepository.selectBondById(bondId).orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + email));
+        result.setIsLiked(exist);
         return result;
     }
 

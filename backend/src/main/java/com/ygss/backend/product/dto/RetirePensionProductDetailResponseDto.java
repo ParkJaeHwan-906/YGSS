@@ -13,4 +13,5 @@ public class RetirePensionProductDetailResponseDto {
     private Double profitPrediction;
     private Long riskGradeId;
     private String riskGrade;
+    private Boolean isLiked;
 }
