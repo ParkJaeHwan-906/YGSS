@@ -198,7 +198,7 @@ public class PensionProductServiceImpl implements PensionProductService {
     public boolean toggleBondLike(Long BondId,String email) {
         Long userId = usersAccountsRepository.selectUserIdByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
-        boolean exist = pensionProductRepository.getProductLike(userId, BondId) != 0;
+        boolean exist = pensionProductRepository.getBondLike(userId, BondId) != 0;
 
         if (exist) {
             pensionProductRepository.deleteBondLike(userId, BondId);
