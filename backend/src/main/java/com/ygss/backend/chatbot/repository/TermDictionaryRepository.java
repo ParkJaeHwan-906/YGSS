@@ -11,7 +11,9 @@ import java.util.Optional;
 public interface TermDictionaryRepository {
     @Select("SELECT id, term, `desc` FROM term_dictionary")
     List<TermDictionaryResponseDto> selectAllTerm();
-
-    @Select("SELEC term FROM term_dictionary WHERE id = #{id}")
-    Optional<String> getWord(Long id);
+    @Select("""
+            SELECT id, term, `desc` FROM term_dictionary
+            WHERE id = #{id};
+            """)
+    Optional<TermDictionaryResponseDto> selectTermById(Long id);
 }

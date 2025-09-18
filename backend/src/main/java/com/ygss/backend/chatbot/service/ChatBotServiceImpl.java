@@ -1,37 +1,62 @@
 package com.ygss.backend.chatbot.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ygss.backend.chatbot.dto.AnswerDto;
+import com.ygss.backend.chatbot.dto.SearchResultDto;
 import com.ygss.backend.chatbot.dto.SendChatRequestDto;
-import com.ygss.backend.chatbot.repository.TermDictionaryRepository;
+import com.ygss.backend.chatbot.repository.ChatDummyRepository;
 import com.ygss.backend.global.gms.GmsApiClient;
+import com.ygss.backend.global.gms.dto.Gpt5MiniRequestDto;
 import com.ygss.backend.global.redis.VectorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class ChatBotServiceImpl implements ChatBotService{
     private final GmsApiClient gmsApiClient;
     private final VectorRepository vectorRepository;
-    private final TermDictionaryRepository termDictionaryRepository;
+    private final FastApiServiceImpl fastApiService;
+    private final ChatDummyRepository chatDummyRepository;
+    private final TermDictionaryServiceImpl termDictionaryService;
 
     @Override
-    public Boolean requestAnswer(SendChatRequestDto request) {
+    public String requestAnswer(SendChatRequestDto request) {
         ObjectMapper mapper = new ObjectMapper();
         try {
             String jsonResult = gmsApiClient.getEmbedding(request.getMessage());
-            JsonNode root = mapper.readTree(jsonResult);
-            JsonNode embeddingArray = root.path("data").get(0).path("embedding");
+            // Bi-Encoder
+            List<AnswerDto> candidateList = getCandidateAnswerList(vectorRepository.searchAllPrefixes(gmsApiClient.getEmbeddingArr(jsonResult), 10));
+            if(candidateList == null) return "잘 모르겠어요. 조금 더 자세히 질문해주세요.";
+            // Cross-Encoder
+            List<AnswerDto> accurateList = getAccurateList(request.getMessage(), candidateList);
 
-            float[] embedding = new float[embeddingArray.size()];
-            for (int i = 0; i < embeddingArray.size(); i++) {
-                embedding[i] = embeddingArray.get(i).floatValue();
-            }
-            System.out.println(vectorRepository.searchAllPrefixes(embedding, 100));
-            return true;
+            return gmsApiClient.getAnswerText(gmsApiClient.getAnswer(new Gpt5MiniRequestDto(
+                    request.getMessage(),
+                    termDictionaryService.makeTermMap(accurateList),
+                    accurateList.stream().map(AnswerDto::getAnswer).toList()
+                    )));
         } catch (Exception e) {
             throw new RuntimeException("Message Embedding Failed : "+e.getMessage());
         }
+    }
+
+    @Override
+    public List<AnswerDto> getAccurateList(String question, List<AnswerDto> candidateList) {
+        return fastApiService.getAccurateList(question, candidateList);
+    }
+
+    @Override
+    public List<AnswerDto> getCandidateAnswerList(List<SearchResultDto> candidateList) {
+        if(candidateList.isEmpty()) return null;
+        List<AnswerDto> candidateAnswerList = new ArrayList<>();
+        candidateList.forEach((candidate) -> {
+            candidateAnswerList.add(chatDummyRepository.selectAnswerById(candidate.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Not Found Chat Dummy")));
+        });
+        return candidateAnswerList;
     }
 }
