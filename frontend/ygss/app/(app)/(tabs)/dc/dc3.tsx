@@ -1,22 +1,18 @@
 // app/(app)/(tabs)/dc/dc3.tsx
 
-import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
+import ItemCarousel from "@/components/organisms/ItemCarousel";
 import { Colors } from "@/src/theme/colors";
+import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Dc3() {
   return (
     <SafeAreaView
-      edges={['top','left','right']}                             // ✅ 상단/좌우 세이프엣지
+      edges={['top', 'left', 'right']}                             // ✅ 상단/좌우 세이프엣지
       style={[styles.safeArea, { backgroundColor: Colors?.back ?? "#F4F6FF" }]}
     >
-      {/* ✅ 상태바: 아이콘 보이게(시간/배터리), 배경은 투명 */}
-      <StatusBar style="dark" translucent backgroundColor="transparent" />
-      
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.container}
       >
         {/* ===== Header ===== */}
         <View style={styles.header}>
@@ -29,40 +25,11 @@ export default function Dc3() {
             style={styles.headerIcon}
           />
         </View>
-
-        {/* ===== Carousel ===== */}
-        <ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          snapToAlignment="center"
-          contentContainerStyle={styles.carouselTrack}
-          decelerationRate="fast"
-        >
-          {/* 카드 1 */}
-          <View style={[styles.card, { backgroundColor: "#FFF7A6" }]}>
-            <Text style={styles.cardTitle}>하나증권{"\n"}DC 투자 상품</Text>
-            <Text style={styles.cardRateUp}>+92.54%</Text>
-            <Image source={require("@/assets/icon/star.png")} style={styles.cardBadge}/>
-          </View>
-
-          {/* 카드 2 (중앙 강조) */}
-          <View style={[styles.card, styles.cardEmph]}>
-            <Text style={styles.cardTitleDark}>하나증권{"\n"}DC 투자 상품</Text>
-            <Text style={styles.cardRateUpDark}>+92.54%</Text>
-            <Image source={require("@/assets/icon/star.png")} style={styles.cardBadge}/>
-          </View>
-
-          {/* 카드 3 */}
-          <View style={[styles.card, { backgroundColor: "#FFF7A6" }]}>
-            <Text style={styles.cardTitle}>하나증권{"\n"}DC 투자 상품</Text>
-            <Text style={styles.cardRateUp}>+92.54%</Text>
-            <Image source={require("@/assets/icon/star.png")} style={styles.cardBadge}/>
-          </View>
-        </ScrollView>
-
-        {/* 캡션 */}
-        <Text style={styles.caption}>대표 수익률은 3개월 기준입니다.</Text>
+        <View style={styles.carouselTrack}>
+          <ItemCarousel />
+          {/* 캡션 */}
+          <Text style={styles.caption}>대표 수익률은 3개월 기준입니다.</Text>
+        </View>
 
         {/* ===== Section: 더 많은 상품 확인하기 ===== */}
         <View style={styles.sectionHeader}>
@@ -114,18 +81,13 @@ const CARD_W = 260;
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  container: {
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-  },
-
   /* Header */
   header: {
     marginTop: 40,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 20,
+    paddingHorizontal: 20,
   },
   headerTitleLine1: { fontSize: 24, fontFamily: "BasicBold", color: Colors?.black ?? "#111" },
   headerTitleLine2: { fontSize: 24, fontFamily: "BasicBold", color: Colors?.black ?? "#111" },
@@ -160,12 +122,12 @@ const styles = StyleSheet.create({
     width: 64, height: 64, resizeMode: "contain",
     position: "absolute", right: 18, bottom: 18,
   },
-
   caption: {
     textAlign: "center",
     color: Colors?.gray ?? "#8B8B8B",
-    marginTop: 14,
-    marginBottom: 18,
+    fontFamily: "BasicMedium",
+    fontSize: 12,
+    marginBottom: 10,
   },
 
   /* Section */

@@ -42,6 +42,10 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.primary,
         padding: 20,
         borderRadius: 16,
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
     },
     boxTitle: {
         fontSize: 22,

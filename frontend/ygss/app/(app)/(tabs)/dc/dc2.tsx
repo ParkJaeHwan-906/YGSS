@@ -1,19 +1,19 @@
 // app/(app)/(tabs)/dc/dc2.tsx
 
-import { useEffect } from "react";
+import { Colors } from "@/src/theme/colors";
 import { Stack, useRouter } from "expo-router";
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Image, 
-  SafeAreaView, 
-  StatusBar,
+import { MotiView } from "moti";
+import { useEffect } from "react";
+import {
+  Image,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
-import { Colors } from "@/src/theme/colors";
-import { MotiView } from "moti";
 
 export default function Dc2() {
   const router = useRouter();
@@ -48,13 +48,13 @@ export default function Dc2() {
                 repeatReverse: true,
               }}
             >
-            <Image
-              source={require("@/assets/char/winkAlchi.png")}
-              style={styles.image}
-              resizeMode="contain"
-            />
+              <Image
+                source={require("@/assets/char/winkAlchi.png")}
+                style={styles.image}
+                resizeMode="contain"
+              />
             </MotiView>
-            <Text style={styles.caption}>알키가 당신에게 딱 맞는 상품을 고르는 중이에요 ...</Text>
+            <Text style={styles.caption}>알키가 당신에게 딱 맞는 상품을{"\n"}고르는 중이에요 ...</Text>
           </View>
         </SafeAreaView>
       </KeyboardAvoidingView>
