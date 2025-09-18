@@ -207,7 +207,7 @@ public class PensionProductController {
         try {
             return ResponseEntity.ok(pensionProductService.getAllLikedProduct(principal.getName()));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
