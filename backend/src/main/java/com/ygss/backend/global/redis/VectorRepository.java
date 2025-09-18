@@ -12,57 +12,9 @@ import java.util.*;
 @Component
 public class VectorRepository {
     private final Jedis jedis;
-    private static final String SPLIT_REGEX = "[.!?\\n]+";
-    private static final String REMOVE_CHARS_REGEX = "[\"'`]";
-    private static final int MIN_SENTENCE_LENGTH = 15;
-    private static final int MAX_CHARS = 200;
+
     public VectorRepository(Jedis jedis) { this.jedis = jedis; }
 
-    // chunk 나누기
-//    public List<String> seperateChunk(String text) {
-//        List<String> chunks = new ArrayList<>();
-//        text = text.replaceAll(REMOVE_CHARS_REGEX, "");
-//        List<String> sentences = splitBySentence(text);
-//        StringBuilder currentChunk = new StringBuilder();
-//
-//        for (String sentence : sentences) {
-//            sentence = sentence.trim();
-//            if (sentence.isEmpty()) continue;
-//
-//            if (sentence.length() < MIN_SENTENCE_LENGTH) {
-//                if (currentChunk.length() + sentence.length() <= MAX_CHARS) {
-//                    currentChunk.append(sentence).append(" ");
-//                } else {
-//                    if (!currentChunk.isEmpty()) {
-//                        chunks.add(currentChunk.toString().trim());
-//                    }
-//                    currentChunk = new StringBuilder(sentence).append(" ");
-//                }
-//            } else {
-//                if (!currentChunk.isEmpty()) {
-//                    chunks.add(currentChunk.toString().trim());
-//                    currentChunk = new StringBuilder();
-//                }
-//                chunks.add(sentence);
-//            }
-//        }
-//
-//        if (!currentChunk.isEmpty()) {
-//            chunks.add(currentChunk.toString().trim());
-//        }
-//        return chunks;
-//    }
-
-//    private static List<String> splitBySentence(String text) {
-//        String[] split = text.split(SPLIT_REGEX);
-//        List<String> sentences = new ArrayList<>();
-//        for (String s : split) {
-//            if (!s.trim().isEmpty()) {
-//                sentences.add(s.trim());
-//            }
-//        }
-//        return sentences;
-//    }
     private byte[] toBytes(float[] vector) {
         ByteBuffer buffer = ByteBuffer.allocate(vector.length * 4);
         for (float v : vector) {
@@ -84,15 +36,11 @@ public class VectorRepository {
         return floats;
     }
 
-    public void saveVectorChunk(String prefix, Long id, float[] embedding) {
-        String counterKey = prefix + ":" + id + ":counter";
-        String hashKey = prefix + ":" + id;
-
-        long fieldIndex = jedis.incr(counterKey);
-        jedis.hset(hashKey.getBytes(),
-                String.valueOf(fieldIndex).getBytes(),
-                toBytes(embedding));
+    public void saveVectorChunk(String prefix, Long termId, Long id, String type, float[] embedding) {
+        String key = prefix + ":" + termId + ":" + id + ":" + type; // type: "Q" 또는 "A"
+        jedis.rpush(key.getBytes(), toBytes(embedding));
     }
+
 
     public static double cosineSimilarity(float[] a, float[] b) {
         double dotProduct = 0.0;
@@ -129,32 +77,31 @@ public class VectorRepository {
         do {
             ScanResult<String> scanResult = jedis.scan(cursor);
             for (String key : scanResult.getResult()) {
-                if (key.endsWith(":counter")) continue;
-                if (!"hash".equalsIgnoreCase(jedis.type(key))) continue;
+                if (!"list".equalsIgnoreCase(jedis.type(key))) continue;
 
+                // key 구조: prefix:termId:id:type
                 String[] parts = key.split(":");
-                if (parts.length < 2) continue;
+                if (parts.length < 4) continue; // type까지 포함
                 String prefix = parts[0];
-                Long id;
+                Long termId, id;
+                String type = parts[3].toUpperCase(); // DTO에 표시할 type
                 try {
-                    id = Long.parseLong(parts[1]);
+                    termId = Long.parseLong(parts[1]);
+                    id = Long.parseLong(parts[2]);
                 } catch (NumberFormatException e) {
                     continue;
                 }
 
-                Map<byte[], byte[]> allEmbeddings = jedis.hgetAll(key.getBytes());
-                for (Map.Entry<byte[], byte[]> entry : allEmbeddings.entrySet()) {
-                    String field = new String(entry.getKey(), StandardCharsets.UTF_8);
-                    if ("counter".equals(field)) continue;
-
-                    float[] vec = fromBytes(entry.getValue());
+                // 모든 embedding 조회 (Q/A 구분 없이)
+                List<byte[]> allEmbeddings = jedis.lrange(key.getBytes(), 0, -1);
+                for (byte[] value : allEmbeddings) {
+                    float[] vec = fromBytes(value);
                     double sim = cosineSimilarity(queryVector, vec);
-                    pq.offer(new SearchResultDto(prefix, id, sim));
+                    pq.offer(new SearchResultDto(prefix, termId, id, type, sim));
 
                     if (pq.size() > k) pq.poll();
                 }
             }
-
             cursor = scanResult.getCursor();
         } while (!"0".equals(cursor));
 

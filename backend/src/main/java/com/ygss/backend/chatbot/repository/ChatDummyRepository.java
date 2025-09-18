@@ -8,6 +8,6 @@ import java.util.List;
 
 @Mapper
 public interface ChatDummyRepository {
-    @Select("SELECT term_id, question, answer FROM chat_dummy;")
+    @Select("SELECT id, term_id, question, answer FROM chat_dummy;")
     List<ChatDummyResponseDto> selectAllChatDummy();
 }
