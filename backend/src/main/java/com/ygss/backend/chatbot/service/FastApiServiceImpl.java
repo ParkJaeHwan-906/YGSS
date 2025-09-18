@@ -27,7 +27,7 @@ public class FastApiServiceImpl implements FastApiService{
                 "candidateList", candidateList
         );
         return convertToJson(client.post()
-                        .uri(FAST_API_URL+"/compare")
+                        .uri(FAST_API_URL+"/server/compare")
                         .body(body)
                         .retrieve()
                         .body(String.class)
