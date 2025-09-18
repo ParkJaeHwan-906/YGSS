@@ -1,9 +1,10 @@
 // components/InvestChar.tsx
+import InvestBias from "@/components/molecules/InvestBias";
 import { useAppSelector } from "@/src/store/hooks";
 import { Colors } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Image, Animated as RNAnimated, Easing as RNEasing, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, Animated as RNAnimated, Easing as RNEasing, StyleSheet, Text, View } from "react-native";
 import { PieChart } from "react-native-gifted-charts";
 import Animated, {
   Easing,
@@ -30,8 +31,10 @@ export default function InvestChar({ slices }: InvestCharProps) {
 
   const userName = user?.name ?? "유저";
   const investType = user?.riskGrade ?? "?????";
-
+  const [showBias, setShowBias] = useState(false); // 투자성향 컴포넌트 보여주는지 
   const translateY = useRef(new RNAnimated.Value(0)).current;
+
+  const slide = useSharedValue(0);
 
   useEffect(() => {
     RNAnimated.loop(
@@ -52,6 +55,21 @@ export default function InvestChar({ slices }: InvestCharProps) {
     ).start();
   }, [translateY]);
 
+
+  useEffect(() => {
+    slide.value = withTiming(showBias ? 1 : 0, { duration: 300 });
+  }, [showBias]);
+
+  const biasStyle = useAnimatedStyle(() => ({
+    opacity: slide.value,
+    transform: [
+      {
+        translateY: slide.value === 1 ? 0 : -20, // 🔹 위에서 아래로
+      },
+    ],
+    height: slide.value === 1 ? "auto" : 0, // 안 보일 땐 높이 0
+  }));
+
   // risk_grade_id 없으면 차트 안 보여줌
   if (investType === "?????") {
     return (
@@ -66,9 +84,24 @@ export default function InvestChar({ slices }: InvestCharProps) {
           resizeMode="contain"
         />
         <Text style={styles.emptyText}>투자 성향 테스트를 해보세요!</Text>
-        <RNAnimated.View style={[{ transform: [{ translateY: translateY }] }, styles.arrowStyle]}>
-          <Ionicons name="chevron-down-outline" size={24} color="black" />
+
+        <RNAnimated.View
+          style={[{ transform: [{ translateY: translateY }] }, styles.arrowStyle]}
+        >
+          <Pressable onPress={() => setShowBias(!showBias)}>
+            <Ionicons
+              name={showBias ? "chevron-up-outline" : "chevron-down-outline"}
+              size={24}
+              color="black"
+            />
+          </Pressable>
         </RNAnimated.View>
+
+        {/* 🔹 슬라이드 애니메이션 InvestBias */}
+        <Animated.View style={[{ overflow: "hidden" }, biasStyle]}>
+          <InvestBias />
+        </Animated.View>
+
       </View>
     );
   }
@@ -249,6 +282,25 @@ export default function InvestChar({ slices }: InvestCharProps) {
           </View>
         ))}
       </View>
+
+
+      <RNAnimated.View
+        style={[{ transform: [{ translateY: translateY }] }, styles.arrowStyle]}
+      >
+        <Pressable onPress={() => setShowBias(!showBias)}>
+          <Ionicons
+            name={showBias ? "chevron-up-outline" : "chevron-down-outline"}
+            size={24}
+            color="black"
+          />
+        </Pressable>
+      </RNAnimated.View>
+      {!showBias && <Text style={styles.retakeText}>투자 성향 검사 다시 하러가기</Text>}
+
+      {/* 🔹 슬라이드 애니메이션 InvestBias */}
+      <Animated.View style={[{ overflow: "hidden" }, biasStyle]}>
+        <InvestBias />
+      </Animated.View>
     </View>
   );
 }
@@ -256,11 +308,13 @@ export default function InvestChar({ slices }: InvestCharProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors?.white ?? "#FFFFFF",
-    borderRadius: 18,
     paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 24,
-
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 10,
   },
   titleText: {
     fontSize: 20,
@@ -325,5 +379,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginVertical: 16,
+  },
+  retakeText: {
+    textAlign: "center",
+    marginTop: 6,
+    fontSize: 12,
+    color: Colors.gray,
+    fontFamily: "BasicMedium",
   },
 });

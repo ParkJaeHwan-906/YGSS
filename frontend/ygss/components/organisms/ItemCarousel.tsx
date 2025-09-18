@@ -1,6 +1,8 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
 import { Animated, Dimensions, StyleSheet, View } from "react-native";
 import ItemCard, { cardConstants } from "../molecules/ItemCard";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL as string;
 
 const { width } = Dimensions.get("window");
 const { CARD_W, SPACING } = cardConstants;
@@ -26,7 +28,8 @@ export default function ItemCarousel() {
                 decelerationRate="fast"
                 bounces={false}
                 contentContainerStyle={{
-                    paddingHorizontal: (width - CARD_W) / 2, // 첫/마지막 카드도 중앙
+                    // 부모 padding(16) 고려해서 보정
+                    paddingHorizontal: (width - CARD_W) / 2 - 16,
                 }}
                 onScroll={Animated.event(
                     [{ nativeEvent: { contentOffset: { x: scrollX } } }],
@@ -47,7 +50,7 @@ export default function ItemCarousel() {
 
                     const translateY = scrollX.interpolate({
                         inputRange,
-                        outputRange: [0, +20, 0],
+                        outputRange: [0, 20, 0],
                         extrapolate: "clamp",
                     });
 
@@ -63,6 +66,7 @@ export default function ItemCarousel() {
                     );
                 }}
             />
+
         </View>
     );
 }

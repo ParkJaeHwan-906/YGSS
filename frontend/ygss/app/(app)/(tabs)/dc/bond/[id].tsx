@@ -9,6 +9,7 @@ import axios from "axios";
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Animated, Easing, Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { BarChart } from "react-native-gifted-charts";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL as string;
@@ -28,7 +29,7 @@ export default function DcDetail() {
 
             const res = await axios.post(
                 url,
-                { numericId },
+                {},
                 {
                     headers: {
                         Authorization: `A103 ${accessToken}`,
@@ -100,25 +101,27 @@ export default function DcDetail() {
             <ScrollView contentContainerStyle={styles.scrollContent}>
 
                 {/* 상품 기본 정보 */}
-                <ItemInfo_bond productDetail={productDetail} />
+                <View style={styles.productContainer}>
+                    <ItemInfo_bond productDetail={productDetail} />
+                </View>
 
                 {/* 발행처 */}
                 <View style={styles.publisherContainer}>
                     <Text style={styles.publisherText}>발행처</Text>
                     <Text style={styles.publisherValue}>• {productDetail.publisher}</Text>
+                    <Text style={styles.publisherValue}>• 신용 등급: {productDetail.publisherGrade}</Text>
                 </View>
 
                 {/* 만기일/ 잔존기간 */}
                 <View style={styles.expireContainer}>
                     <View style={styles.expireRow}>
                         <Text style={styles.expireTitle}>만기일:</Text>
-                        <Text > {productDetail.expiredDay}</Text>
+                        <Text style={styles.expireText}> {productDetail.expiredDay}</Text>
                     </View>
                     <View style={styles.expireRow}>
                         <Text style={styles.expireTitle}>만기까지:</Text>
-                        <Text> {productDetail.maturityYears}년</Text>
+                        <Text style={styles.expireText}> {productDetail.maturityYears}년</Text>
                     </View>
-
                 </View>
 
                 {/* 종목 구성 */}
@@ -128,16 +131,54 @@ export default function DcDetail() {
                         style={styles.pointAlchi}
                         resizeMode="contain"
                     />
-                    <Text style={styles.pointText}>종목 구성은 이렇게 되어 있어요 !</Text>
+                    <Text style={styles.pointText}>자세한 수익률을 아래와 같아요!</Text>
                     <Animated.View style={{ transform: [{ translateY }] }}>
                         <Ionicons name="chevron-down-outline" size={24} color="black" />
                     </Animated.View>
                 </View>
 
-                <View>
-                    <Caution />
+                {/* 수익률 바 차트 */}
+                <View style={styles.chartContainer}>
+                    <BarChart
+                        data={[
+                            {
+                                value: productDetail.publishedRate,
+                                label: "매수수익률",
+                                frontColor: Colors.primary,
+                            },
+                            {
+                                value: productDetail.couponRate,
+                                label: "표면금리",
+                                frontColor: "#9BB1FF",
+                            },
+                            {
+                                value: productDetail.evaluationRate,
+                                label: "민평수익률",
+                                frontColor: "#BFB4F0",
+                            },
+                        ]}
+                        barWidth={60}
+                        adjustToWidth
+                        hideRules={false}
+                        scrollAnimation={false}
+                        yAxisLabelSuffix="(%)"
+                        yAxisTextStyle={{ fontFamily: "BasicMedium", fontSize: 10, color: Colors.gray }}
+                        xAxisLabelTextStyle={{ fontFamily: "BasicMedium", fontSize: 12, color: Colors.black }}
+                        yAxisColor={Colors.gray}
+                        xAxisColor={Colors.gray}
+                        noOfSections={5}
+                        showValuesAsTopLabel
+                        topLabelTextStyle={{
+                            color: Colors.primary,
+                            fontSize: 11,
+                            fontFamily: "BasicMedium",
+                        }}
+                    />
                 </View>
 
+
+                {/* 유의사항 */}
+                <Caution />
 
             </ScrollView>
 
@@ -156,7 +197,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Colors.back,
     },
-    stratContainer: { backgroundColor: Colors.white, marginBottom: 10 },
+    productContainer: { backgroundColor: Colors.white, marginTop: 20 },
     publisherContainer: { backgroundColor: Colors.white, marginBottom: 10, padding: 16 },
     publisherText: {
         fontSize: 18,
@@ -179,25 +220,33 @@ const styles = StyleSheet.create({
         color: Colors.black,
         marginVertical: 20,
     },
+    chartContainer: {
+        padding: 16,
+        backgroundColor: Colors.white,
+        marginBottom: 30,
+    },
     expireContainer: {
         padding: 16,
-        alignItems: "flex-end",
         backgroundColor: Colors.white,
         marginBottom: 30,
     },
     expireRow: {
         flexDirection: "row",
-        alignItems: "flex-end",
+        justifyContent: "space-between",
+        alignItems: "center",
     },
     expireTitle: {
         fontFamily: "BasicBold",
         fontSize: 18,
         color: Colors.black,
+        marginBottom: 10,
     },
     expireText: {
         fontFamily: "BasicMedium",
         fontSize: 15,
-        color: Colors.black,
+        color: Colors.gray,
+        textAlign: "right",
+        flex: 1,
     },
     button: {
         position: "absolute",
