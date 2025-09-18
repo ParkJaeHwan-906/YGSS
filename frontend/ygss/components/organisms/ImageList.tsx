@@ -14,12 +14,14 @@ export type ImageListData = {
 };
 
 type Props = {
+  header?: string;
   items: ImageListData[];
   initialCount?: number; // 기본 3개 노출
   step?: number;         // 클릭 시 5개씩 증가
 };
 
 export default function ImageList({
+  header = "나의 찜 상품",
   items,
   initialCount = 3,
   step = 5,
@@ -34,7 +36,7 @@ export default function ImageList({
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.header}>나의 찜 상품</Text>
+      <Text style={styles.header}>{header}</Text>
 
       {items.length === 0 ? (
         <Text style={styles.emptyText}>찜한 상품이 없습니다.</Text>
