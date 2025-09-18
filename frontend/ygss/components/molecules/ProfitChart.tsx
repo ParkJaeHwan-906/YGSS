@@ -22,8 +22,8 @@ const RANGE_LABELS: Record<RangeType, string> = {
 
 export default function ProfitChart({ data }: { data: PriceData[] }) {
     const [month, setMonth] = useState<RangeType>("3M");
-    const [focusedIndex, setFocusedIndex] = useState<number | null>(null); // 터치 시 인터페이스 유지
-    const [scrollX, setScrollX] = useState(0); // 스크롤 상태 저장해야 툴팁 위치 고정 가능
+    const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+    const [scrollX, setScrollX] = useState(0);
 
     if (!data || data.length === 0) {
         return (
@@ -35,7 +35,7 @@ export default function ProfitChart({ data }: { data: PriceData[] }) {
 
     const baseDate = "2025-09-01"; // 기준일
 
-    // 기간별 시작일 계산
+    // 기간별 데이터 필터링
     const filteredData = useMemo(() => {
         const end = new Date(baseDate);
         const start = new Date(end);
@@ -65,92 +65,67 @@ export default function ProfitChart({ data }: { data: PriceData[] }) {
         });
     }, [data, month]);
 
-    // 기준 initprice (선택기간 첫날의 가격)
+    // 기준 initPrice (첫날)
     const basePrice = useMemo(() => {
         return filteredData.length > 0
             ? filteredData[0].initPrice
             : data[0].initPrice;
     }, [filteredData, data]);
 
-    // 누적 수익률
+    // 누적 수익률 (첫 점은 항상 0)
     const chartData = useMemo(() => {
         return filteredData.map((d, idx) => {
-            const date = new Date(d.date);
-            const monthLabel = `${date.getMonth() + 1}월`; // 0-based → +1
-            const cumReturn = ((d.initPrice - basePrice) / basePrice) * 100;
+            const cumReturn =
+                idx === 0 ? 0 : ((d.initPrice - basePrice) / basePrice) * 100;
             return {
                 value: Number(cumReturn.toFixed(2)),
-                label: monthLabel,
                 date: d.date,
                 initPrice: d.initPrice,
                 index: idx,
-                // labelComponent: () => (
-                //     <Text
-                //         style={{
-                //             position: "absolute",
-                //             top: -20,
-                //             fontSize: 10,
-                //             color: Colors.black,
-                //             textAlign: "center",
-                //             width: 40,
-                //         }}
-                //     >
-                //         {monthLabel}
-                //     </Text>
-                // ),
             };
         });
     }, [filteredData, basePrice]);
 
-    // y축 스케일링 (%)
+    // x축 라벨: 점과 점 사이에 표시
+    const xAxisLabels = useMemo(() => {
+        return filteredData.map((d) => {
+            const date = new Date(d.date);
+            return `${date.getMonth() + 1}월`;
+        });
+    }, [filteredData]);
+
+    // y축 스케일링
     const yValues = chartData.map((d) => d.value);
     let minY = Math.min(...yValues);
     let maxY = Math.max(...yValues);
-
-    // 0을 반드시 포함
     minY = Math.min(minY, 0);
     maxY = Math.max(maxY, 0);
 
     const rangeY = maxY - minY;
-
-    // 범위 크기에 따른 step 자동 결정
     let step = 1;
-    if (rangeY <= 5) step = 1;       // 좁은 구간 → 1%
-    else if (rangeY <= 10) step = 2; // 중간 구간 → 2%
-    else if (rangeY <= 30) step = 5; // 넓은 구간 → 5%  
-    else if (rangeY <= 50) step = 10;// 더 넓은 구간 → 10%
-    else step = 20;                  // 극단적 구간 → 20%
+    if (rangeY <= 0.5) step = 0.1;       // 아주 좁은 구간
+    else if (rangeY <= 1) step = 0.2;    // 좁은 구간
+    else if (rangeY <= 5) step = 0.5;    // 소수점 단위
+    else if (rangeY <= 10) step = 1;
+    else if (rangeY <= 30) step = 2;
+    else if (rangeY <= 50) step = 5;
+    else step = 10;
 
-    // minY, maxY를 step 단위로 맞춤
     minY = Math.floor(minY / step) * step;
     maxY = Math.ceil(maxY / step) * step;
 
-    // y축 라벨 생성
     const yAxisLabelTexts: string[] = [];
     for (let y = minY; y <= maxY; y += step) {
-        yAxisLabelTexts.push(`${y}`);
+        yAxisLabelTexts.push(y.toFixed(1)); // 소수점 1자리 고정
     }
 
-
-    // const yAxisLabelTexts: string[] = [];
-    // for (let y = Math.floor(minY / step) * step; y <= Math.ceil(maxY / step) * step; y += step) {
-    //     yAxisLabelTexts.push(Number(y.toFixed(2)).toString());
-    // }
-
-    // --- x축 spacing 계산 (항상 마지막 데이터가 맨 끝에 오도록)
+    // spacing 계산
     const screenWidth = Dimensions.get("window").width;
-
-    const monthCount =
-        month === "1M" ? 1 :
-            month === "3M" ? 3 :
-                month === "6M" ? 6 :
-                    month === "1Y" ? 12 :
-                        new Date(baseDate).getMonth() + 1; // YTD (1월부터 현재까지 개월 수)
-
-    // 총 간격 = 화면 폭
     const spacing = useMemo(() => {
-        return screenWidth / (monthCount - 1 || 1);
-    }, [month, screenWidth]);
+        return chartData.length > 1
+            ? screenWidth / (chartData.length - 1)
+            : screenWidth;
+    }, [chartData.length, screenWidth]);
 
     const focusedPoint =
         focusedIndex !== null ? chartData[focusedIndex] : null;
@@ -194,7 +169,12 @@ export default function ProfitChart({ data }: { data: PriceData[] }) {
                 기준일 : {baseDate}
             </Text>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} onScroll={(e) => setScrollX(e.nativeEvent.contentOffset.x)} scrollEventThrottle={16}>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                onScroll={(e) => setScrollX(e.nativeEvent.contentOffset.x)}
+                scrollEventThrottle={16}
+            >
                 <LineChart
                     data={chartData}
                     curved
@@ -207,6 +187,7 @@ export default function ProfitChart({ data }: { data: PriceData[] }) {
                     startOpacity={0.8}
                     endOpacity={0.05}
                     hideDataPoints
+                    xAxisLabelTexts={xAxisLabels} // 구간 라벨 반영
                     xAxisLabelTextStyle={{ color: Colors.black, fontSize: 10 }}
                     yAxisTextStyle={{ color: Colors.black, fontSize: 10 }}
                     yAxisLabelWidth={40}
@@ -226,7 +207,7 @@ export default function ProfitChart({ data }: { data: PriceData[] }) {
                     referenceLine1Config={{ color: Colors.black, thickness: 1 }}
                     adjustToWidth
                     width={chartData.length * spacing}
-                    spacing={spacing} // 기간에 따라 spacing 반영
+                    spacing={spacing}
                     onFocus={(item: any) => {
                         setFocusedIndex(item.index);
                     }}
@@ -234,38 +215,33 @@ export default function ProfitChart({ data }: { data: PriceData[] }) {
             </ScrollView>
 
             {focusedPoint && (
-                <>
-                    {/* 툴팁 박스 */}
-                    <View
-                        style={[
-                            styles.tooltip,
-                            {
-                                // stripX 좌표에서 scrollX 빼줌
-                                left: Math.min(
-                                    Math.max(0, 30 + focusedPoint.index * spacing - 50 - scrollX),
-                                    screenWidth - 100
+                <View
+                    style={[
+                        styles.tooltip,
+                        {
+                            left: Math.min(
+                                Math.max(
+                                    0,
+                                    30 + focusedPoint.index * spacing - 50 - scrollX
                                 ),
-                                top: 150,
-                            },
-                        ]}
-                    >
-                        <Text style={styles.tooltipText}>{focusedPoint.date}</Text>
-                        <Text style={styles.tooltipText}>
-                            시장가: {focusedPoint.initPrice.toLocaleString()} KRW
-                        </Text>
-                    </View>
-                </>
-            )
-            }
-        </View >
+                                screenWidth - 100
+                            ),
+                            top: 150,
+                        },
+                    ]}
+                >
+                    <Text style={styles.tooltipText}>{focusedPoint.date}</Text>
+                    <Text style={styles.tooltipText}>
+                        시장가: {focusedPoint.initPrice.toLocaleString()} KRW
+                    </Text>
+                </View>
+            )}
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        alignItems: "center",
-        justifyContent: "center",
-    },
+    container: { alignItems: "center", justifyContent: "center" },
     title: {
         fontSize: 18,
         fontFamily: "BasicBold",
@@ -273,14 +249,8 @@ const styles = StyleSheet.create({
         padding: 10,
         color: Colors.black,
     },
-    empty: {
-        fontSize: 12,
-        color: Colors.gray,
-    },
-    tabContainer: {
-        flexDirection: "row",
-        marginBottom: 10,
-    },
+    empty: { fontSize: 12, color: Colors.gray },
+    tabContainer: { flexDirection: "row", marginBottom: 10 },
     tabButton: {
         paddingVertical: 6,
         paddingHorizontal: 12,
