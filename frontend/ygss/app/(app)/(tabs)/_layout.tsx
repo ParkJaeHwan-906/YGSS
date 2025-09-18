@@ -48,6 +48,7 @@ export default function TabLayout() {
             <Ionicons name="compass-outline" size={size} color={focused ? "skyblue" : color} />
           ),
         }}
+        listeners={{ focus: () => router.replace("/(app)/(tabs)/dc/dc1") }}
 
       />
       <Tabs.Screen
