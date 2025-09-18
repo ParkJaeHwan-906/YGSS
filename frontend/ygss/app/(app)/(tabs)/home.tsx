@@ -4,7 +4,6 @@ import { Colors } from "@/src/theme/colors";
 import { Link, useRouter } from "expo-router";
 import {
   Image,
-  Modal,
   Platform,
   ScrollView,
   StatusBar,
@@ -14,28 +13,13 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-import ChatBotScreen from "@/components/chatbot/ChatBotScreen";
-import FloatingChatButton from "@/components/chatbot/FloatingChatButton";
-import { useState } from "react";
-
-
 export default function Home() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const user = useAppSelector((s) => s.auth.user);
 
-  const [isChatVisible, setIsChatVisible] = useState(false);
-
-  const openChat = () => {
-    setIsChatVisible(true);
-  };
-
-  const closeChat = () => {
-    setIsChatVisible(false);
-  };
 
   return (
-    <>
     <SafeAreaView style={styles.background} edges={["top", "left", "right"]}>
       <StatusBar barStyle="dark-content" translucent={false} />
 
@@ -121,24 +105,7 @@ export default function Home() {
         <View style={{ height: 24 }} />
       </ScrollView>
 
-      {/*ChatBot button*/}
-      <FloatingChatButton 
-        onPress={openChat}
-        backgroundColor={Colors?.primary ?? '#007AFF'}
-        hasNotification={false}
-      />
-      
     </SafeAreaView>
-    {/*ChatBot Modal */}
-        <Modal
-      visible={isChatVisible}
-      animationType="slide"
-      presentationStyle="fullScreen"
-      onRequestClose={closeChat}
-    >
-      <ChatBotScreen onClose={closeChat} />
-    </Modal>
-    </>
   );
 }
 
