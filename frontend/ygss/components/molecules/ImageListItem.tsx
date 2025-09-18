@@ -1,9 +1,12 @@
 // components/ImageListItem.tsx
 import { Colors } from "@/src/theme/colors";
+import { useRouter } from "expo-router";
 import React from "react";
-import { Image, ImageSourcePropType, StyleSheet, Text, View } from "react-native";
+import { Image, ImageSourcePropType, Pressable, StyleSheet, Text, View } from "react-native";
 
 type ImageListItemProps = {
+  id: number;
+  type: "BOND" | "ETF_FUND";
   logo?: ImageSourcePropType;
   title: string;
   subTitle: string;
@@ -12,18 +15,29 @@ type ImageListItemProps = {
 };
 
 export default function ImageListItem({
+  id,
+  type,
   logo,
   title,
   subTitle,
   rate,
   showDivider = true,
-}: ImageListItemProps) {
+}: ImageListItemProps & { id: number; type: "BOND" | "ETF_FUND" }) {
+  const router = useRouter();
   const isUp = rate >= 0;
   const rateText = `${isUp ? "+" : ""}${rate.toFixed(1)}%`;
   const defaultLogo = require("@/assets/char/basicAlchi.png");
 
+  const handlePress = () => {
+    if (type === "BOND") {
+      router.push(`/dc/bond/${id}`);
+    } else {
+      router.push(`/dc/etf_fund/${id}`);
+    }
+  };
+
   return (
-    <View style={styles.itemWrap}>
+    <Pressable onPress={handlePress} style={styles.itemWrap}>
       <View style={styles.row}>
         <View style={styles.logoStub}>
           <Image source={logo ?? defaultLogo} style={styles.logoImg} resizeMode="contain" />
@@ -38,7 +52,7 @@ export default function ImageListItem({
       </View>
 
       {showDivider && <View style={styles.divider} />}
-    </View>
+    </Pressable>
   );
 }
 
@@ -50,15 +64,15 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   logoStub: {
-    width: 70, height: 70,
+    width: 60, height: 60,
     alignItems: "center", justifyContent: "center",
-    marginRight: 12,
+    marginRight: 8,
   },
   logoImg: { width: 60, height: 60 },
   rowCenter: { flex: 1 },
   rowTitle: { fontFamily: "BasicMedium", fontSize: 16, color: Colors.black },
   rowSub: { fontFamily: "BasicMedium", fontSize: 12, color: Colors.gray, marginTop: 4 },
-  rowRateUp: { fontFamily: "BasicBold", fontSize: 14, color: "#FF2C2C" },
-  rowRateDown: { fontFamily: "BasicBold", fontSize: 14, color: "#2F6FFF" },
+  rowRateUp: { fontFamily: "BasicBold", fontSize: 15, color: "#FF2C2C" },
+  rowRateDown: { fontFamily: "BasicBold", fontSize: 15, color: "#2F6FFF" },
   divider: { height: 1, backgroundColor: "#E5E5E5" },
 });

@@ -32,72 +32,80 @@ export default function TabLayout() {
   const shouldShowChatbot = !pathname.includes('/mypage');
   return (
     <>
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
-      }}>
-      <Tabs.Screen
-        name="home"
-        options={{
-          tabBarLabel: "홈",
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name="home" size={size} color={focused ? "skyblue" : color} />
-          ),
-        }}
-        listeners={{ focus: () => router.replace("/(app)/(tabs)/home") }}
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+          headerShown: false,
+          tabBarButton: HapticTab,
+          tabBarBackground: TabBarBackground,
+          tabBarStyle: Platform.select({
+            ios: {
+              // Use a transparent background on iOS to show the blur effect
+              position: 'absolute',
+            },
+            default: {},
+          }),
+        }}>
+        <Tabs.Screen
+          name="home"
+          options={{
+            tabBarLabel: "홈",
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons name="home" size={size} color={focused ? "skyblue" : color} />
+            ),
+          }}
+          listeners={{ focus: () => router.replace("/(app)/(tabs)/home") }}
 
-      />
-      <Tabs.Screen
-        name="dc"
-        options={{
-          tabBarLabel: "DC",
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name="compass-outline" size={size} color={focused ? "skyblue" : color} />
-          ),
-        }}
-        listeners={{ focus: () => router.replace("/(app)/(tabs)/dc/dc1") }}
+        />
+        <Tabs.Screen
+          name="dc"
+          options={{
+            tabBarLabel: "DC",
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons name="compass-outline" size={size} color={focused ? "skyblue" : color} />
+            ),
+          }}
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault(); // 기본 이동 막기
+              router.replace("/(app)/(tabs)/dc/dc1");
+            },
+          }}
+        />
+        <Tabs.Screen
+          name="irp"
+          options={{
+            tabBarLabel: "IRP",
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons name="search" size={size} color={focused ? "skyblue" : color} />
+            ),
+          }}
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault();
+              router.replace("/(app)/(tabs)/irp/irp1");
+            },
+          }} />
+        <Tabs.Screen
+          name="mypage"
+          options={{
+            title: "마이페이지",
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons name="person" size={size} color={focused ? "skyblue" : color} />
+            ),
+          }}
+          listeners={{ focus: () => router.replace("/(app)/(tabs)/mypage") }}
 
-      />
-      <Tabs.Screen
-        name="irp"
-        options={{
-          tabBarLabel: "IRP",
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name="search" size={size} color={focused ? "skyblue" : color} />
-          ),
-        }}
-        listeners={{ focus: () => router.replace("/(app)/(tabs)/irp") }}
-      />
-      <Tabs.Screen
-        name="mypage"
-        options={{
-          title: "마이페이지",
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name="person" size={size} color={focused ? "skyblue" : color} />
-          ),
-        }}
-        listeners={{ focus: () => router.replace("/(app)/(tabs)/mypage") }}
+        />
 
-      />
+        {/* ⛔️ 탭바에서 숨길 라우트들 */}
+        <Tabs.Screen name="dc/index" options={{ href: null }} />
+        <Tabs.Screen name="dc/dc1" options={{ href: null }} />
+        <Tabs.Screen name="dc/dc2" options={{ href: null }} />
+        <Tabs.Screen name="dc/dc3" options={{ href: null }} />
+        <Tabs.Screen name="dc/dc4" options={{ href: null }} />
 
-      {/* ⛔️ 탭바에서 숨길 라우트들 */}
-      <Tabs.Screen name="dc/index" options={{ href: null }} />
-      <Tabs.Screen name="dc/dc1" options={{ href: null }} />
-      <Tabs.Screen name="dc/dc2" options={{ href: null }} />
-      <Tabs.Screen name="dc/dc3" options={{ href: null }} />
-      <Tabs.Screen name="dc/dc4" options={{ href: null }} />
-
-    </Tabs>
+      </Tabs>
 
       {/* 조건부로 플로팅 챗봇 버튼 표시 - home, dc, irp에서만 */}
       {shouldShowChatbot && (
@@ -113,6 +121,6 @@ export default function TabLayout() {
       >
         <ChatBotScreen onClose={closeChat} />
       </Modal>
-      </>
+    </>
   );
 }

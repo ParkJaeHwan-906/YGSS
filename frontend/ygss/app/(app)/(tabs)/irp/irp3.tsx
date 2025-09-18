@@ -1,4 +1,3 @@
-import ItemCarousel from "@/components/organisms/ItemCarousel";
 import { Colors } from "@/src/theme/colors";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,7 +16,7 @@ export default function IrpRecommend() {
                 />
             </View>
 
-            <ItemCarousel />
+            {/* <ItemCarousel /> */}
 
             <View >
                 <Text>헬로우 이츠미</Text>
