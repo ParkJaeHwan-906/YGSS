@@ -10,8 +10,8 @@ import { deleteRefreshToken } from "@/src/utils/secureStore";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL as string;
@@ -22,10 +22,12 @@ export default function Mypage() {
     const user = useAppSelector((state) => state.auth.user);
     const accessToken = useAppSelector((s) => s.auth.accessToken);
 
-    const [modalVisible, setModalVisible] = useState(false);
-
     const insets = useSafeAreaInsets();
+    const [modalVisible, setModalVisible] = useState(false);
     const [likedItems, setLikedItems] = useState<ImageListData[]>([]);
+    const [showTop, setShowTop] = useState(false); // top버튼
+
+    const scrollRef = useRef<ScrollView>(null);
 
     const handleLogout = async () => {
         await deleteRefreshToken();     // SecureStore 비우기
@@ -66,11 +68,25 @@ export default function Mypage() {
 
         fetchLiked();
     }, [accessToken]);
+
+    // 최상단 이동 핸들러
+    const handlePressToTop = () => {
+        scrollRef.current?.scrollTo({ y: 0, animated: true });
+    };
+
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
             <ScrollView
+                ref={scrollRef}
                 contentContainerStyle={{ flexGrow: 1 }}
-                showsVerticalScrollIndicator={false}>
+                showsVerticalScrollIndicator={false}
+                onScroll={(e) => {
+                    const offsetY = e.nativeEvent.contentOffset.y;
+                    setShowTop(offsetY > 300);
+                }}
+                scrollEventThrottle={16} // 스크롤 이벤트 빈도
+            >
+
                 {/* 상단 프로필 이동 버튼 */}
                 <Pressable
                     onPress={() => setModalVisible(true)}
@@ -106,7 +122,17 @@ export default function Mypage() {
                 <Pressable onPress={handleLogout} style={styles.logoutButton}>
                     <Text style={styles.logoutText}>로그아웃</Text>
                 </Pressable>
+
             </ScrollView >
+            {showTop && (
+                <TouchableOpacity
+                    style={styles.fab}
+                    onPress={handlePressToTop}
+                    activeOpacity={0.85}
+                >
+                    <Text style={styles.fabText}>↑</Text>
+                </TouchableOpacity>
+            )}
         </View>
     );
 }
@@ -139,6 +165,7 @@ const styles = StyleSheet.create({
     logoutButton: {
         marginTop: 30,
         alignSelf: "center", // 가운데 정렬
+        marginBottom: 20,
     },
     logoutText: {
         fontSize: 16,
@@ -146,4 +173,17 @@ const styles = StyleSheet.create({
         color: Colors.black,
         textDecorationLine: "underline", // 밑줄
     },
+    fab: {
+        position: "absolute",
+        right: 20,
+        bottom: 40,
+        backgroundColor: Colors.primary,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        alignItems: "center",
+        justifyContent: "center",
+        elevation: 5,
+    },
+    fabText: { color: "#fff", fontSize: 20, fontWeight: "bold" },
 });
