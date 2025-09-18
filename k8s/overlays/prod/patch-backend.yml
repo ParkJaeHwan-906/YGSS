@@ -10,6 +10,9 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: "prod"
+            # prod 환경 FastAPI URL (TODO: /ai 배포 후 변경)
+            - name: FASTAPI_BASE_URL
+              value: "https://j13a103.p.ssafy.io/ai-infra"
           resources:
             requests:
               cpu: "200m"

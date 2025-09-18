@@ -10,6 +10,8 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: "infra-refactor"
+            - name: FASTAPI_BASE_URL
+              value: "https://j13a103.p.ssafy.io/ai-infra"
           resources:
             requests:
               cpu: "100m"

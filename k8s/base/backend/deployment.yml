@@ -42,6 +42,11 @@ spec:
               value: "172.26.7.217"
             - name: SPRING_REDIS_PORT
               value: "6379"
+            - name: FASTAPI_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: FASTAPI_BASE_URL
             - name: SPRING_DATASOURCE_PASSWORD
               valueFrom:
                 secretKeyRef:
