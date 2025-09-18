@@ -455,7 +455,7 @@ public interface PensionProductRepository {
     int getBondLike(@Param("userId")Long userId, @Param("bondId")Long bondId);
 
     @Delete({
-            "DELETE FROM retire_pension_product_like",
+            "DELETE FROM bond_product_like",
             "WHERE user_account_id = #{userId}",
             "AND bond_product_id = #{bondId}"
     })
