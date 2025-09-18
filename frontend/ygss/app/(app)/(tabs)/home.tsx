@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: "#111",
     lineHeight: 32,
-    alignSelf: "flex-start", // ✅ 텍스트도 왼쪽 기준
+    alignSelf: "flex-start",
     textAlign: "left",
     marginLeft: 8,
     ...(Platform.OS === "android" ? { includeFontPadding: false } : {}), // ✅ 안드로이드 여백 제거

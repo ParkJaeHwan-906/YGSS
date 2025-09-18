@@ -41,11 +41,18 @@ export default function Dc1() {
         </View>
 
 
-        {/* 임시 상세정보 가는 라우터 */}
+        {/* 임시 etf/fund 상세정보 가는 라우터 */}
         <TouchableOpacity style={{ marginTop: 20 }}
-          onPress={() => router.push({ pathname: "/dc/[id]", params: { id: "29" } })}
+          onPress={() => router.push({ pathname: "/dc/etf_fund/[id]", params: { id: "35" } })}
         >
-          <Text>상세정보</Text>
+          <Text>etf/fund 상세정보</Text>
+        </TouchableOpacity>
+
+        {/* 임시 bond 상세정보 가는 라우터 */}
+        <TouchableOpacity style={{ marginTop: 20 }}
+          onPress={() => router.push({ pathname: "/dc/bond/[id]", params: { id: "35" } })}
+        >
+          <Text>bond 상세정보</Text>
         </TouchableOpacity>
 
         {/* 알키 설명 박스 */}
