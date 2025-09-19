@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai
+  labels:
+    app: ai
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: ai
+  template:
+    metadata:
+      labels:
+        app: ai
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: ai
+          image: ygss-ai:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: ai-config
+          env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: MYSQL_PASSWORD
+            - name: MYSQL_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: ai-config
+                  key: MYSQL_USER
+            - name: MYSQL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: ai-config
+                  key: MYSQL_HOST
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: ai-config
+                  key: MYSQL_DATABASE
+            - name: DATABASE_URL
+              value: "mysql+pymysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@$(MYSQL_HOST):3306/$(MYSQL_DATABASE)"
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+          readinessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: model-storage
+              mountPath: /app/saved_models
+      volumes:
+        - name: model-storage
+          hostPath:
+            path: /opt/ygss/ai-models
+            type: DirectoryOrCreate

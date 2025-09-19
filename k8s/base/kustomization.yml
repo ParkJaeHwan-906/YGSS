@@ -5,12 +5,17 @@ resources:
   - backend/deployment.yml
   - backend/service.yml
   - backend/configmap.yml
+  - ai/deployment.yml
+  - ai/service.yml
+  - ai/configmap.yml  
   - shared/ingress.yml
 
 commonLabels:
-  app: ygss-backend
+  project: ygss
   version: v1
 
 images:
   - name: ygss-backend
+    newTag: latest
+  - name: ygss-ai
     newTag: latest

@@ -2,23 +2,25 @@ pipeline {
   agent any
 
   environment {
-    // 배포 환경
+    // 배포 환경 (infra-refactor → master 변경)
     DOCKER_IMAGE  = 'ygss-backend'
-    DOCKER_TAG    = "v${BUILD_NUMBER}"
-    K8S_NAMESPACE = 'ygss-prod'
+    DOCKER_TAG    = "v${BUILD_NUMBER}"          // refactor-${BUILD_NUMBER} → v${BUILD_NUMBER}
+    AI_IMAGE      = 'ygss-ai'
+    AI_TAG        = "v${BUILD_NUMBER}"          // refactor-${BUILD_NUMBER} → v${BUILD_NUMBER}
+    K8S_NAMESPACE = 'ygss-prod'                 // ygss-infra → ygss-prod
 
     // k3s kubeconfig
     KUBECONFIG = '/etc/rancher/k3s/k3s.yaml'
 
-    // Jenkins Credentials
+    // Jenkins Credentials (master에 GMS_SECRET_KEY 추가)
     MYSQL_PASSWORD = credentials('mysql-password')
     JWT_SECRET     = credentials('jwt-secret')
-    GMS_SECRET_KEY = credentials('gms-secret-key')
+    GMS_SECRET_KEY = credentials('gms-secret-key')  // infra-refactor에는 없었음
   }
 
   options {
-    buildDiscarder(logRotator(numToKeepStr: '5'))
-    timeout(time: 10, unit: 'MINUTES')
+    buildDiscarder(logRotator(numToKeepStr: '3'))   // infra-refactor: 3 → master: 유지
+    timeout(time: 20, unit: 'MINUTES')              // infra-refactor: 20분 → master: 유지
     timestamps()
     disableConcurrentBuilds()
   }
@@ -42,8 +44,8 @@ pipeline {
       steps {
         script {
           def current = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
-          if (current != 'master') {
-            error "This pipeline runs only on master. Current: ${current}"
+          if (!current.contains('master')) {
+            error "This pipeline runs only on master branch. Current: ${current}"
           }
         }
       }
@@ -52,14 +54,14 @@ pipeline {
     stage('소스 검증') {
       steps {
         sh '''
-          bash -lc '
           set -euo pipefail
-            echo "🔍 필수 파일 확인"
-            [ -f backend/build.gradle ] || { echo "❌ backend/build.gradle 없음"; exit 1; }
-            [ -f backend/Dockerfile   ] || { echo "❌ backend/Dockerfile 없음"; exit 1; }
-            [ -d k8s/base ] && [ -d k8s/overlays/prod ] || { echo "❌ k8s overlay 구조 없음"; exit 1; }
-            echo "✅ 필수 파일 확인 완료"
-          '
+          echo "🔍 필수 파일 확인"
+          [ -f backend/build.gradle ] || { echo "❌ backend/build.gradle 없음"; exit 1; }
+          [ -f backend/Dockerfile   ] || { echo "❌ backend/Dockerfile 없음"; exit 1; }
+          [ -f ai/Dockerfile ] || { echo "❌ ai/Dockerfile 없음"; exit 1; }
+          [ -f ai/requirements.txt ] || { echo "❌ ai/requirements.txt 없음"; exit 1; }
+          [ -d k8s/base ] && [ -d k8s/overlays/prod ] || { echo "❌ k8s overlay 없음"; exit 1; }  // infra-refactor → prod
+          echo "✅ 필수 파일 확인 완료"
         '''
       }
     }
@@ -68,10 +70,8 @@ pipeline {
       steps {
         sh '''
           set -euo pipefail
-          echo "🔧 kustomize 설치 확인"
-          
           if command -v kustomize &> /dev/null; then
-            echo "✅ kustomize 이미 설치됨: $(kustomize version)"
+            echo "✅ kustomize 이미 설치됨"
           else
             echo "📦 kustomize v5.7.1 설치 중..."
             curl -Lo kustomize.tar.gz "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.7.1/kustomize_v5.7.1_linux_amd64.tar.gz"
@@ -79,21 +79,55 @@ pipeline {
             sudo mv kustomize /usr/local/bin/
             sudo chmod +x /usr/local/bin/kustomize
             rm -f kustomize.tar.gz
-            echo "✅ kustomize 설치 완료: $(kustomize version)"
+            echo "✅ kustomize 설치 완료"
           fi
         '''
       }
     }
 
+    stage('AI Base Image 확인') {
+      steps {
+        script {
+          def baseExists = sh(
+            script: "docker images | grep ygss-ai-base",
+            returnStatus: true
+          ) == 0
+          
+          if (!baseExists) {
+            echo "🤖 AI Base 이미지 빌드 중..."
+            sh "cd ai && docker build -f Dockerfile.base -t ygss-ai-base:latest ."
+          } else {
+            echo "✅ AI Base 이미지 재사용"
+          }
+        }
+      }
+    }
+
     stage('백엔드 빌드') {
       steps {
-        echo '🔨 백엔드 빌드 (테스트 제외)'
+        echo '🔨 백엔드 빌드'
         dir('backend') {
           sh '''
             set -euo pipefail
             chmod +x ./gradlew
             ./gradlew clean build -x test --no-daemon
-            ls -la build/libs/ || true
+          '''
+        }
+      }
+    }
+
+    stage('AI 서버 빌드') {
+      steps {
+        echo '🤖 AI FastAPI 서버 빌드'
+        dir('ai') {
+          sh '''
+            set -euo pipefail
+            echo "=== AI 빌드 전 파일 확인 ==="
+            ls -la src/
+            echo "=== Dockerfile 확인 ==="
+            cat Dockerfile
+            docker build --no-cache -t $AI_IMAGE:$AI_TAG .
+            echo "✅ AI 이미지 빌드 완료: $AI_IMAGE:$AI_TAG"
           '''
         }
       }
@@ -106,7 +140,6 @@ pipeline {
             set -euo pipefail
             echo '🐳 Docker 이미지 빌드'
             docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
-            docker images | grep "$DOCKER_IMAGE" || true
             echo "✅ 이미지 빌드 완료: $DOCKER_IMAGE:$DOCKER_TAG"
           '''
         }
@@ -122,7 +155,21 @@ pipeline {
           docker save "$DOCKER_IMAGE:$DOCKER_TAG" -o "/tmp/$DOCKER_IMAGE-$DOCKER_TAG.tar"
           sudo -n /usr/local/bin/k3s ctr images import "/tmp/$DOCKER_IMAGE-$DOCKER_TAG.tar"
           rm -f "/tmp/$DOCKER_IMAGE-$DOCKER_TAG.tar"
-          echo "✅ containerd import 완료"
+          echo "✅ Backend containerd import 완료"
+        '''
+      }
+    }
+
+    stage('AI 이미지 import') {
+      steps {
+        sh '''
+          set -Eeuo pipefail
+          echo "📦 AI Docker → k3s(containerd) import"
+
+          docker save "$AI_IMAGE:$AI_TAG" -o "/tmp/$AI_IMAGE-$AI_TAG.tar"
+          sudo -n /usr/local/bin/k3s ctr images import "/tmp/$AI_IMAGE-$AI_TAG.tar"
+          rm -f "/tmp/$AI_IMAGE-$AI_TAG.tar"
+          echo "✅ AI containerd import 완료"
         '''
       }
     }
@@ -150,19 +197,14 @@ pipeline {
         sh '''
           set -euo pipefail
           echo "⚙️ Kustomize 매니페스트 준비"
-
+          
           cd k8s/overlays/prod
           
-          # 이미지 태그 동적 설정
+          # 이미지 태그 설정
           kustomize edit set image ygss-backend:${DOCKER_TAG}
+          kustomize edit set image ygss-ai:${AI_TAG}
           
-          echo "=== kustomization.yml 확인 ==="
-          cat kustomization.yml
-          
-          echo "=== 최종 매니페스트 미리보기 ==="
-          kustomize build . | head -50
-          
-          # dry-run으로 사전 검증
+          # dry-run으로 검증
           kustomize build . | kubectl apply --dry-run=client -f -
           echo "✅ 매니페스트 검증 완료"
         '''
@@ -173,11 +215,12 @@ pipeline {
       steps {
         sh '''
           set -euo pipefail
-          echo '🚢 Kubernetes 배포 (Kustomize)'
+          echo '🚢 Kubernetes 배포'
           
           cd k8s/overlays/prod
           kubectl apply -k .
           kubectl -n $K8S_NAMESPACE rollout status deployment/backend --timeout=300s
+          kubectl -n $K8S_NAMESPACE rollout status deployment/ai --timeout=300s
 
           echo '=== 리소스 현황 ==='
           kubectl -n $K8S_NAMESPACE get all
@@ -189,14 +232,13 @@ pipeline {
       steps {
         script {
           echo '⏳ Pod 시작 대기 중...'
-          sleep(time: 10, unit: 'SECONDS')
+          sleep(time: 15, unit: 'SECONDS')
           
-          echo '🏥 서비스 헬스체크'
+          echo '🏥 백엔드 헬스체크'
           timeout(time: 3, unit: 'MINUTES') {
             waitUntil {
               def code = sh(
                 script: '''
-                  set -euo pipefail
                   curl -s -k -o /dev/null -w "%{http_code}" \
                        --connect-timeout 10 \
                        --max-time 30 \
@@ -204,20 +246,43 @@ pipeline {
                 ''',
                 returnStdout: true
               ).trim()
-              echo "헬스체크 응답: ${code}"
+              echo "백엔드 헬스체크: ${code}"
               return (code == '200')
             }
           }
+          
+          echo '🤖 AI 헬스체크'
+          timeout(time: 3, unit: 'MINUTES') {
+            waitUntil {
+              def aiCode = sh(
+                script: '''
+                  curl -s -k -o /dev/null -w "%{http_code}" \
+                       --connect-timeout 10 \
+                       --max-time 30 \
+                       https://j13a103.p.ssafy.io/ai/health/ || echo 000
+                ''',
+                returnStdout: true
+              ).trim()
+              echo "AI 헬스체크: ${aiCode}"
+              return (aiCode == '200')
+            }
+          }
+          
+          echo '✅ 모든 헬스체크 통과!'
         }
       }
     }
 
-    stage('정리') {
+    stage('이미지 정리') {
       steps {
         sh '''
           set -euo pipefail
-          echo '🧹 이전 이미지 정리'
-          KEEP=3
+          echo '🧹 이미지 정리'
+          
+          # 최근 2개 버전만 유지 (infra-refactor와 동일)
+          KEEP=2
+          
+          # 백엔드 이미지 정리
           TAGS=$(docker images "$DOCKER_IMAGE" --format '{{.Tag}}' | grep -E '^v[0-9]+' | sort -V -r || true)
           COUNT=0
           for t in $TAGS; do
@@ -225,6 +290,16 @@ pipeline {
             if [ $COUNT -le $KEEP ]; then continue; fi
             docker rmi "$DOCKER_IMAGE:$t" 2>/dev/null || true
           done
+          
+          # AI 이미지 정리
+          AI_TAGS=$(docker images "$AI_IMAGE" --format '{{.Tag}}' | grep -E '^v[0-9]+' | sort -V -r || true)
+          COUNT=0
+          for t in $AI_TAGS; do
+            COUNT=$((COUNT+1))
+            if [ $COUNT -le $KEEP ]; then continue; fi
+            docker rmi "$AI_IMAGE:$t" 2>/dev/null || true
+          done
+          
           docker image prune -f || true
         '''
       }
@@ -234,28 +309,31 @@ pipeline {
   post {
     success {
       echo """
-✅ 🎉 배포 성공! 🎉
+✅ 배포 성공!
 
-📋 배포 정보:
+• 브랜치: master
 • 커밋: ${env.GIT_COMMIT}
-• 이미지: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
-• 네임스페이스: ${env.K8S_NAMESPACE}
-• 배포 방식: Kustomize Overlay
+• 백엔드: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
+• AI: ${env.AI_IMAGE}:${env.AI_TAG}
 
+🔗 테스트 엔드포인트:
+• 백엔드: https://j13a103.p.ssafy.io/api/infra
+• AI: https://j13a103.p.ssafy.io/ai/health/
 """
     }
     failure {
-      echo '❌ 배포 실패! 디버깅 정보 출력'
+      echo '❌ 배포 실패! 디버깅 정보'
       sh '''
         set -euo pipefail
         echo '=== Pods ==='
         kubectl -n $K8S_NAMESPACE get pods -o wide || true
-        echo '=== 최근 로그(backend) ==='
-        kubectl -n $K8S_NAMESPACE logs -l app=backend --tail=50 || true
-        echo '=== Deployment 설명 ==='
+        echo '=== 백엔드 로그 ==='
+        kubectl -n $K8S_NAMESPACE logs -l app=backend --tail=30 || true
+        echo '=== AI 로그 ==='
+        kubectl -n $K8S_NAMESPACE logs -l app=ai --tail=30 || true
+        echo '=== Deployment 상태 ==='
         kubectl -n $K8S_NAMESPACE describe deployment backend || true
-        echo '=== kustomize 빌드 확인 ==='
-        cd k8s/overlays/prod && kustomize build . || true
+        kubectl -n $K8S_NAMESPACE describe deployment ai || true
       '''
     }
     always {
