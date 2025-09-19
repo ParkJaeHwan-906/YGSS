@@ -11,6 +11,17 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+_model_cache: Dict[str, Any] = {}
+_cache_lock = Lock()
+
+def _infer_type_from_ext(path: str) -> Optional[str]:
+    ext = os.path.splitext(path)[1].lower()
+    if ext in ('.pkl', '.pickle'): return 'pickle'
+    if ext in ('.joblib',): return 'joblib'
+    if ext in ('.h5', '.keras'): return 'tensorflow'
+    if ext in ('.pt', '.pth'): return 'torch'
+    return None
+
 def save_model(model: Any, file_path: str, model_type: str = "pickle") -> bool:
     """모델을 파일로 저장"""
     try:
@@ -33,29 +44,82 @@ def save_model(model: Any, file_path: str, model_type: str = "pickle") -> bool:
         logger.error(f"모델 저장 실패: {e}")
         return False
 
-def load_model(file_path: str, model_type: str = "pickle") -> Optional[Any]:
-    """파일에서 모델 로드"""
+def load_model(path: str, model_type: Optional[str] = None,
+               use_cache: bool = True, warm_up: bool = True) -> Optional[Any]:
+    """
+    파일 또는 디렉토리(모델 번들)를 로드해서 반환.
+    - path가 디렉토리면, 그 내부의 알려진 파일명을 찾아 dict 반환.
+    - 캐시 사용 권장 (use_cache=True).
+    """
+    # cache key
+    key = f"{path}:{model_type}"
+    if use_cache:
+        with _cache_lock:
+            if key in _model_cache:
+                return _model_cache[key]
+
+    # 디렉토리(모델 번들) 처리
+    if os.path.isdir(path):
+        models = {}
+        for fname in os.listdir(path):
+            fpath = os.path.join(path, fname)
+            guessed = _infer_type_from_ext(fpath)
+            try:
+                if guessed in ('pickle', 'joblib', 'tensorflow', 'torch') or model_type:
+                    loaded = load_model(fpath, model_type=guessed or model_type,
+                                        use_cache=use_cache, warm_up=warm_up)
+                    models[fname] = loaded
+            except Exception as e:
+                logger.warning(f"번들 내부 파일 로드 실패 {fpath}: {e}")
+        with _cache_lock:
+            _model_cache[key] = models
+        return models
+
+    # 단일 파일
+    if not os.path.exists(path):
+        logger.error(f"모델 파일 없음: {path}")
+        return None
+
+    inferred = model_type or _infer_type_from_ext(path)
+    model = None
     try:
-        if not os.path.exists(file_path):
-            logger.error(f"모델 파일을 찾을 수 없습니다: {file_path}")
-            return None
-        
-        if model_type == "pickle":
-            with open(file_path, 'rb') as f:
+        if inferred == 'pickle':
+            with open(path, 'rb') as f:
                 model = pickle.load(f)
-        elif model_type == "joblib":
-            model = joblib.load(file_path)
-        elif model_type == "tensorflow":
+        elif inferred == 'joblib':
+            model = joblib.load(path)
+        elif inferred == 'tensorflow':
             import tensorflow as tf
-            model = tf.keras.models.load_model(file_path)
+            model = tf.keras.models.load_model(path)
+        elif inferred == 'torch':
+            import torch
+            model = torch.load(path, map_location='cpu')
+            try:
+                model.eval()
+            except:
+                pass
         else:
-            raise ValueError(f"지원하지 않는 모델 타입: {model_type}")
-        
-        logger.info(f"모델 로드 완료: {file_path}")
+            raise ValueError(f"지원하지 않는 모델 형식: {inferred} ({path})")
+
+        # optional warm-up (간단한 입력으로 예측 시도) — 실패해도 무시
+        if warm_up:
+            try:
+                if hasattr(model, 'predict'):
+                    # dummy input: caller should know model input shape; keep safe fallback
+                    # 여기서는 예측 호출을 하지 않거나 아주 작은 검증 데이터로 호출
+                    pass
+            except Exception:
+                pass
+
+        with _cache_lock:
+            if use_cache:
+                _model_cache[key] = model
+
+        logger.info(f"모델 로드 성공: {path}")
         return model
-        
+
     except Exception as e:
-        logger.error(f"모델 로드 실패: {e}")
+        logger.exception(f"모델 로드 실패: {path} : {e}")
         return None
 
 def validate_model_input(data: np.ndarray, expected_shape: Tuple[int, ...]) -> bool:
@@ -147,193 +211,9 @@ def normalize_data(data: np.ndarray, scaler=None, fit_scaler: bool = True):
         logger.error(f"데이터 정규화 실패: {e}")
         return data, scaler
 
-def git_clone_or_pull(repo_url: str, local_path: str, branch: str = "ai/rinkoko/update-models") -> bool:
-    """Git 리포지토리를 클론하거나 최신 상태로 업데이트"""
-    try:
-        local_path = Path(local_path)
-        
-        if local_path.exists() and (local_path / ".git").exists():
-            # 이미 클론된 리포지토리가 있으면 pull
-            logger.info(f"기존 리포지토리 업데이트: {local_path}")
-            result = subprocess.run(
-                ["git", "pull", "origin", branch],
-                cwd=local_path,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            logger.info(f"Git pull 완료: {result.stdout}")
-        else:
-            # 새로 클론
-            logger.info(f"리포지토리 클론: {repo_url} -> {local_path}")
-            result = subprocess.run(
-                ["git", "clone", "-b", branch, repo_url, str(local_path)],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            logger.info(f"Git clone 완료: {result.stdout}")
-        
-        return True
-        
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Git 작업 실패: {e.stderr}")
-        return False
-    except Exception as e:
-        logger.error(f"Git 작업 중 오류 발생: {e}")
-        return False
-
-def git_commit_and_push(repo_path: str, file_paths: list, commit_message: str, 
-                       branch: str = "ai/rinkoko/update-models") -> bool:
-    """파일들을 Git에 커밋하고 푸시"""
-    try:
-        repo_path = Path(repo_path)
-        
-        # Git add
-        for file_path in file_paths:
-            result = subprocess.run(
-                ["git", "add", file_path],
-                cwd=repo_path,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-        
-        # Git commit
-        result = subprocess.run(
-            ["git", "commit", "-m", commit_message],
-            cwd=repo_path,
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        logger.info(f"Git commit 완료: {result.stdout}")
-        
-        # Git push
-        result = subprocess.run(
-            ["git", "push", "origin", branch],
-            cwd=repo_path,
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        logger.info(f"Git push 완료: {result.stdout}")
-        
-        return True
-        
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Git 커밋/푸시 실패: {e.stderr}")
-        return False
-    except Exception as e:
-        logger.error(f"Git 작업 중 오류 발생: {e}")
-        return False
-
-def save_model_and_commit(model: Any, model_name: str, model_type: str = "tensorflow",
-                         repo_url: str = "https://lab.ssafy.com/s13-bigdata-recom-sub1/S13P21A103.git",
-                         local_repo_path: str = "./temp_repo",
-                         branch: str = "ai/rinkoko/update-models",
-                         model_metadata: Optional[Dict] = None,
-                         use_timestamp: bool = True,
-                         keep_versions: int = 5) -> bool:
-    """모델을 저장하고 Git 리포지토리에 자동으로 커밋"""
-    try:
-        # 1. Git 리포지토리 클론 또는 업데이트
-        if not git_clone_or_pull(repo_url, local_repo_path, branch):
-            return False
-        
-        # 2. 모델 저장 경로 설정
-        if use_timestamp:
-            # 버전 관리용: 타임스탬프 디렉토리
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            model_dir = f"{model_name}_{timestamp}"
-            model_save_path = Path(local_repo_path) / "ai" / "saved_models" / "versions" / model_dir
-            
-            # 백엔드용: 고정 경로에 최신 모델 복사
-            production_path = Path(local_repo_path) / "ai" / "saved_models" / model_name
-        else:
-            # 프로덕션용: 고정 경로만 사용
-            model_save_path = Path(local_repo_path) / "ai" / "saved_models" / model_name
-            production_path = model_save_path
-        
-        # 3. 모델 저장
-        if model_type == "tensorflow":
-            model_file_path = model_save_path / "model"
-        else:
-            model_file_path = model_save_path / f"model.{model_type}"
-        
-        if not save_model(model, str(model_file_path), model_type):
-            return False
-        
-        # 4. 메타데이터 저장
-        if model_metadata:
-            metadata_path = model_save_path / "metadata.json"
-            import json
-            with open(metadata_path, 'w', encoding='utf-8') as f:
-                json.dump(model_metadata, f, ensure_ascii=False, indent=2)
-        
-        # 5. README 파일 생성
-        readme_path = model_save_path / "README.md"
-        readme_content = f"""# {model_name} Model
-
-## 모델 정보
-- 모델명: {model_name}
-- 모델 타입: {model_type}
-- 저장 시간: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-
-## 파일 구조
-- `model/` 또는 `model.{model_type}`: 학습된 모델 파일
-- `metadata.json`: 모델 메타데이터
-- `README.md`: 이 파일
-
-## 백엔드 사용법
-```python
-from utils.model_utils import load_model
-# 고정 경로로 최신 모델 로드
-model = load_model("saved_models/{model_name}/model", "{model_type}")
-```
-"""
-        with open(readme_path, 'w', encoding='utf-8') as f:
-            f.write(readme_content)
-        
-        # 6. 백엔드용 고정 경로에 복사 (타임스탬프 사용 시)
-        if use_timestamp and production_path != model_save_path:
-            import shutil
-            if production_path.exists():
-                shutil.rmtree(production_path)
-            shutil.copytree(model_save_path, production_path)
-            logger.info(f"프로덕션 경로에 모델 복사: {production_path}")
-        
-        # 7. 이전 버전 정리 (keep_versions 개수만큼 유지)
-        if use_timestamp and keep_versions > 0:
-            versions_dir = Path(local_repo_path) / "ai" / "saved_models" / "versions"
-            if versions_dir.exists():
-                model_versions = [d for d in versions_dir.iterdir() 
-                                if d.is_dir() and d.name.startswith(model_name)]
-                model_versions.sort(key=lambda x: x.name, reverse=True)
-                
-                # 오래된 버전 삭제
-                for old_version in model_versions[keep_versions:]:
-                    shutil.rmtree(old_version)
-                    logger.info(f"이전 버전 삭제: {old_version}")
-        
-        # 8. Git 커밋 및 푸시
-        timestamp_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        commit_message = f"Update model: {model_name} ({timestamp_str})"
-        
-        if use_timestamp:
-            files_to_commit = [f"ai/saved_models/versions/{model_dir}", f"ai/saved_models/{model_name}"]
-        else:
-            files_to_commit = [f"ai/saved_models/{model_name}"]
-        
-        if git_commit_and_push(local_repo_path, files_to_commit, commit_message, branch):
-            logger.info(f"모델 {model_name}이 성공적으로 Git에 커밋되었습니다.")
-            return True
-        else:
-            return False
-        
-    except Exception as e:
-        logger.error(f"모델 저장 및 커밋 실패: {e}")
-        return False
+def clear_model_cache():
+    with _cache_lock:
+        _model_cache.clear()
 
 def create_jupyter_deployment_script(output_path: str = "jupyter_model_deployer.py") -> bool:
     """주피터 허브용 모델 배포 자동화 스크립트 생성"""

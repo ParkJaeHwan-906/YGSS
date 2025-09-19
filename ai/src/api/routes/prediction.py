@@ -1,9 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
 import numpy as np
-from config.database import get_db
 from services.predictor import prediction_service
 from database.model_storage import PredictionHistory
 import logging
@@ -29,7 +27,7 @@ class PredictionResponse(BaseModel):
     dates: Optional[List[str]] = None
 
 @router.post("/predict", response_model=PredictionResponse)
-async def predict_etf(request: PredictionRequest, db: Session = Depends(get_db)):
+async def predict_etf(request: PredictionRequest):
     """ETF 가격 예측"""
     try:
         if request.model_type == "lstm":
@@ -76,8 +74,6 @@ async def predict_etf(request: PredictionRequest, db: Session = Depends(get_db))
             confidence_score=result.get('confidence', 0.5),
             model_version=request.model_version
         )
-        db.add(prediction_history)
-        db.commit()
         
         return PredictionResponse(
             etf_code=request.etf_code,
@@ -105,29 +101,3 @@ async def list_available_models():
     except Exception as e:
         logger.error(f"모델 목록 조회 실패: {e}")
         raise HTTPException(status_code=500, detail="모델 목록 조회 중 오류가 발생했습니다")
-
-@router.get("/history/{etf_code}")
-async def get_prediction_history(etf_code: str, limit: int = 10, db: Session = Depends(get_db)):
-    """ETF 예측 이력 조회"""
-    try:
-        history = db.query(PredictionHistory)\
-                   .filter(PredictionHistory.etf_code == etf_code)\
-                   .order_by(PredictionHistory.created_at.desc())\
-                   .limit(limit)\
-                   .all()
-        
-        return {
-            "etf_code": etf_code,
-            "history": [
-                {
-                    "prediction_value": h.prediction_value,
-                    "confidence_score": h.confidence_score,
-                    "model_version": h.model_version,
-                    "created_at": h.created_at.isoformat()
-                }
-                for h in history
-            ]
-        }
-    except Exception as e:
-        logger.error(f"예측 이력 조회 실패: {e}")
-        raise HTTPException(status_code=500, detail="예측 이력 조회 중 오류가 발생했습니다")
