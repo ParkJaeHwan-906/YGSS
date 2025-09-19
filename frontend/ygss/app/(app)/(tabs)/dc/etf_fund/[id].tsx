@@ -65,11 +65,15 @@ export default function DcDetail() {
             try {
                 // 상품 기본 정보
                 const detailUrl = `${API_URL}/product/dc/${numericId}`;
-                const detailRes = await axios.get(detailUrl);
-
+                const detailRes = await axios.get(detailUrl, {
+                    headers: { Authorization: `A103 ${accessToken}` }
+                });
+                console.log(detailRes.data)
                 // 그래프 정보
                 const graphUrl = `${API_URL}/product/dc/${numericId}/graph`;
-                const graphRes = await axios.get(graphUrl);
+                const graphRes = await axios.get(graphUrl, {
+                    headers: { Authorization: `A103 ${accessToken}` }
+                });
 
                 setProductDetail(detailRes.data);
                 setGraphData(graphRes.data);
@@ -162,10 +166,13 @@ export default function DcDetail() {
 
                     {/* 상품 찜하기 버튼 fixed 고정 */}
                     {/* 찜 해제하기 색깔 변경 */}
-                    <Button onPress={() => { handleLikeToggle() }} style={[
-                        styles.button,
-                        liked ? { backgroundColor: "#AA00FF" } : {},
-                    ]} label={liked ? "찜 해제하기" : "찜하기"} disabled={loadingLike}>
+                    <Button onPress={() => { handleLikeToggle() }}
+                        style={[
+                            styles.button,
+                            liked ? { backgroundColor: "#AA00FF" } : {},
+                        ]}
+                        label={liked === true ? "찜 해제하기" : liked === false ? "찜하기" : "로그인 후 이용해주세요"}
+                        disabled={loadingLike || liked === null}>
                     </Button>
                 </>
             )}
