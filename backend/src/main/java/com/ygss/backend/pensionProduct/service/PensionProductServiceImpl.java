@@ -109,14 +109,12 @@ public class PensionProductServiceImpl implements PensionProductService {
     }
 
     @Override
-    public BondDto searchBondById(Long bondId, String email) {
-//        log.info("채권 단건 조회 - ID: {}", bondId);
-        Long userId = usersAccountsRepository.selectUserIdByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
-        boolean exist = pensionProductRepository.getBondLike(userId, bondId) != 0;
+    public BondDto searchBondById(Long bondProductId, String userEmail) {
+        boolean exist = pensionProductRepository.getBondLike(bondProductId, userEmail) > 0;
 
-        BondDto result = pensionProductRepository.selectBondById(bondId).orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + email));
-        result.setIsLiked(exist);
+        BondDto result = pensionProductRepository.selectBondById(bondProductId)
+                .orElseThrow(() -> new RuntimeException("Not Found User : " + userEmail));
+        result.setIsLiked(userEmail == null ? null : exist);
         return result;
     }
 
@@ -181,7 +179,7 @@ public class PensionProductServiceImpl implements PensionProductService {
     public boolean toggleProductLike(Long productId,String email){
         Long userId = usersAccountsRepository.selectUserIdByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
-        boolean exist = pensionProductRepository.getProductLike(userId, productId) != 0;
+        boolean exist = pensionProductRepository.getProductLike(productId, email) != 0;
 
         if (exist) {
             pensionProductRepository.deleteProductLike(userId, productId);
@@ -195,7 +193,7 @@ public class PensionProductServiceImpl implements PensionProductService {
     public boolean toggleBondLike(Long BondId,String email) {
         Long userId = usersAccountsRepository.selectUserIdByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
-        boolean exist = pensionProductRepository.getBondLike(userId, BondId) != 0;
+        boolean exist = pensionProductRepository.getBondLike(BondId, email) != 0;
 
         if (exist) {
             pensionProductRepository.deleteBondLike(userId, BondId);
