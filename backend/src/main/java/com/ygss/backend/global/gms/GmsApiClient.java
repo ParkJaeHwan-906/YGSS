@@ -7,10 +7,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ygss.backend.global.gms.dto.Gpt5MiniRequestDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +28,13 @@ public class GmsApiClient {
     private final RestClient client;
 
     public GmsApiClient() {
-        this.client = RestClient.create();
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(30));
+        factory.setReadTimeout(Duration.ofMinutes(5));
+
+        this.client = RestClient.builder()
+                .requestFactory(factory)
+                .build();
     }
 
     public String getEmbedding(String text) throws IOException {
@@ -60,12 +68,7 @@ public class GmsApiClient {
             = new Gpt5MiniRequestDto(
                 "developer",
             """
-                    I'll give you basic words and definitions, and I'll give you questions and answers that are most similar.
-                    Based on that information, please create an answer to the user's question.
-                    Please boldly remove and answer any words, definitions, and examples of answers that you think are irrelevant to the user's question.
-                    Do not use Markdown formatting.
-                    Instead, present the answer in plain text, clearly separating paragraphs for better readability.
-                    Lastly, please answer all questions in Korean.
+                   I will provide basic words, definitions, and example Q&A pairs. Based on them, write an answer to the user’s question. Boldly remove any irrelevant words, definitions, or examples. Write the answer in Korean, separating paragraphs for readability. Keep it concise and within 400 characters. If the question is not related to finance, retirement pensions, or financial products, only respond with: "잘 모르겠어요. 조금 더 자세히 질문해주세요."
                     """
             );
     public String getAnswer(Gpt5MiniRequestDto user) throws IOException {

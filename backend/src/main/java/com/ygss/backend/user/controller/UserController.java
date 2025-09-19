@@ -68,6 +68,19 @@ public class UserController {
         }
     }
     /**
+     * 로그아웃
+     */
+    @GetMapping("/logout")
+    public ResponseEntity<?> logout(@AuthenticationPrincipal String email) {
+        try {
+            return ResponseEntity.ok(userService.logout(email));
+        } catch (Exception e) {
+            log.error("Logout Failed : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+    }
+
+    /**
      * 회원 탈퇴
      * exit 의 null 값을 바꿔줌
      */
