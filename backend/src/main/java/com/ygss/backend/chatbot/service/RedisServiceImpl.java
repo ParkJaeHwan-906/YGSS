@@ -11,10 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -33,8 +30,6 @@ public class RedisServiceImpl implements RedisService {
             try {
                 String jsonResult = gmsApiClient.getEmbedding(QnA.getQuestion());
                 redisService.saveVectorChunk("term", QnA.getTermId(), QnA.getId(), "Q", gmsApiClient.getEmbeddingArr(jsonResult));
-//                jsonResult = gmsApiClient.getEmbedding(QnA.getAnswer());
-//                redisService.saveVectorChunk("term", QnA.getTermId(), QnA.getId(), "A", gmsApiClient.getEmbeddingArr(jsonResult));
             } catch (IOException e) {
                     throw new RuntimeException("Text Embedding Failed");
             }
