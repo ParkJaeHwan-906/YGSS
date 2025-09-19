@@ -1,0 +1,56 @@
+# Python 캐시 및 바이너리
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 개발 환경
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS 파일
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# 환경변수 (보안)
+.env
+.env.local
+
+# 로그
+*.log
+logs/
+
+# 학습 데이터 (용량 큰 파일들)
+data/
+*.csv
+*.pkl
+
+# 주피터 노트북 (개발용)
+notebooks/
+*.ipynb
+.ipynb_checkpoints/
+
+# 저장된 모델 (런타임에 업로드)
+saved_models/
+
+# 테스트 파일
+tests/
+
+# 학습 코드 (배포 불필요)
+training/
+
+# 임시 파일
+*.tmp
+temp/
+tmp/
+
+# Docker 관련
+Dockerfile*
+docker-compose*
+.dockerignore
