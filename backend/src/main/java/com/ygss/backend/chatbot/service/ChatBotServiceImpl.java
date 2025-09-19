@@ -30,10 +30,10 @@ public class ChatBotServiceImpl implements ChatBotService{
             String jsonResult = gmsApiClient.getEmbedding(request.getMessage());
             // Bi-Encoder
             List<AnswerDto> candidateList = getCandidateAnswerList(vectorRepository.searchAllPrefixes(gmsApiClient.getEmbeddingArr(jsonResult), 10));
-            if(candidateList == null) return "잘 모르겠어요. 조금 더 자세히 질문해주세요.";
+            if(candidateList == null || candidateList.isEmpty()) return "잘 모르겠어요. 조금 더 자세히 질문해주세요.";
             // Cross-Encoder
             List<AnswerDto> accurateList = getAccurateList(request.getMessage(), candidateList);
-
+            if(accurateList == null || accurateList.isEmpty()) return "잘 모르겠어요. 조금 더 자세히 질문해주세요.";
             return gmsApiClient.getAnswerText(gmsApiClient.getAnswer(new Gpt5MiniRequestDto(
                     request.getMessage(),
                     termDictionaryService.makeTermMap(accurateList),
