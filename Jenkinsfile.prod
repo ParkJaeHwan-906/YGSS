@@ -4,23 +4,23 @@ pipeline {
   environment {
     // 배포 환경 (infra-refactor → master 변경)
     DOCKER_IMAGE  = 'ygss-backend'
-    DOCKER_TAG    = "v${BUILD_NUMBER}"          // refactor-${BUILD_NUMBER} → v${BUILD_NUMBER}
+    DOCKER_TAG    = "v${BUILD_NUMBER}"
     AI_IMAGE      = 'ygss-ai'
-    AI_TAG        = "v${BUILD_NUMBER}"          // refactor-${BUILD_NUMBER} → v${BUILD_NUMBER}
-    K8S_NAMESPACE = 'ygss-prod'                 // ygss-infra → ygss-prod
+    AI_TAG        = "v${BUILD_NUMBER}"
+    K8S_NAMESPACE = 'ygss-prod'
 
     // k3s kubeconfig
     KUBECONFIG = '/etc/rancher/k3s/k3s.yaml'
 
-    // Jenkins Credentials (master에 GMS_SECRET_KEY 추가)
+    // Jenkins Credentials
     MYSQL_PASSWORD = credentials('mysql-password')
     JWT_SECRET     = credentials('jwt-secret')
-    GMS_SECRET_KEY = credentials('gms-secret-key')  // infra-refactor에는 없었음
+    GMS_SECRET_KEY = credentials('gms-secret-key')
   }
 
   options {
-    buildDiscarder(logRotator(numToKeepStr: '3'))   // infra-refactor: 3 → master: 유지
-    timeout(time: 20, unit: 'MINUTES')              // infra-refactor: 20분 → master: 유지
+    buildDiscarder(logRotator(numToKeepStr: '3'))
+    timeout(time: 20, unit: 'MINUTES')
     timestamps()
     disableConcurrentBuilds()
   }
@@ -60,7 +60,7 @@ pipeline {
           [ -f backend/Dockerfile   ] || { echo "❌ backend/Dockerfile 없음"; exit 1; }
           [ -f ai/Dockerfile ] || { echo "❌ ai/Dockerfile 없음"; exit 1; }
           [ -f ai/requirements.txt ] || { echo "❌ ai/requirements.txt 없음"; exit 1; }
-          [ -d k8s/base ] && [ -d k8s/overlays/prod ] || { echo "❌ k8s overlay 없음"; exit 1; }  // infra-refactor → prod
+          [ -d k8s/base ] && [ -d k8s/overlays/prod ] || { echo "❌ k8s overlay 없음"; exit 1; }
           echo "✅ 필수 파일 확인 완료"
         '''
       }
@@ -278,11 +278,9 @@ pipeline {
         sh '''
           set -euo pipefail
           echo '🧹 이미지 정리'
-          
-          # 최근 2개 버전만 유지 (infra-refactor와 동일)
+
           KEEP=2
           
-          # 백엔드 이미지 정리
           TAGS=$(docker images "$DOCKER_IMAGE" --format '{{.Tag}}' | grep -E '^v[0-9]+' | sort -V -r || true)
           COUNT=0
           for t in $TAGS; do
@@ -291,7 +289,6 @@ pipeline {
             docker rmi "$DOCKER_IMAGE:$t" 2>/dev/null || true
           done
           
-          # AI 이미지 정리
           AI_TAGS=$(docker images "$AI_IMAGE" --format '{{.Tag}}' | grep -E '^v[0-9]+' | sort -V -r || true)
           COUNT=0
           for t in $AI_TAGS; do
