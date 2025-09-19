@@ -25,7 +25,7 @@ export default function DcDetail() {
     const handleLikeToggle = async () => {
         try {
             setLoadingLike(true);
-            const url = `${API_URL}/product/dc/bond/${numericId}/like`;
+            const url = `${API_URL}/pension/bond/${numericId}/like`;
 
             const res = await axios.post(
                 url,

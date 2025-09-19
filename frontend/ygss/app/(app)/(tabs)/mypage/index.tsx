@@ -45,12 +45,12 @@ export default function Mypage() {
                 });
 
                 const { likedProduct = [], likedBond = [] } = res.data;
-
+                console.log(res.data)
                 // ETF 개수
                 const etfCount = likedProduct.filter((it: any) => it.productTypeName === "ETF").length;
 
                 // 펀드 개수
-                const fundCount = likedProduct.filter((it: any) => it.productTypeName === "FUND").length;
+                const fundCount = likedProduct.filter((it: any) => it.productTypeName === "펀드").length;
 
                 // 채권 개수
                 const bondCount = likedBond.length;
