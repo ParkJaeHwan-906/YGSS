@@ -13,6 +13,8 @@ patchesStrategicMerge:
 images:
   - name: ygss-backend
     newTag: refactor-${BUILD_NUMBER}
+  - name: ygss-ai
+    newTag: refactor-${BUILD_NUMBER}
 
 commonLabels:
   env: infra-refactor

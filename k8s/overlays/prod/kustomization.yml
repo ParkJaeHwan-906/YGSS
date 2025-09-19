@@ -13,10 +13,14 @@ patchesStrategicMerge:
 images:
   - name: ygss-backend
     newTag: v${BUILD_NUMBER}
+  - name: ygss-ai
+    newTag: v${BUILD_NUMBER}
 
 commonLabels:
   env: production
 
 replicas:
   - name: backend
+    count: 1
+  - name: ai
     count: 1

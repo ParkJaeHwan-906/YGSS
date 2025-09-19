@@ -7,6 +7,7 @@ spec:
   stripPrefix:
     prefixes:
       - /api-infra
+      - /ai-infra
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -25,5 +26,12 @@ spec:
             backend:
               service:
                 name: backend-service
+                port:
+                  number: 80
+          - path: /ai-infra
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-service
                 port:
                   number: 80

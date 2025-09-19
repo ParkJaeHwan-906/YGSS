@@ -1,0 +1,23 @@
+FROM python:3.11-slim
+
+# Python 최적화 환경변수 + 시간대
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    TZ=Asia/Seoul
+
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# 시스템 패키지 설치
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# 명시적 UID/GID로 사용자 생성 (확실함)
+RUN groupadd -g 1000 appuser && \
+    useradd -m -u 1000 -g 1000 appuser
+
+WORKDIR /app
+COPY requirements.txt ./requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
