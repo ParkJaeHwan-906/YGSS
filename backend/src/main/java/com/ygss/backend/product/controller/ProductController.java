@@ -9,6 +9,7 @@ import java.security.Principal;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -49,14 +50,16 @@ public class ProductController {
     }
 
     @GetMapping("/dc/{retirePensionProductId}")
-    public ResponseEntity<?> loadRetirePensionProductDetail(@PathVariable Long retirePensionProductId, Principal principal) {
+    public ResponseEntity<?> loadRetirePensionProductDetail(@PathVariable Long retirePensionProductId,
+                                                            @AuthenticationPrincipal String email) {
         try {
-            return ResponseEntity.ok(productService.selectRetirePensionProductById(retirePensionProductId,principal.getName()));
+            return ResponseEntity.ok(productService.selectRetirePensionProductById(retirePensionProductId, email));
         } catch (Exception e) {
             log.error("Load Retire Pension Product Detail Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
+
     @GetMapping("/dc/{retirePensionProductId}/graph")
     public ResponseEntity<?> loadRetirePensionProductDetailForGraph(@PathVariable Long retirePensionProductId) {
         try {
@@ -66,6 +69,7 @@ public class ProductController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
+
     @GetMapping("/dc/{retirePensionProductId}/timeline")
     public ResponseEntity<?> loadRetirePensionTimeLine(@PathVariable Long retirePensionProductId) {
         try {
@@ -75,6 +79,7 @@ public class ProductController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
+
     @GetMapping("/dc/bond")
     public ResponseEntity<?> loadbondProduct(ProductListRequestDto request) {
         try {
@@ -86,9 +91,9 @@ public class ProductController {
     }
 
     @GetMapping("/dc/bond/{bondId}")
-    public ResponseEntity<?> loadbondProductDetail(@PathVariable Long bondId, Principal principal) {
+    public ResponseEntity<?> loadbondProductDetail(@PathVariable Long bondId, @AuthenticationPrincipal String email) {
         try {
-            return ResponseEntity.ok(productService.selectBondDetailById(bondId,principal.getName()));
+            return ResponseEntity.ok(productService.selectBondDetailById(bondId, email));
         } catch (Exception e) {
             log.error("Load DC BOND Product Detail Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
