@@ -25,7 +25,6 @@ import axios from "axios";
 import { ActivityIndicator } from "react-native";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
-const screenW = Dimensions.get("window").width;
 
 // ===== 타입 (landing4에서 사용한 응답 타입)
 type CompareResp = {
@@ -39,14 +38,17 @@ type CompareResp = {
 };
 
 // ===== 숫자 표기/변환 유틸 (만원↔원)
+// '000만원'에서 '000'만 추출출
 const toManWonLabel = (won: number) => {
   const man = Math.round(won / 10000);
   return man.toLocaleString("ko-KR") + " 만원";
 };
+// '000'을 원 단위로 변환 0000 + 0000
 const toWon = (man?: string) => {
   const n = Number((man ?? "0").replace(/\D/g, ""));
   return n * 10000;
 };
+// 입력 포맷팅(,추가가)
 const toMan = (won: number) => {
   const man = Math.round(won / 10000);
   return man.toLocaleString("ko-KR");
@@ -78,54 +80,74 @@ const niceMax = (v: number) => {
 };
 
 // 연도별로 금액 넣기
-const YEAR_ORDER = [3, 5, 7, 10] as const;
+const YEAR_ORDER = [3, 5, 7, 10] as const; // 연차 인덱싱
 const getYearIndex = (y: number) => Math.max(0, YEAR_ORDER.indexOf(y as any));
+// 연도별 값 계산
 const pickByYear = (arr: number[] | undefined, y: number) =>
   Array.isArray(arr) ? (arr[getYearIndex(y)] ?? 0) : 0;
 
 export default function Dc4() {
   const router = useRouter();
   const accessToken = useSelector((state: any) => state.auth.accessToken);
+  const user = useSelector((state: any) => state.auth.user);
   const salary = useSelector((state: any) => state.auth.user?.salary);
-  const salaryWon = useSelector((state: any) => state.auth.user?.salary); // DB의 '원' 값
-  const [inputSalary, setInputSalary] = useState<string>(salary?.toString() ?? "");
   const [inputSalaryMan, setInputSalaryMan] = useState<string>("");
-  
   const [selectedYear, setSelectedYear] = useState<number>(3); // 피커에서 보여줄 값
   const [appliedYear, setAppliedYear] = useState<number | null>(null); // '비교하기'를 눌렀을 때 확정되는 값
 
   // ===== 상태 추가 (Dc4 컴포넌트 내부)
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
-  const [cmp, setCmp] = useState<CompareResp | null>(null);
+  const [cmp, setCmp] = useState<CompareResp | null>(null); // API 응답 전체 보관
 
-  // (선택) 투자성향 ID가 리덕스에 있다면 사용
-  const investorPersonalityId = useSelector((s: any) => s.auth.user?.investorPersonalityId) ?? null;
+  // 투자성향 ID가 리덕스에 있다면 사용
+  const riskGradeId = useSelector((state: any) => state.auth.user?.riskGradeId);
+  const profileSalary = useSelector((state: any) => state.auth.user?.salary) ?? 0;
 
+  // 비교하기 버튼 클릭 시, 동작
   const handleCompare = async () => {
     try {
       setLoading(true);
       setErrMsg(null);
-      const salaryWon = toWon(inputSalaryMan);
-  
-      if (!API_URL) throw new Error("API_URL이 설정되지 않았습니다.");
-      if (!Number.isFinite(salaryWon) || salaryWon <= 0) throw new Error("연봉을 올바르게 입력하세요.");
-  
-      const params: any = {};
-      const { data } = await axios.get<CompareResp>(`${API_URL}/recommend/compare`, {
-        params,
-        headers: { Authorization: `A103 ${accessToken}` },
-      });
-  
+
+      // '투자성향'이 없는 회원은 다시 가서, 검사하고 오세요
+      if (!riskGradeId) {
+        console.log("[dc4] GUARD TRIGGER (no personality)", { riskGradeId });
+        Alert.alert("투자성향 필요",
+          "서비스 이용을 위해 투자성향을 먼저 검사한 후에 이용해 주세요 :)",
+          [
+            { text: "취소", style: "cancel" },
+            { text: "검사하러 가기", onPress: () => router.push("/(app)/invest") }]
+        );
+        return;
+      }
+
+      const inputSalary = toWon(inputSalaryMan);
+      const isWhatIf = inputSalary > 0 && inputSalary !== profileSalary;
+
+      let url = "";
+      let params: any | undefined;
+      let headers: any | undefined;
+
+      if (isWhatIf) {
+        url = `${API_URL}/recommend/public/compare`;
+        params = { investorPersonalityId: riskGradeId, salary: inputSalary };
+      } else {
+        // 프로필 기준
+        url = `${API_URL}/recommend/compare`;
+        headers = { Authorization: `A103 ${accessToken}` };
+      }
+
+      const { data } = await axios.get<CompareResp>(url, { headers, params });
       setCmp(data);
-      setAppliedYear(selectedYear);   // ★ 여기서만 연도 확정!
-    } catch (e: any) {
-      console.error("[dc4] compare error:", e?.message || e);
+      setAppliedYear(selectedYear);
+    } catch (e:any) {
+      console.error("비교하기 실패:", e);
       setErrMsg("예상 수익 데이터를 불러오지 못했어요.");
     } finally {
       setLoading(false);
     }
-  };  
+  };
 
   // 연도별 금액
   const dcValue = React.useMemo(() => pickByYear(cmp?.dcCalculateGraph, appliedYear ?? selectedYear), [cmp?.dcCalculateGraph, appliedYear, selectedYear]);
@@ -138,6 +160,14 @@ export default function Dc4() {
       router.replace("/(auth)/login");
     }
   }, [accessToken, router]);
+
+  useEffect(() => {
+    console.log("[dc4] redux snapshot", {
+      riskGradeId,
+      typeofRiskGradeId: typeof riskGradeId,
+      user,
+    });
+  }, [riskGradeId]);  
 
   // 리다이렉트 직전 표시
   if (!accessToken) {
@@ -154,10 +184,10 @@ export default function Dc4() {
 
   // 마운트 시, redux 값으로 초기화
   useEffect(() => {
-    if (salaryWon) {
-      setInputSalaryMan(toMan(salaryWon));
+    if (salary) {
+      setInputSalaryMan(toMan(salary));
     }
-  }, [salaryWon]);
+  }, [salary]);
 
   return (
     <SafeAreaView

@@ -37,12 +37,19 @@ type CompareResp = {
 };
 
 // ====== 유틸 ======
-// 1) 숫자 → "3,456 만원"처럼 표시
+// 숫자 → "3,456 만원"처럼 표시
 const toManWon = (won: number) => {
   const man = Math.round(won / 10000);
   return man.toLocaleString("ko-KR") + " 만원";
 };
-// 2) 3·5·7·10년 레이블
+
+// 연도별로 금액 넣기
+const YEAR_ORDER = [3, 5, 7, 10] as const;
+const getYearIndex = (y: number) => Math.max(0, YEAR_ORDER.indexOf(y as any));
+const pickByYear = (arr: number[] | undefined, y: number) =>
+  Array.isArray(arr) ? (arr[getYearIndex(y)] ?? 0) : 0;
+
+// 3·5·7·10년 레이블
 const YEAR_LABELS = ["3년", "5년", "7년", "10년"] as const;
 
 // 라인 차트
@@ -89,37 +96,91 @@ export default function Landing4() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  
+  // 정보 받기
   const { salary: qsSalary, pid } = useLocalSearchParams<{ salary?: string; pid?: string }>();
-  console.log("[L4] params:", { qsSalary, pid });
   
+  // 연봉 파싱
+  const parsedSalary = (qsSalary ?? "").toString().replace(/\D/g, "");
+  const yearlySalary = useMemo(() => Number(parsedSalary), [parsedSalary]);
+
   const [loading, setLoading] = useState(true);
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [data, setData] = useState<CompareResp | null>(null);
 
-  // 기본 투자성향 ID(없으면 1)
-  const investorPersonalityId = useMemo(() => Number(pid ?? 1), [pid]);
-  const yearlySalary = useMemo(() => Number(qsSalary ?? NaN), [qsSalary]);
+  const parsedPid = (pid ?? "").toString().replace(/\D/g, "");
+  const investorPersonalityId = useMemo(() => {
+    const n = Number(parsedPid);
+    // 비로그인 랜딩의 기본값을 2(안정추구형)로 가정
+    return Number.isFinite(n) && n > 0 ? n : 2;
+  }, [parsedPid]);
+
+  // 디버깅 콘솔
+  useEffect(() => {
+    console.log("[L4] params(raw):", { qsSalary, pid });
+    console.log("[L4] params(parsed):", { yearlySalary, investorPersonalityId });
+  }, [qsSalary, pid, yearlySalary, investorPersonalityId]);
 
   // ====== API 호출 (비회원 전용) ======
   const fetchPublicCompare = async () => {
+    // ── 1) 쿼리 파라미터 (만원 → 원 보정)
+    const params = {
+      investorPersonalityId,
+      salary: yearlySalary * 10000, // ★ 중요: 단위 보정
+    };
+  
+    console.log("[L4] REQUEST /recommend/public/compare", { API_URL, params });
+  
+    // ── 2) AbortController 로 취소 가능하게
+    const controller = new AbortController();
+  
+    setLoading(true);
+    setErrMsg(null);
+    console.time("[L4] fetchPublicCompare");
+  
     try {
-      setLoading(true);
-      setErrMsg(null);
-      const { data } = await axios.get<CompareResp>(`${API_URL}/recommend/public/compare`, {
-        params: {
-          investorPersonalityId,
-          salary: yearlySalary,
-        },
-        // 비회원: Authorization 절대 넣지 않음
-      });
+      const { data, status } = await axios.get<CompareResp>(
+        `${API_URL}/recommend/public/compare`,
+        {
+          params,
+          timeout: 8000,                // ★ 8초 타임아웃
+          signal: controller.signal,    // ★ 화면 이탈 시 취소
+          validateStatus: s => s >= 200 && s < 300, // 2xx 외엔 throw
+        }
+      );
+  
+      console.timeEnd("[L4] fetchPublicCompare");
+      console.log("[L4] RESPONSE status:", status);
+      console.log("[L4] RESPONSE graphs same?",
+        JSON.stringify(data.dcCalculateGraph) === JSON.stringify(data.dbCalculateGraph)
+      );
+  
       setData(data);
     } catch (e: any) {
-      console.error("[landing4] public compare error:", e?.message || e);
-      setErrMsg("예상 수익 데이터를 불러오지 못했어요.");
+      console.timeEnd("[L4] fetchPublicCompare");
+  
+      // ── 3) 에러 상세 로그
+      if (axios.isAxiosError(e)) {
+        console.log("[L4] AXIOS ERROR", {
+          code: e.code,
+          message: e.message,
+          status: e.response?.status,
+          data: e.response?.data,
+        });
+        if (e.code === "ECONNABORTED") {
+          setErrMsg("서버 응답이 지연되고 있어요. 잠시 후 다시 시도해주세요.");
+        } else {
+          setErrMsg("예상 수익 데이터를 불러오지 못했어요.");
+        }
+      } else {
+        console.log("[L4] UNKNOWN ERROR", e);
+        setErrMsg("네트워크 오류가 발생했어요.");
+      }
     } finally {
       setLoading(false);
     }
+  
+    // 화면 이탈 시 요청 취소
+    return () => controller.abort();
   };
 
   useEffect(() => {
@@ -145,12 +206,15 @@ export default function Landing4() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [investorPersonalityId, yearlySalary]);
 
-  const dcFinal = data?.dcCalculate ?? 0;
-  const dbFinal = data?.dbCalculate ?? 0;
-  const dcChartData = toLineSeries(data?.dcCalculateGraph);
-  const dbChartData = toLineSeries(data?.dbCalculateGraph);
-  const dcMaxVal = niceMax(Math.max(...(data?.dcCalculateGraph ?? [0])) * 1.1);
-  const dbMaxVal = niceMax(Math.max(...(data?.dbCalculateGraph ?? [0])) * 1.1);
+  // 원 → 만원으로 변환해서 차트/축에 사용
+  const dcGraphMan = (data?.dcCalculateGraph ?? []).map(v => Math.round(v / 10000));
+  const dbGraphMan = (data?.dbCalculateGraph ?? []).map(v => Math.round(v / 10000));
+  const dcFinal = pickByYear(data?.dcCalculateGraph, 10);
+  const dbFinal = pickByYear(data?.dbCalculateGraph, 10);
+  const dcChartData = toLineSeries(dcGraphMan);
+  const dbChartData = toLineSeries(dbGraphMan);
+  const dcMaxVal = niceMax(Math.max(...dcGraphMan, 0) * 1.1);
+  const dbMaxVal = niceMax(Math.max(...dbGraphMan, 0) * 1.1);
 
   // 컴포넌트 내부 (return 위)
   const horizontalPad = 24;
