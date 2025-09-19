@@ -217,9 +217,9 @@ export default function Login() {
                                 </Link>
                             </View>
 
-                            {/* 임시로 home으로 이동하는 라우터 replace */}
-                            <Pressable onPress={() => router.replace("/(app)/(tabs)/home")}>
-                                <Text style={stylesLogin.linkStrong}>홈으로</Text>
+                            {/* 로그인 없이 이용하기 버튼 */}
+                            <Pressable onPress={() => router.replace("/(app)/(tabs)/home")} style={stylesLogin.guestBtn}>
+                                <Text style={stylesLogin.linkStrong}>게스트로 이용하기</Text>
                             </Pressable>
                             {/* <Text style={stylesLogin.linkMuted}>비밀번호를 잊어버리셨나요?</Text> */}
                         </View>
@@ -273,7 +273,8 @@ const stylesLogin = StyleSheet.create({
     loginTxt: { color: Colors.white, fontFamily: "BasicMedium", fontSize: 16 },
     linkRow: { flexDirection: "row", gap: 8, justifyContent: "flex-end", marginTop: 8 },
     linkMuted: { color: "#6f7285", fontSize: 12, fontFamily: "BasicMedium", textAlign: "right" },
-    linkStrong: { color: Colors.primary, fontSize: 12, fontFamily: "BasicMedium", },
+    guestBtn: { marginTop: 10 },
+    linkStrong: { color: Colors.primary, fontSize: 12, fontFamily: "BasicMedium", textAlign: "center" },
     suggestionBox: {
         position: "absolute",
         top: 70, // 이메일 필드 높이 + margin 만큼

@@ -9,6 +9,7 @@ export default function MyPageLayout() {
 
     useEffect(() => {
         if (!user) {
+            alert("로그인 후 이용해주세요.");
             router.replace("/(auth)/login");
         }
     }, [user]);
