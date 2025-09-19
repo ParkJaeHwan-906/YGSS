@@ -1,0 +1,24 @@
+{
+  "model_hash": "1aa72d08",
+  "created_at": "2025-09-16T13:49:03.397285",
+  "data_config": {
+    "regression_group": [
+      "kospi",
+      "oil_price",
+      "price_index"
+    ],
+    "sequence_length": 12,
+    "data_shape": [
+      29488,
+      12,
+      4
+    ],
+    "data_hash": "6f3deefc"
+  },
+  "model_info": {
+    "has_lstm": true,
+    "has_prophet": true,
+    "has_feature_scaler": true,
+    "has_target_scaler": true
+  }
+}
