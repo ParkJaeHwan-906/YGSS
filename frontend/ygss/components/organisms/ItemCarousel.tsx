@@ -1,27 +1,23 @@
 import { useRef } from "react";
 import { Animated, Dimensions, StyleSheet, View } from "react-native";
 import ItemCard, { cardConstants } from "../molecules/ItemCard";
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL as string;
+import { ImageListData } from "./ImageList";
 
 const { width } = Dimensions.get("window");
 const { CARD_W, SPACING } = cardConstants;
 
-const data = [
-    { id: "1", title: "하나증권\nDC 투자 상품", rate: 92.54 },
-    { id: "2", title: "삼성증권\nDC 투자 상품", rate: 15.32 },
-    { id: "3", title: "미래에셋\nIRP 상품", rate: -4.12 },
-];
+type Props = {
+    items: ImageListData[];
+}
 
-
-export default function ItemCarousel() {
+export default function ItemCarousel({ items }: Props) {
     const scrollX = useRef(new Animated.Value(0)).current;
 
     return (
         <View style={{ overflow: "visible", marginTop: 20, height: cardConstants.CARD_H + 40, }}>
             <Animated.FlatList
-                data={data}
-                keyExtractor={(item) => item.id}
+                data={items}
+                keyExtractor={(item, idx) => `${item.title}-${idx}`}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 snapToInterval={CARD_W + SPACING}

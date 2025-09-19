@@ -1,27 +1,26 @@
 // app/(app)/(tabs)/home.tsx
+import ChatBotScreen from "@/components/chatbot/ChatBotScreen";
+import FloatingChatButton from "@/components/chatbot/FloatingChatButton";
+import MyMoney from "@/components/molecules/MyMoney";
+import ImageList, { ImageListData } from "@/components/organisms/ImageList";
+import { fetchPlanDc } from "@/src/api/plan";
 import { useAppSelector } from "@/src/store/hooks";
 import { Colors } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
+  Dimensions,
   Image,
   Modal,
   Platform,
   ScrollView,
-  TouchableOpacity,
   StatusBar,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ImageList, { ImageListData } from "@/components/organisms/ImageList";
-import { fetchPlanDc } from "@/src/api/plan";
-import { useEffect, useState } from "react";
-import { Dimensions } from "react-native";
-import MyMoney from "@/components/molecules/MyMoney";
-
-import ChatBotScreen from "@/components/chatbot/ChatBotScreen";
-import FloatingChatButton from "@/components/chatbot/FloatingChatButton";
 
 export default function Home() {
   const router = useRouter();
@@ -54,6 +53,7 @@ export default function Home() {
       }
     })();
   }, [accessToken]);
+
 
   return (
     <>
@@ -134,7 +134,7 @@ export default function Home() {
             </View>
 
           </View>
-          
+
           {/* DC 상품 Top3 */}
           <View style={styles.topList}>
             {loadingPlan ? (
@@ -150,10 +150,10 @@ export default function Home() {
             {/* 내 자산 현황 */}
             <View style={styles.moneyContainer}>
               {user?.totalRetirePension !== null && user?.totalRetirePension !== undefined && (
-                  <MyMoney
-                      amount={user.totalRetirePension}
-                      rate={0} // TODO: 실제 수익률 값으로 교체 필요
-                  />
+                <MyMoney
+                  amount={user.totalRetirePension}
+                  rate={0} // TODO: 실제 수익률 값으로 교체 필요
+                />
               )}
             </View>
 
@@ -373,5 +373,5 @@ const styles = StyleSheet.create({
   moneyContainer: {
     marginBottom: 10,
     paddingHorizontal: 16,
-},
+  },
 });

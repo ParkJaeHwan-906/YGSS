@@ -1,5 +1,5 @@
 // app/(app)/(tabs)/mypage/index.tsx
-import InvestChar from "@/components/molecules/InvestChar";
+import InvestChar, { Slice } from "@/components/molecules/InvestChar";
 import MyMoney from "@/components/molecules/MyMoney";
 import ImageList, { ImageListData } from "@/components/organisms/ImageList";
 import PasswordConfirmModal from "@/components/organisms/PasswordConfirmModal";
@@ -26,13 +26,14 @@ export default function Mypage() {
     const [modalVisible, setModalVisible] = useState(false);
     const [likedItems, setLikedItems] = useState<ImageListData[]>([]);
     const [showTop, setShowTop] = useState(false); // top버튼
+    const [slices, setSlices] = useState<Slice[]>([]);
 
     const scrollRef = useRef<ScrollView>(null);
 
     const handleLogout = async () => {
         await deleteRefreshToken();     // SecureStore 비우기
-        dispatch(signOut());            // 전역 상태 초기화
         router.replace("/(auth)/login"); // 뒤로가기 못하게 교체 이동
+        dispatch(signOut());            // 전역 상태 초기화
     };
 
     //  찜한 상품 불러오기
@@ -45,14 +46,36 @@ export default function Mypage() {
 
                 const { likedProduct = [], likedBond = [] } = res.data;
 
+                // ETF 개수
+                const etfCount = likedProduct.filter((it: any) => it.productTypeName === "ETF").length;
+
+                // 펀드 개수
+                const fundCount = likedProduct.filter((it: any) => it.productTypeName === "FUND").length;
+
+                // 채권 개수
+                const bondCount = likedBond.length;
+
+                // slices 세팅 (개수 기준)
+                const mappedSlices: Slice[] = [
+                    { label: "ETF", amount: etfCount },
+                    { label: "펀드", amount: fundCount },
+                    { label: "채권", amount: bondCount },
+                ];
+
+                setSlices(mappedSlices);
+
                 const mapped: ImageListData[] = [
                     ...likedProduct.map((it: any) => ({
+                        id: it.id,
+                        type: "ETF_FUND",
                         logo: require("@/assets/icon/etf.png"), // ETF 아이콘 예시
                         title: it.product,
                         subTitle: it.companyName,
                         rate: it.nextYearProfitRate ?? 0,
                     })),
                     ...likedBond.map((it: any) => ({
+                        id: it.id,
+                        type: "BOND",
                         logo: require("@/assets/icon/bond.png"), // 채권 아이콘 예시
                         title: it.productName,
                         subTitle: it.publisher,
@@ -111,12 +134,13 @@ export default function Mypage() {
                     onClose={() => setModalVisible(false)}
                     onSuccess={() => router.push("/mypage/modify")}
                 />
-                {/* <MyMoney /> */}
+                {/* <찜상품 비중 /> */}
                 <View style={{ marginBottom: 10 }}>
-                    <InvestChar />
+                    <InvestChar slices={slices} />
                 </View>
 
-                <ImageList items={likedItems} initialCount={3} step={5} />
+                {/* 찜 상품 */}
+                <ImageList items={likedItems} initialCount={3} step={5} header="나의 찜 상품" emptyText="찜한 상품이 없습니다." />
 
                 {/* 로그아웃 버튼 */}
                 <Pressable onPress={handleLogout} style={styles.logoutButton}>

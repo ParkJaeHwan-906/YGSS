@@ -7,6 +7,8 @@ import React, { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export type ImageListData = {
+  id: number,
+  type: "BOND" | "ETF_FUND",
   logo?: any;
   title: string;
   subTitle: string;
@@ -16,6 +18,8 @@ export type ImageListData = {
 type Props = {
   header?: string;
   items: ImageListData[];
+  header?: string;
+  emptyText?: string;
   initialCount?: number; // 기본 3개 노출
   step?: number;         // 클릭 시 5개씩 증가
 };
@@ -23,6 +27,8 @@ type Props = {
 export default function ImageList({
   header = "나의 찜 상품",
   items,
+  header = "목록",
+  emptyText = "데이터가 없습니다.",
   initialCount = 3,
   step = 5,
 }: Props) {
@@ -39,12 +45,14 @@ export default function ImageList({
       <Text style={styles.header}>{header}</Text>
 
       {items.length === 0 ? (
-        <Text style={styles.emptyText}>찜한 상품이 없습니다.</Text>
+        <Text style={styles.emptyText}>{emptyText}</Text>
       ) : (
         <>
           {sliced.map((it, idx) => (
             <ImageListItem
               key={`${it.title}-${idx}`}
+              id={it.id}
+              type={it.type}
               logo={it.logo}
               title={it.title}
               subTitle={it.subTitle}

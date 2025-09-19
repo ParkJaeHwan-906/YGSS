@@ -73,6 +73,8 @@ export default function DcDetail() {
 
                 setProductDetail(detailRes.data);
                 setGraphData(graphRes.data);
+                setLiked(detailRes.data.isLiked);
+
             } catch (err: any) {
                 console.error("상품 상세 불러오기 실패");
                 console.error("상태코드:", err.response?.status);
@@ -105,62 +107,72 @@ export default function DcDetail() {
         ).start();
     }, [translateY]);
 
-    if (loading) return <ActivityIndicator size="large" color={Colors.primary} />;
-    if (!productDetail) return <Text>상품 정보를 불러올 수 없습니다.</Text>;
-    if (!graphData) return <Text>그래프 데이터를 불러올 수 없습니다.</Text>;
+    // if (loading) return <ActivityIndicator size="large" color={Colors.primary} />;
+    // if (!productDetail) return <Text>상품 정보를 불러올 수 없습니다.</Text>;
+    // if (!graphData) return <Text>그래프 데이터를 불러올 수 없습니다.</Text>;
 
     return (
         <SafeAreaView style={styles.container}>
+            {loading ? (
+                <ActivityIndicator size="large" color={Colors.primary} />
+            ) : !productDetail ? (
+                <Text>상품 정보를 불러올 수 없습니다.</Text>
+            ) : !graphData ? (
+                <Text>그래프 데이터를 불러올 수 없습니다.</Text>
+            ) : (
+                <>
+                    <ScrollView contentContainerStyle={styles.scrollContent}>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+                        {/* 상품 기본 정보 */}
+                        <ItemInfo productDetail={productDetail} />
 
-                {/* 상품 기본 정보 */}
-                <ItemInfo productDetail={productDetail} />
+                        {/* 투자 전략 */}
+                        <View style={styles.stratContainer}>
+                            <ItemStrat data={graphData.investStrategy} />
+                        </View>
 
-                {/* 투자 전략 */}
-                <View style={styles.stratContainer}>
-                    <ItemStrat data={graphData.investStrategy} />
-                </View>
+                        {/* 기간별 수익률 */}
+                        <View style={styles.profitContainer}>
+                            <ProfitChart data={graphData.priceChart} />
+                        </View>
 
-                {/* 기간별 수익률 */}
-                <View style={styles.profitContainer}>
-                    <ProfitChart data={graphData.priceChart} />
-                </View>
+                        {/* 운용사 */}
+                        <View style={styles.corpContainer}>
+                            <ItemCorp company={productDetail.company} />
+                        </View>
 
-                {/* 운용사 */}
-                <View style={styles.corpContainer}>
-                    <ItemCorp company={productDetail.company} />
-                </View>
+                        {/* 종목 구성 */}
+                        <View style={styles.pointContainer}>
+                            <Image
+                                source={require("@/assets/char/pointAlchi.png")}
+                                style={styles.pointAlchi}
+                                resizeMode="contain"
+                            />
+                            <Text style={styles.pointText}>종목 구성은 이렇게 되어 있어요 !</Text>
+                            <Animated.View style={{ transform: [{ translateY }] }}>
+                                <Ionicons name="chevron-down-outline" size={24} color="black" />
+                            </Animated.View>
+                        </View>
 
-                {/* 종목 구성 */}
-                <View style={styles.pointContainer}>
-                    <Image
-                        source={require("@/assets/char/pointAlchi.png")}
-                        style={styles.pointAlchi}
-                        resizeMode="contain"
-                    />
-                    <Text style={styles.pointText}>종목 구성은 이렇게 되어 있어요 !</Text>
-                    <Animated.View style={{ transform: [{ translateY }] }}>
-                        <Ionicons name="chevron-down-outline" size={24} color="black" />
-                    </Animated.View>
-                </View>
-
-                <View style={styles.ratioContainer}>
-                    <ItemRatio data={graphData.doughnutChart} />
-                </View>
-                <View>
-                    <Caution />
-                </View>
+                        <View style={styles.ratioContainer}>
+                            <ItemRatio data={graphData.doughnutChart} />
+                        </View>
+                        <View>
+                            <Caution />
+                        </View>
 
 
-            </ScrollView>
+                    </ScrollView>
 
-            {/* 상품 찜하기 버튼 fixed 고정 */}
-            {/* 찜 해제하기 색깔 변경 */}
-            <Button onPress={() => { handleLikeToggle() }} style={[
-                styles.button,
-                liked ? { backgroundColor: "#AA00FF" } : {},
-            ]} label={liked ? "찜 해제하기" : "찜하기"} disabled={loadingLike}></Button>
+                    {/* 상품 찜하기 버튼 fixed 고정 */}
+                    {/* 찜 해제하기 색깔 변경 */}
+                    <Button onPress={() => { handleLikeToggle() }} style={[
+                        styles.button,
+                        liked ? { backgroundColor: "#AA00FF" } : {},
+                    ]} label={liked ? "찜 해제하기" : "찜하기"} disabled={loadingLike}>
+                    </Button>
+                </>
+            )}
         </SafeAreaView>
     );
 }

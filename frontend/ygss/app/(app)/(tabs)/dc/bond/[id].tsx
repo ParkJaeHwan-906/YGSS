@@ -60,6 +60,7 @@ export default function DcDetail() {
                 });
                 console.log(detailRes.data)
                 setProductDetail(detailRes.data);
+                setLiked(detailRes.data.isLiked);
             } catch (err: any) {
                 console.error("상품 상세 불러오기 실패");
                 console.error("상태코드:", err.response?.status);
@@ -92,102 +93,109 @@ export default function DcDetail() {
         ).start();
     }, [translateY]);
 
-    if (loading) return <ActivityIndicator size="large" color={Colors.primary} />;
-    if (!productDetail) return <Text>상품 정보를 불러올 수 없습니다.</Text>;
+    // if (loading) return <ActivityIndicator size="large" color={Colors.primary} />;
+    // if (!productDetail) return <Text>상품 정보를 불러올 수 없습니다.</Text>;
 
     return (
         <SafeAreaView style={styles.container}>
+            {loading ? (
+                <ActivityIndicator size="large" color={Colors.primary} />
+            ) : !productDetail ? (
+                <Text>상품 정보를 불러올 수 없습니다.</Text>
+            ) : (
+                <>
+                    <ScrollView contentContainerStyle={styles.scrollContent}>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+                        {/* 상품 기본 정보 */}
+                        <View style={styles.productContainer}>
+                            <ItemInfo_bond productDetail={productDetail} />
+                        </View>
 
-                {/* 상품 기본 정보 */}
-                <View style={styles.productContainer}>
-                    <ItemInfo_bond productDetail={productDetail} />
-                </View>
+                        {/* 발행처 */}
+                        <View style={styles.publisherContainer}>
+                            <Text style={styles.publisherText}>발행처</Text>
+                            <Text style={styles.publisherValue}>• {productDetail.publisher}</Text>
+                            <Text style={styles.publisherValue}>• 신용 등급: {productDetail.publisherGrade}</Text>
+                        </View>
 
-                {/* 발행처 */}
-                <View style={styles.publisherContainer}>
-                    <Text style={styles.publisherText}>발행처</Text>
-                    <Text style={styles.publisherValue}>• {productDetail.publisher}</Text>
-                    <Text style={styles.publisherValue}>• 신용 등급: {productDetail.publisherGrade}</Text>
-                </View>
+                        {/* 만기일/ 잔존기간 */}
+                        <View style={styles.expireContainer}>
+                            <View style={styles.expireRow}>
+                                <Text style={styles.expireTitle}>만기일:</Text>
+                                <Text style={styles.expireText}> {productDetail.expiredDay}</Text>
+                            </View>
+                            <View style={styles.expireRow}>
+                                <Text style={styles.expireTitle}>만기까지:</Text>
+                                <Text style={styles.expireText}> {productDetail.maturityYears}년</Text>
+                            </View>
+                        </View>
 
-                {/* 만기일/ 잔존기간 */}
-                <View style={styles.expireContainer}>
-                    <View style={styles.expireRow}>
-                        <Text style={styles.expireTitle}>만기일:</Text>
-                        <Text style={styles.expireText}> {productDetail.expiredDay}</Text>
-                    </View>
-                    <View style={styles.expireRow}>
-                        <Text style={styles.expireTitle}>만기까지:</Text>
-                        <Text style={styles.expireText}> {productDetail.maturityYears}년</Text>
-                    </View>
-                </View>
+                        {/* 종목 구성 */}
+                        <View style={styles.pointContainer}>
+                            <Image
+                                source={require("@/assets/char/pointAlchi.png")}
+                                style={styles.pointAlchi}
+                                resizeMode="contain"
+                            />
+                            <Text style={styles.pointText}>자세한 수익률을 아래와 같아요!</Text>
+                            <Animated.View style={{ transform: [{ translateY }] }}>
+                                <Ionicons name="chevron-down-outline" size={24} color="black" />
+                            </Animated.View>
+                        </View>
 
-                {/* 종목 구성 */}
-                <View style={styles.pointContainer}>
-                    <Image
-                        source={require("@/assets/char/pointAlchi.png")}
-                        style={styles.pointAlchi}
-                        resizeMode="contain"
-                    />
-                    <Text style={styles.pointText}>자세한 수익률을 아래와 같아요!</Text>
-                    <Animated.View style={{ transform: [{ translateY }] }}>
-                        <Ionicons name="chevron-down-outline" size={24} color="black" />
-                    </Animated.View>
-                </View>
-
-                {/* 수익률 바 차트 */}
-                <View style={styles.chartContainer}>
-                    <BarChart
-                        data={[
-                            {
-                                value: productDetail.publishedRate,
-                                label: "매수수익률",
-                                frontColor: Colors.primary,
-                            },
-                            {
-                                value: productDetail.couponRate,
-                                label: "표면금리",
-                                frontColor: "#9BB1FF",
-                            },
-                            {
-                                value: productDetail.evaluationRate,
-                                label: "민평수익률",
-                                frontColor: "#BFB4F0",
-                            },
-                        ]}
-                        barWidth={60}
-                        adjustToWidth
-                        hideRules={false}
-                        scrollAnimation={false}
-                        yAxisLabelSuffix="(%)"
-                        yAxisTextStyle={{ fontFamily: "BasicMedium", fontSize: 10, color: Colors.gray }}
-                        xAxisLabelTextStyle={{ fontFamily: "BasicMedium", fontSize: 12, color: Colors.black }}
-                        yAxisColor={Colors.gray}
-                        xAxisColor={Colors.gray}
-                        noOfSections={5}
-                        showValuesAsTopLabel
-                        topLabelTextStyle={{
-                            color: Colors.primary,
-                            fontSize: 11,
-                            fontFamily: "BasicMedium",
-                        }}
-                    />
-                </View>
+                        {/* 수익률 바 차트 */}
+                        <View style={styles.chartContainer}>
+                            <BarChart
+                                data={[
+                                    {
+                                        value: productDetail.publishedRate,
+                                        label: "매수수익률",
+                                        frontColor: Colors.primary,
+                                    },
+                                    {
+                                        value: productDetail.couponRate,
+                                        label: "표면금리",
+                                        frontColor: "#9BB1FF",
+                                    },
+                                    {
+                                        value: productDetail.evaluationRate,
+                                        label: "민평수익률",
+                                        frontColor: "#BFB4F0",
+                                    },
+                                ]}
+                                barWidth={60}
+                                adjustToWidth
+                                hideRules={false}
+                                scrollAnimation={false}
+                                yAxisLabelSuffix="(%)"
+                                yAxisTextStyle={{ fontFamily: "BasicMedium", fontSize: 10, color: Colors.gray }}
+                                xAxisLabelTextStyle={{ fontFamily: "BasicMedium", fontSize: 12, color: Colors.black }}
+                                yAxisColor={Colors.gray}
+                                xAxisColor={Colors.gray}
+                                noOfSections={5}
+                                showValuesAsTopLabel
+                                topLabelTextStyle={{
+                                    color: Colors.primary,
+                                    fontSize: 11,
+                                    fontFamily: "BasicMedium",
+                                }}
+                            />
+                        </View>
 
 
-                {/* 유의사항 */}
-                <Caution />
+                        {/* 유의사항 */}
+                        <Caution />
 
-            </ScrollView>
+                    </ScrollView>
 
-            {/* 상품 찜하기 버튼 fixed 고정 */}
-            {/* 찜 해제하기 색깔 변경 */}
-            <Button onPress={() => { handleLikeToggle() }} style={[
-                styles.button,
-                liked ? { backgroundColor: "#AA00FF" } : {},
-            ]} label={liked ? "찜 해제하기" : "찜하기"} disabled={loadingLike}></Button>
+                    {/* 상품 찜하기 버튼 fixed 고정 */}
+                    {/* 찜 해제하기 색깔 변경 */}
+                    <Button onPress={() => { handleLikeToggle() }} style={[
+                        styles.button,
+                        liked ? { backgroundColor: "#AA00FF" } : {},
+                    ]} label={liked ? "찜 해제하기" : "찜하기"} disabled={loadingLike}></Button>
+                </>
+            )}
         </SafeAreaView>
     );
 }
