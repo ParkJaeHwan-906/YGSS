@@ -23,7 +23,7 @@ import Animated, {
 
 export type Slice = {
   label: "ETF" | "펀드" | "채권";
-  amount: number; // 👉 count(개수)
+  amount: number;
   color?: string;
 };
 
@@ -45,7 +45,7 @@ export default function InvestChar({ slices }: InvestCharProps) {
   const translateY = useRef(new RNAnimated.Value(0)).current;
   const slide = useSharedValue(0);
 
-  // 위아래로 화살표 애니메이션
+  // 위아래 화살표 애니메이션
   useEffect(() => {
     RNAnimated.loop(
       RNAnimated.sequence([
@@ -76,67 +76,24 @@ export default function InvestChar({ slices }: InvestCharProps) {
     height: slide.value === 1 ? "auto" : 0,
   }));
 
-  // 투자 성향 미정일 때
-  if (investType === "?????") {
-    return (
-      <View style={styles.card}>
-        <Text style={styles.titleText}>
-          {userName}님은{"\n"}
-          <Text style={styles.highlight}>{investType}</Text> 입니다.
-        </Text>
-        <Image
-          source={require("@/assets/char/pointAlchi.png")}
-          style={styles.emptyIcon}
-          resizeMode="contain"
-        />
-        <Text style={styles.emptyText}>투자 성향 테스트를 해보세요!</Text>
-
-        <RNAnimated.View
-          style={[{ transform: [{ translateY: translateY }] }, styles.arrowStyle]}
-        >
-          <Pressable onPress={() => setShowBias(!showBias)}>
-            <Ionicons
-              name={showBias ? "chevron-up-outline" : "chevron-down-outline"}
-              size={24}
-              color="black"
-            />
-          </Pressable>
-        </RNAnimated.View>
-
-        <Animated.View style={[{ overflow: "hidden" }, biasStyle]}>
-          <InvestBias />
-        </Animated.View>
-      </View>
-    );
-  }
-
   const palette = {
     ETF: "#8BB6FF",
     펀드: "#A8B7D1",
     채권: "#FFE9B7",
   } as const;
 
-  // slices 없으면 더미 데이터
+  // slices 가공
   const baseData = useMemo(() => {
-    if (!slices || slices.length === 0) {
-      // 🔹 아무것도 찜 안했을 경우 → 회색 1개
-      return [{ label: "없음" as any, amount: 1, color: "#D3D3D3" }];
-    }
-
+    if (!slices || slices.length === 0) return [];
     return slices.map((it) => ({
       ...it,
       color: it.color ?? palette[it.label],
     }));
   }, [slices]);
 
-  if (baseData.length === 0) {
-    return (
-      <View style={styles.card}>
-        <Text style={styles.emptyText}>찜한 상품이 없습니다.</Text>
-      </View>
-    );
-  }
+  // 👉 Hook은 무조건 컴포넌트 최상단에서만 실행 (조건문 X)
 
+  // chart 계산
   const total = baseData.reduce((a, c) => a + (c.amount || 0), 0) || 1;
   const pct = (amt: number) => Math.round((amt / total) * 100);
 
@@ -152,7 +109,10 @@ export default function InvestChar({ slices }: InvestCharProps) {
   const labelProgress = useSharedValue(0);
   const ringProgress = useSharedValue(0);
 
+  // PieChart 라벨 전환 애니메이션
   useEffect(() => {
+    if (baseData.length === 0) return; // 데이터 없으면 애니메이션 안 돌림
+
     labelProgress.value = withTiming(1, {
       duration: ENTER_DURATION,
       easing: Easing.inOut(Easing.cubic),
@@ -219,14 +179,76 @@ export default function InvestChar({ slices }: InvestCharProps) {
   const innerRadius = () =>
     interpolate(ringProgress.value, [0, 0.6, 1], [baseInner, baseInner + 4, baseInner]);
 
+  // =========================================
+  // 👉 UI
+  // =========================================
+
+  // slices 없음 → 안내문만
+  if (baseData.length === 0) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.titleText}>
+          {userName}님은{"\n"}
+          <Text style={styles.highlight}>{investType}</Text> 입니다.
+        </Text>
+
+        <Image source={require("@/assets/char/sadAlchi.png")} style={styles.sadAlchi} />
+        <Text style={styles.nolikeText}>찜한 상품이 없습니다</Text>
+
+
+        {investType === "?????" ? (
+          <Text style={styles.emptyText}>당신의 투자 성향을 테스트 해보세요!</Text>
+        ) : (
+          <Text style={styles.emptyText}>다시 투자 성향 테스트를 해보세요!</Text>
+        )}
+
+        <RNAnimated.View
+          style={[{ transform: [{ translateY: translateY }] }, styles.arrowStyle]}
+        >
+          <Pressable onPress={() => setShowBias(!showBias)}>
+            <Ionicons
+              name={showBias ? "chevron-up-outline" : "chevron-down-outline"}
+              size={24}
+              color="black"
+            />
+          </Pressable>
+        </RNAnimated.View>
+
+        <Animated.View style={[{ overflow: "hidden" }, biasStyle]}>
+          <InvestBias />
+        </Animated.View>
+      </View>
+    );
+  }
+
+  // slices 있음 → PieChart + 범례
   return (
     <View style={styles.card}>
-      <Text style={styles.titleText}>
-        {userName}님은{"\n"}
-        <Text style={styles.highlight}>'{investType}'</Text> 입니다.
-      </Text>
+      {investType === "?????" ? (
+        <Text style={styles.titleText}>
+          {userName}님은{"\n"}
+          <Text style={styles.highlight}>{investType}</Text> 입니다.
+        </Text>
+      ) : (
+        <Text style={styles.titleText}>
+          {userName}님은{"\n"}
+          <Text style={styles.highlight}>'{investType}'</Text> 입니다.
+        </Text>
+      )}
 
       <View style={styles.chartWrapper}>
+        <Text
+          style={{
+            fontFamily: "BasicBold",
+            fontSize: 16,
+            color: Colors.black,
+            marginBottom: 16,
+            borderBottomWidth: 1,
+            borderBottomColor: Colors.primary,
+          }}
+        >
+          나의 관심 상품
+        </Text>
         <Animated.View style={animatedChartStyle}>
           <PieChart
             data={chartBase.map((it, i) => ({
@@ -242,7 +264,14 @@ export default function InvestChar({ slices }: InvestCharProps) {
             showGradient
             labelsPosition="outward"
             centerLabelComponent={() => (
-              <View style={{ width: 140, height: 60, alignItems: "center", justifyContent: "center" }}>
+              <View
+                style={{
+                  width: 140,
+                  height: 60,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
                 {/* 이전 라벨 */}
                 <Animated.View style={prevStyle}>
                   <Text style={styles.centerTitle}>{previous.label}</Text>
@@ -262,20 +291,37 @@ export default function InvestChar({ slices }: InvestCharProps) {
 
       {/* 범례 */}
       <View style={styles.legendContainer}>
-        {baseData[0].label === "없음" ? (
-          <Text style={styles.emptyText}>찜한 상품이 없습니다.</Text>
-        ) : (
-          baseData.map((item, idx) => (
-            <View key={idx} style={styles.legendItem}>
-              <View style={[styles.dot, { backgroundColor: item.color }]} />
-              <Text style={styles.legendText}>
-                {item.label}: {pct(item.amount)}%
-              </Text>
-            </View>
-          ))
-        )}
+        {baseData.map((item, idx) => (
+          <View key={idx} style={styles.legendItem}>
+            <View style={[styles.dot, { backgroundColor: item.color }]} />
+            <Text style={styles.legendText}>
+              {item.label}: {pct(item.amount)}%
+            </Text>
+          </View>
+        ))}
       </View>
 
+      {investType === "?????" ? (
+        <Text style={styles.emptyText}>투자 성향 테스트를 해보세요!</Text>
+      ) : (
+        <Text style={styles.emptyText}>다시 투자 성향 테스트를 해보세요!</Text>
+      )}
+
+      <RNAnimated.View
+        style={[{ transform: [{ translateY: translateY }] }, styles.arrowStyle]}
+      >
+        <Pressable onPress={() => setShowBias(!showBias)}>
+          <Ionicons
+            name={showBias ? "chevron-up-outline" : "chevron-down-outline"}
+            size={24}
+            color="black"
+          />
+        </Pressable>
+      </RNAnimated.View>
+
+      <Animated.View style={[{ overflow: "hidden" }, biasStyle]}>
+        <InvestBias />
+      </Animated.View>
     </View>
   );
 }
@@ -328,23 +374,31 @@ const styles = StyleSheet.create({
   },
   dot: { width: 10, height: 10, borderRadius: 5, marginRight: 6 },
   legendText: { fontSize: 13, color: Colors?.black ?? "#111", fontFamily: "BasicMedium" },
-  emptyIcon: {
-    width: 200,
-    height: 200,
-    alignSelf: "center",
-    marginTop: 20,
-    marginBottom: 20,
-  },
   emptyText: {
     textAlign: "center",
-    marginTop: 6,
-    fontSize: 16,
-    color: Colors.gray,
+    marginTop: 16,
+    fontSize: 14,
+    color: Colors.primary,
+    padding: 16,
+    borderRadius: 8,
     fontFamily: "BasicMedium",
   },
   arrowStyle: {
     alignItems: "center",
     justifyContent: "center",
     marginVertical: 16,
+  },
+  sadAlchi: {
+    width: 180,
+    height: 180,
+    marginBottom: 16,
+    alignSelf: "center",
+  },
+  nolikeText: {
+    textAlign: "center",
+    marginTop: 16,
+    fontSize: 14,
+    color: Colors.gray,
+    fontFamily: "BasicMedium",
   },
 });

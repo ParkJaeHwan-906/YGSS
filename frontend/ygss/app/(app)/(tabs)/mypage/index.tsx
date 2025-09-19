@@ -56,11 +56,11 @@ export default function Mypage() {
                 const bondCount = likedBond.length;
 
                 // slices 세팅 (개수 기준)
-                const mappedSlices: Slice[] = [
-                    { label: "ETF", amount: etfCount },
-                    { label: "펀드", amount: fundCount },
-                    { label: "채권", amount: bondCount },
-                ];
+                const mappedSlices: Slice[] = [];
+
+                if (etfCount > 0) mappedSlices.push({ label: "ETF", amount: etfCount });
+                if (fundCount > 0) mappedSlices.push({ label: "펀드", amount: fundCount });
+                if (bondCount > 0) mappedSlices.push({ label: "채권", amount: bondCount });
 
                 setSlices(mappedSlices);
 
