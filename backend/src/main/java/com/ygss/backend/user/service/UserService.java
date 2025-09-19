@@ -8,4 +8,5 @@ public interface UserService {
     EditUserInfoResponseDto getUserInfoByUserEmail(String userEmail);
     Boolean updateUserInfo(EditUserInfoResponseDto request);
     Boolean updateUserExit(String userEmail);
+    Boolean logout(String userEmail);
 }

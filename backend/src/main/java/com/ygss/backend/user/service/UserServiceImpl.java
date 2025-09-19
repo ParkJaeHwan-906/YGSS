@@ -1,5 +1,6 @@
 package com.ygss.backend.user.service;
 
+import com.ygss.backend.auth.repository.UserRefreshTokenRepository;
 import com.ygss.backend.auth.service.AuthServiceImpl;
 import com.ygss.backend.user.dto.EditUserInfoResponseDto;
 import com.ygss.backend.user.repository.UserAccountsRepository;
@@ -16,6 +17,7 @@ public class UserServiceImpl implements UserService{
     private final AuthServiceImpl authService;
     private final UsersRepository usersRepository;
     private final UserAccountsRepository userAccountsRepository;
+    private final UserRefreshTokenRepository userRefreshTokenRepository;
     @Override
     public String getUserNameById(Long userId) {
         return usersRepository.getUserNameById(userId);
@@ -63,6 +65,12 @@ public class UserServiceImpl implements UserService{
         } else {
             request.setPassword(authService.cryptoPassword(request.getPassword()));
         }
+    }
+
+    @Override
+    public Boolean logout(String userEmail) {
+        userRefreshTokenRepository.deleteRefreshTokenWhenLogout(userEmail);
+        return true;
     }
 
     @Override
