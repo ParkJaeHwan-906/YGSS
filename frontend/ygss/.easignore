@@ -1,0 +1,28 @@
+# .easignore
+
+# node_modules는 항상 제외
+node_modules/
+
+# 플랫폼별 빌드 산출물
+android/
+ios/
+
+# 번들러/빌드 캐시
+.expo/
+.expo-shared/
+dist/
+build/
+.cache/
+.gradle/
+Pods/
+
+# 환경 파일
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 로그 파일
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
