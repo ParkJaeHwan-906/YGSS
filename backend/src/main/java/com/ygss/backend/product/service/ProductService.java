@@ -25,7 +25,7 @@ public interface ProductService {
     /**
      * ETF/펀드 상세 조회
      */
-    RetirePensionProductDetailResponseDto selectRetirePensionProductById(Long retirePensionProductId);
+    RetirePensionProductDetailResponseDto selectRetirePensionProductById(Long retirePensionProductId,String email);
 
     /**
      * ETF/펀드 상세 조회 (그래프)
@@ -41,5 +41,5 @@ public interface ProductService {
      * BOND
      */
     List<BondProductResponseDto> selectAllBondProduct(ProductListRequestDto request);
-    BondDto selectBondDetailById(Long bondProductId);
+    BondDto selectBondDetailById(Long bondProductId,String email);
 }

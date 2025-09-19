@@ -4,6 +4,9 @@ import com.ygss.backend.product.dto.ProductListRequestDto;
 import com.ygss.backend.product.service.ProductServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.security.Principal;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -46,9 +49,9 @@ public class ProductController {
     }
 
     @GetMapping("/dc/{retirePensionProductId}")
-    public ResponseEntity<?> loadRetirePensionProductDetail(@PathVariable Long retirePensionProductId) {
+    public ResponseEntity<?> loadRetirePensionProductDetail(@PathVariable Long retirePensionProductId, Principal principal) {
         try {
-            return ResponseEntity.ok(productService.selectRetirePensionProductById(retirePensionProductId));
+            return ResponseEntity.ok(productService.selectRetirePensionProductById(retirePensionProductId,principal.getName()));
         } catch (Exception e) {
             log.error("Load Retire Pension Product Detail Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
@@ -83,9 +86,9 @@ public class ProductController {
     }
 
     @GetMapping("/dc/bond/{bondId}")
-    public ResponseEntity<?> loadbondProduct(@PathVariable Long bondId) {
+    public ResponseEntity<?> loadbondProductDetail(@PathVariable Long bondId, Principal principal) {
         try {
-            return ResponseEntity.ok(productService.selectBondDetailById(bondId));
+            return ResponseEntity.ok(productService.selectBondDetailById(bondId,principal.getName()));
         } catch (Exception e) {
             log.error("Load DC BOND Product Detail Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
