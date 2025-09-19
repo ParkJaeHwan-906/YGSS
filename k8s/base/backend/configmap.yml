@@ -16,5 +16,5 @@ data:
   JWT_REFRESH_TOKEN_EXPIRATION: "604800000"
   MYBATIS_CONFIGURATION_MAP_UNDERSCORE_TO_CAMEL_CASE: "true"
   GMS_BASE_URL: "https://gms.ssafy.io/gmsapi"
-  GMS_OPENAI_ENDPOINT: "/openai/v1"
+  GMS_OPENAI_ENDPOINT: "/api.openai.com/v1"
   FASTAPI_BASE_URL: "https://j13a103.p.ssafy.io/ai"
