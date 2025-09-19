@@ -215,7 +215,7 @@ export default function Dc1() {
         </View>
 
         {/* 리스트 영역 */}
-        <View style={[styles.listContainer, { paddingHorizontal: 14, paddingVertical: 6 }]}>
+        <View style={[styles.listContainer]}>
           {loading ? (
             <Text style={{ padding: 16 }}>불러오는 중…</Text>
           ) : error ? (
@@ -339,8 +339,9 @@ const styles = StyleSheet.create({
   listContainer: {
     flex: 1,
     marginTop: 20,
+    marginHorizontal: -20,
+    padding: 18,
     backgroundColor: Colors?.white ?? "#FFFFFF",
-    borderRadius: 16,
   },
   moreHint: {
     marginTop: 8,

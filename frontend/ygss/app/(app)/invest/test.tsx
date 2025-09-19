@@ -22,6 +22,15 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 type ApiOption = { no: number; option: string; score: number };
 type ApiQuestion = { no: number; question: string; options: ApiOption[] };
 
+// 알키 이미지 매핑
+const ALCHI_IMAGES = [
+  require("@/assets/char/winkAlchi.png"),
+  require("@/assets/char/dreamAlchi.png"),
+  require("@/assets/char/sadAlchi.png"),
+  require("@/assets/char/pointAlchi.png"),
+  require("@/assets/char/upsetAlchi.png"),
+];
+
 export default function InvestTest() {
   const router = useRouter();
   const pathname = usePathname();
@@ -33,6 +42,28 @@ export default function InvestTest() {
   const [idx, setIdx] = useState(0);                       // 현재 문항 인덱스
   const [answers, setAnswers] = useState<Record<number, number>>({}); // { [question.no]: option.no }
   const [selectedNo, setSelectedNo] = useState<number | null>(null);   // 현재 문항에서 누른 옵션 no
+
+  // 질문번호 -> 랜덤 이미지 매핑
+  const [imgMap, setImgMap] = useState<Record<number, number>>({});
+
+  useEffect(() => {
+    if (!questions.length) return;
+  
+    // 연속 문항에서 같은 이미지가 나오지 않게 살짝 배려
+    const map: Record<number, number> = {};
+    let lastPicked = -1;
+  
+    for (const q of questions) {
+      let pick = Math.floor(Math.random() * ALCHI_IMAGES.length);
+      if (ALCHI_IMAGES.length > 1 && pick === lastPicked) {
+        // 바로 이전과 같은 이미지면 하나 옆으로 밀기
+        pick = (pick + 1) % ALCHI_IMAGES.length;
+      }
+      map[q.no] = pick;
+      lastPicked = pick;
+    }
+    setImgMap(map);
+  }, [questions]);
 
   // 총점
   const totalScore = useMemo(() => {
@@ -158,7 +189,7 @@ export default function InvestTest() {
 
             {/* 알키 캐릭터 */}
             <Image
-              source={require("@/assets/char/upsetAlchi.png")}
+              source={ALCHI_IMAGES[imgMap[q.no]]}
               style={styles.hero}
               resizeMode="contain"
             />

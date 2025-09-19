@@ -16,6 +16,7 @@ export type ImageListData = {
 };
 
 type Props = {
+  header?: string;
   items: ImageListData[];
   header?: string;
   emptyText?: string;
@@ -24,6 +25,7 @@ type Props = {
 };
 
 export default function ImageList({
+  header = "나의 찜 상품",
   items,
   header = "목록",
   emptyText = "데이터가 없습니다.",
