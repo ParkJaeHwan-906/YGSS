@@ -1,6 +1,4 @@
 // app/(app)/(tabs)/home.tsx
-import ChatBotScreen from "@/components/chatbot/ChatBotScreen";
-import FloatingChatButton from "@/components/chatbot/FloatingChatButton";
 import MyMoney from "@/components/molecules/MyMoney";
 import ImageList, { ImageListData } from "@/components/organisms/ImageList";
 import { fetchPlanDc } from "@/src/api/plan";
@@ -11,14 +9,13 @@ import { useEffect, useState } from "react";
 import {
   Dimensions,
   Image,
-  Modal,
   Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -160,22 +157,22 @@ export default function Home() {
             {/* 포트폴리오 구성 */}
           </View>
         </ScrollView>
-
+        {/* 
         <FloatingChatButton
           onPress={() => setIsChatVisible(true)}
           backgroundColor={Colors?.primary ?? "#007AFF"}
           hasNotification={false}
-        />
+        /> */}
       </SafeAreaView>
 
-      <Modal
+      {/* <Modal
         visible={isChatVisible}
         animationType="slide"
         presentationStyle="fullScreen"
         onRequestClose={() => setIsChatVisible(false)}
       >
         <ChatBotScreen onClose={() => setIsChatVisible(false)} />
-      </Modal>
+      </Modal> */}
     </>
   );
 }

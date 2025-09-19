@@ -30,7 +30,7 @@ const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
 }) => {
   // 초기 위치 (좌측 하단)
   const pan = useRef(new Animated.ValueXY({ x: 20, y: screenHeight - 100 })).current;
-  
+
   // 버튼이 화면 경계를 벗어나지 않도록 제한
   const getConstrainedPosition = (x: number, y: number) => {
     const constrainedX = Math.max(10, Math.min(screenWidth - size - 10, x));
@@ -42,7 +42,7 @@ const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
   const snapToEdge = (x: number, y: number) => {
     const centerX = screenWidth / 2;
     const targetX = x < centerX ? 20 : screenWidth - size - 20;
-    
+
     Animated.spring(pan, {
       toValue: { x: targetX, y },
       useNativeDriver: false,
@@ -54,7 +54,7 @@ const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
-    
+
     onPanResponderGrant: () => {
       // 드래그 시작 시 현재 위치 설정
       pan.setOffset({
@@ -62,27 +62,27 @@ const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
         y: (pan.y as any)._value,
       });
     },
-    
+
     onPanResponderMove: Animated.event(
       [null, { dx: pan.x, dy: pan.y }],
       { useNativeDriver: false }
     ),
-    
+
     onPanResponderRelease: (evt, gestureState) => {
       // 드래그 종료
       pan.flattenOffset();
-      
+
       const finalX = (pan.x as any)._value;
       const finalY = (pan.y as any)._value;
-      
+
       const constrainedPosition = getConstrainedPosition(finalX, finalY);
-      
+
       // 짧은 드래그인 경우 탭으로 간주
       if (Math.abs(gestureState.dx) < 10 && Math.abs(gestureState.dy) < 10) {
         onPress();
         return;
       }
-      
+
       // 가장자리로 자동 이동
       snapToEdge(constrainedPosition.x, constrainedPosition.y);
     },
@@ -107,7 +107,7 @@ const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
         onPress={onPress} // 백업 onPress 추가
       >
         <Ionicons name="chatbubble-ellipses" size={iconSize} color={iconColor} />
-        
+
         {/* 새 메시지 알림 점 */}
         {hasNotification && <View style={styles.notificationDot} />}
       </TouchableOpacity>

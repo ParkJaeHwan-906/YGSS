@@ -2,7 +2,7 @@ import { useAppSelector } from "@/src/store/hooks";
 import { Redirect, Stack } from "expo-router";
 
 export default function AuthLayout() {
-    const token = useAppSelector((s) => s.auth.token);
+    const token = useAppSelector((s) => s.auth.accessToken);
 
     if (token) {
         // 이미 로그인 상태면 home으로
