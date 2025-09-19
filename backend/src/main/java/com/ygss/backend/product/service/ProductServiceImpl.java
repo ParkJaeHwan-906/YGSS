@@ -37,14 +37,12 @@ public class ProductServiceImpl implements ProductService {
         return retirePensionProductRepository.selectDcProduct(request.sortToString(), 2L);
     }
     @Override
-    public RetirePensionProductDetailResponseDto selectRetirePensionProductById(Long retirePensionProductId,String email) {
-        Long userId = userAccountsRepository.selectUserIdByEmail(email)
-        .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
-        boolean exist = pensionProductRepository.getProductLike(userId, retirePensionProductId) != 0;
+    public RetirePensionProductDetailResponseDto selectRetirePensionProductById(Long retirePensionProductId, String userEmail) {
+        boolean exist = pensionProductRepository.getProductLike(retirePensionProductId, userEmail) > 0;
 
         RetirePensionProductDetailResponseDto result = retirePensionProductRepository.selectRetirePensionProductById(retirePensionProductId)
                 .orElseThrow(() -> new IllegalArgumentException("Not Found Retire Pension Product"));
-        result.setIsLiked(exist);
+        result.setIsLiked(userEmail == null ? null : exist);
         return result;
     }
 
@@ -73,13 +71,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public BondDto selectBondDetailById(Long bondProductId,String email) {
-        Long userId = userAccountsRepository.selectUserIdByEmail(email)
-        .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + email));
-        boolean exist = pensionProductRepository.getBondLike(userId, bondProductId) != 0;
+    public BondDto selectBondDetailById(Long bondProductId, String userEmail) {
+        boolean exist = pensionProductRepository.getBondLike(bondProductId, userEmail) > 0;
 
         BondDto result = retirePensionProductRepository.selectBondById(bondProductId).orElseThrow(() -> new IllegalArgumentException("Not Found Bond Product"));
-        result.setIsLiked(exist);
+        result.setIsLiked(userEmail == null ? null : exist);
         return result;
     }
 }

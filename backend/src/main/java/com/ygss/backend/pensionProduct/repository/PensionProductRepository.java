@@ -427,45 +427,49 @@ public interface PensionProductRepository {
 
     //===================좋아요 로직====================//
 
-    @Select({
-            "SELECT COUNT(*) FROM retire_pension_product_like",
-            "WHERE user_account_id = #{userId}",
-            "AND retire_pension_product_id = #{productId}"
-    })
-    int getProductLike(@Param("userId")Long userId, @Param("productId")Long productId);
+    @Select("""
+            SELECT COUNT(*) FROM retire_pension_product_like rppl
+            JOIN user_accounts ua ON ua.user_id = rppl.user_account_id
+            WHERE rppl.retire_pension_product_id = #{retirePensionProductId}
+            AND ua.email = #{userEmail}
+            AND ua.`exit` IS NULL;
+            """)
+    Integer getProductLike(Long retirePensionProductId, String userEmail);
 
     @Delete({
             "DELETE FROM retire_pension_product_like",
             "WHERE user_account_id = #{userId}",
             "AND retire_pension_product_id = #{productId}"
     })
-    int deleteProductLike(@Param("userId") Long userId, @Param("productId") Long productId);
+    Integer deleteProductLike(@Param("userId") Long userId, @Param("productId") Long productId);
 
     @Insert({
             "INSERT INTO retire_pension_product_like(user_account_id, retire_pension_product_id)",
             "VALUES(#{userId}, #{productId})"
     })
-    int addProductLike(@Param("userId") Long userId, @Param("productId") Long productId);
+    Integer addProductLike(@Param("userId") Long userId, @Param("productId") Long productId);
 
-    @Select({
-            "SELECT COUNT(*) FROM bond_product_like",
-            "WHERE user_account_id = #{userId}",
-            "AND bond_product_id = #{bondId}"
-    })
-    int getBondLike(@Param("userId")Long userId, @Param("bondId")Long bondId);
+    @Select("""
+            SELECT COUNT(*) FROM bond_product_like bpl
+            JOIN user_accounts ua ON ua.user_id = bpl.user_account_id
+            WHERE bpl.bond_product_id = #{bondProductId}
+            AND ua.email = #{userEmail}
+            AND ua.`exit` IS NULL;
+            """)
+    Integer getBondLike(Long bondProductId, String userEmail);
 
     @Delete({
             "DELETE FROM bond_product_like",
             "WHERE user_account_id = #{userId}",
             "AND bond_product_id = #{bondId}"
     })
-    int deleteBondLike(@Param("userId") Long userId, @Param("bondId") Long bondId);
+    Integer deleteBondLike(@Param("userId") Long userId, @Param("bondId") Long bondId);
 
     @Insert({
             "INSERT INTO bond_product_like(user_account_id, bond_product_id)",
             "VALUES(#{userId}, #{bondId})"
     })
-    int addBondLike(@Param("userId") Long userId, @Param("bondId") Long bondId);
+    Integer addBondLike(@Param("userId") Long userId, @Param("bondId") Long bondId);
 
 
     @Select({

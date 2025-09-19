@@ -26,6 +26,7 @@ public class SecurityConfig {
         http
                 // CSRF 비활성화 (JWT 사용시 불필요)
                 .csrf(csrf -> csrf.disable())
+                .anonymous(anonymous -> anonymous.disable())
 
                 // 폼 로그인 비활성화
                 .formLogin(form -> form.disable())
