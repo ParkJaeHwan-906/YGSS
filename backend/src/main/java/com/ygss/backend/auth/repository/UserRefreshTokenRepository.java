@@ -40,4 +40,12 @@ public interface UserRefreshTokenRepository {
             WHERE `exit` <= CURRENT_TIMESTAMP
             """)
     Integer deleteExpRefreshToken();
+
+    @Delete("""
+            DELETE urt
+            FROM user_refresh_token urt
+            JOIN user_accounts ua ON ua.id = urt.user_id
+            WHERE ua.email = #{userEmail} AND ua.`exit` IS NULL;
+            """)
+    Integer deleteRefreshTokenWhenLogout(String userEmail);
 }

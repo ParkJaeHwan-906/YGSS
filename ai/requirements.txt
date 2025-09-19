@@ -53,3 +53,6 @@ urllib3==2.5.0
 uvicorn==0.30.0
 watchfiles==1.1.0
 websockets==15.0.1
+sentence-transformers==3.0.1
+torch>=2.0.0
+transformers>=4.41.0

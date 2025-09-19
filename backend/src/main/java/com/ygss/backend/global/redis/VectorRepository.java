@@ -97,9 +97,8 @@ public class VectorRepository {
                 for (byte[] value : allEmbeddings) {
                     float[] vec = fromBytes(value);
                     double sim = cosineSimilarity(queryVector, vec);
-                    if(sim < 0.25) continue;
+                    if(sim < 0.45) continue;
                     pq.offer(new SearchResultDto(prefix, termId, id, type, sim));
-
                     if (pq.size() > k) pq.poll();
                 }
             }
