@@ -107,10 +107,6 @@ export default function DcDetail() {
         ).start();
     }, [translateY]);
 
-    // if (loading) return <ActivityIndicator size="large" color={Colors.primary} />;
-    // if (!productDetail) return <Text>상품 정보를 불러올 수 없습니다.</Text>;
-    // if (!graphData) return <Text>그래프 데이터를 불러올 수 없습니다.</Text>;
-
     return (
         <SafeAreaView style={styles.container}>
             {loading ? (

@@ -18,14 +18,12 @@ export type ImageListData = {
 type Props = {
   header?: string;
   items: ImageListData[];
-  header?: string;
   emptyText?: string;
   initialCount?: number; // 기본 3개 노출
   step?: number;         // 클릭 시 5개씩 증가
 };
 
 export default function ImageList({
-  header = "나의 찜 상품",
   items,
   header = "목록",
   emptyText = "데이터가 없습니다.",
