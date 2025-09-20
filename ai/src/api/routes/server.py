@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import List
 from sentence_transformers import CrossEncoder
@@ -16,7 +16,7 @@ class CompareRequest(BaseModel):
     question: str
     candidateList: List[Candidate]
 
-@router.post("/server/compare")
+@router.post("/compare")
 def compare(req: CompareRequest):
     question = req.question
     candidates = req.candidateList
