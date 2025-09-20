@@ -67,15 +67,23 @@ export default function Mypage() {
                 const mapped: ImageListData[] = [
                     ...likedProduct.map((it: any) => ({
                         id: it.id,
-                        type: "ETF_FUND",
+                        type: "ETF",
                         logo: require("@/assets/icon/etf.png"), // ETF 아이콘 예시
+                        title: it.product,
+                        subTitle: it.companyName,
+                        rate: it.nextYearProfitRate ?? 0,
+                    })),
+                    ...likedProduct.map((it: any) => ({
+                        id: it.id,
+                        type: "펀드",
+                        logo: require("@/assets/icon/fund.png"), // ETF 아이콘 예시
                         title: it.product,
                         subTitle: it.companyName,
                         rate: it.nextYearProfitRate ?? 0,
                     })),
                     ...likedBond.map((it: any) => ({
                         id: it.id,
-                        type: "BOND",
+                        type: "채권",
                         logo: require("@/assets/icon/bond.png"), // 채권 아이콘 예시
                         title: it.productName,
                         subTitle: it.publisher,

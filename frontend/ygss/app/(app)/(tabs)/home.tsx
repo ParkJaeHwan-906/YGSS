@@ -44,7 +44,7 @@ export default function Home() {
       } catch (err: any) {
         const status = err?.response?.status;
         setPlanError(status ? `로드 실패 (HTTP ${status})` : "네트워크 오류");
-        console.error("plan/dc load error:", status ?? err?.message);
+        console.error("top 찜상품 load error:", status ?? err?.message);
       } finally {
         setLoadingPlan(false);
       }
@@ -70,8 +70,9 @@ export default function Home() {
                 resizeMode="contain"
               />
               <Text style={styles.heroTitle}>
-                똑똑하게{"\n"}퇴직연금 챙기기!
+                똑똑하게{"\n"}퇴직연금 챙기기
               </Text>
+
             </View>
             <Image
               source={require("@/assets/char/basicAlchi.png")}
@@ -139,7 +140,7 @@ export default function Home() {
             ) : planError ? (
               <Text style={{ padding: 16, color: "red" }}>{planError}</Text>
             ) : (
-              <ImageList header="DC 상품 Top3" items={planItems} initialCount={3} step={5} />
+              <ImageList header="찜 상품 인기 순위" items={planItems} initialCount={3} step={5} />
             )}
           </View>
 
@@ -157,22 +158,7 @@ export default function Home() {
             {/* 포트폴리오 구성 */}
           </View>
         </ScrollView>
-        {/* 
-        <FloatingChatButton
-          onPress={() => setIsChatVisible(true)}
-          backgroundColor={Colors?.primary ?? "#007AFF"}
-          hasNotification={false}
-        /> */}
       </SafeAreaView>
-
-      {/* <Modal
-        visible={isChatVisible}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={() => setIsChatVisible(false)}
-      >
-        <ChatBotScreen onClose={() => setIsChatVisible(false)} />
-      </Modal> */}
     </>
   );
 }
@@ -210,7 +196,7 @@ const styles = StyleSheet.create({
   hero: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   heroLeft: {
     flex: 1,
@@ -230,6 +216,7 @@ const styles = StyleSheet.create({
     lineHeight: 32,
     alignSelf: "flex-start",
     textAlign: "left",
+    flexWrap: "nowrap",
     marginLeft: 8,
     ...(Platform.OS === "android" ? { includeFontPadding: false } : {}),
   },
