@@ -76,7 +76,7 @@ export default function ItemInfo({ productDetail }: { productDetail: ProductDeta
                 <ItemProperty
                     icon={interestIcon}
                     label="예상수익률"
-                    value={`${productDetail.profitPrediction}%`}
+                    value={`${Number(productDetail.profitPrediction).toFixed(2)}%`}
                     valueColor="#FF0000"
                 />
             </View>
@@ -108,6 +108,7 @@ const styles = StyleSheet.create({
         alignSelf: "center",
         marginTop: 8,
         marginBottom: 20,
+        paddingHorizontal: 8,
     },
     productText: {
         fontFamily: "BasicBold",
