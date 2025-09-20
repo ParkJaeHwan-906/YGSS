@@ -18,3 +18,4 @@ data:
   GMS_BASE_URL: "https://gms.ssafy.io/gmsapi"
   GMS_OPENAI_ENDPOINT: "/api.openai.com/v1"
   FASTAPI_BASE_URL: "https://j13a103.p.ssafy.io/ai"
+  LOGGING_PATTERN_CONSOLE: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
