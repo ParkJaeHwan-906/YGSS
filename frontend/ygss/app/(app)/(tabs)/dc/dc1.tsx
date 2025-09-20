@@ -14,7 +14,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ScrollView, NativeSyntheticEvent, NativeScrollEvent, InteractionManager } from "react-native";
-
 import ListItem from "@/components/molecules/ListItem";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import Tab, { AssetGroup, CurrentTab } from "@/components/organisms/Tab";
@@ -220,8 +219,7 @@ export default function Dc1() {
         </View>
 
         {/* 리스트 영역 */}
-        <View style={{flexGrow: 1 }}>
-
+        <View style={{ flexGrow: 1 }}>
           <View
             style={[styles.listContainer, { marginBottom: -20 }]}
             onLayout={(e) => {
@@ -256,7 +254,6 @@ export default function Dc1() {
                       params: { id: String(it.id) },
                     })
                   }
-                // rateColorBy="risk" // 기본이 risk라 생략 가능
                 />
               )
             })
@@ -307,7 +304,6 @@ const styles = StyleSheet.create({
   colLeft:  { flexGrow: 6, flexShrink: 1, flexBasis: 0, minWidth: 0 },
   colRight: { flexGrow: 4, flexShrink: 1, flexBasis: 0, minWidth: 0 },
 
-  // 카드 자체는 래퍼 너비를 100%로 채움
   box: {
     flex: 1,
     height: 160,
@@ -362,7 +358,6 @@ const styles = StyleSheet.create({
   moreHint: {
     marginTop: 8,
     marginBottom: 10,
-    borderRadius: 10,
     borderColor: Colors?.gray ?? "#E5E7EB",
     backgroundColor: Colors?.white ?? "#FFF",
     alignItems: "center",
