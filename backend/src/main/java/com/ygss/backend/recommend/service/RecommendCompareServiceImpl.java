@@ -188,6 +188,16 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
                     url, entity, RecommendPortfolioResponse.class
             );
             RecommendPortfolioResponse fastAPIResponse = response.getBody();
+            if (fastAPIResponse != null && fastAPIResponse.getAllocations() != null) {
+                // asset_code들을 추출해서 PensionProduct 조회
+                List<Long> assetCodes = fastAPIResponse.getAllocations().stream()
+                        .map(allocation -> allocation.getAssetCode().longValue())
+                        .collect(Collectors.toList());
+
+                List<PensionProduct> products = pensionProductRepository.findByIds(assetCodes);
+                fastAPIResponse.setProducts(products);
+                saveToCacheAsync(user,fastAPIResponse);
+            }
             saveToCacheAsync(user, fastAPIResponse);
             return fastAPIResponse;
         } catch (Exception e) {
@@ -210,7 +220,18 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
                     totalExpectedReturn(4.55).
                     riskGradeId(1).
                     build();
+            if (fastAPIResponse != null && fastAPIResponse.getAllocations() != null) {
+                // asset_code들을 추출해서 PensionProduct 조회
+                List<Long> assetCodes = fastAPIResponse.getAllocations().stream()
+                        .map(allocation -> allocation.getAssetCode().longValue())
+                        .collect(Collectors.toList());
+
+                List<PensionProduct> products = pensionProductRepository.findByIds(assetCodes);
+                fastAPIResponse.setProducts(products);
+                saveToCacheAsync(user,fastAPIResponse);
+            }
             saveToCacheAsync(user, fastAPIResponse);
+
             return fastAPIResponse;
         } catch (Exception e) {
             throw new RuntimeException("포트폴리오 추천 중 오류 발생: " + e.getMessage(), e);
