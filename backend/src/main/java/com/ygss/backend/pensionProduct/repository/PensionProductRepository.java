@@ -207,6 +207,36 @@ public interface PensionProductRepository {
     })
     Optional<PensionProduct> findById(@Param("id") Long id);
 
+    /**
+     * 여러 상품 ID로 일괄 조회
+     */
+    @Select({
+            "<script>",
+            "SELECT ",
+            "    rpp.id,",
+            "    rpp.company_id,",
+            "    rpp.systype_id,",
+            "    rpp.product_type_id,",
+            "    rpp.product,",
+            "    rpp.risk_grade_id,",
+            "    rpp.reserve,",
+            "    rpp.next_year_profit_rate,",
+            "    rpp.created_at,",
+            "    rpp.updated_at,",
+            "    c.company AS company_name,",
+            "    pt.product_type AS product_type_name,",
+            "    s.systype AS systype_name",
+            "FROM retire_pension_products rpp",
+            "INNER JOIN companies c ON rpp.company_id = c.id",
+            "INNER JOIN retire_pension_product_type pt ON rpp.product_type_id = pt.id",
+            "INNER JOIN retire_pension_systype s ON rpp.systype_id = s.id",
+            "WHERE rpp.id IN",
+            "<foreach collection='ids' item='id' open='(' separator=',' close=')'>",
+            "#{id}",
+            "</foreach>",
+            "</script>"
+    })
+    List<PensionProduct> findByIds(@Param("ids") List<Long> ids);
 
     @Select({
             "<script>",
@@ -537,4 +567,13 @@ public interface PensionProductRepository {
             "</foreach>" +
             "</script>")
     int batchUpdateProfit(@Param("items") List<UpdateProfitRequest> items);
+
+    @Select({
+            "SELECT earn_rate5 as rate FROM ygss.retire_pension_rate",
+                    "WHERE systype_id =1",
+                    "ORDER BY earn_rate DESC",
+                    "LIMIT 1"
+    })
+    Double SelectBestBondProfit();
+
 }
