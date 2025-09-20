@@ -100,17 +100,16 @@ export default function InvestResult() {
           {/* 액션 */}
           <View style={{ gap: 10, marginTop: 12 }}>
             <Pressable
-              onPress={() => router.replace("/(app)/invest")}
-              style={({ pressed }) => [styles.btnPrimary, pressed ? { opacity: 0.9 } : null]}
-            >
-              <Text style={styles.btnPrimaryText}>다시 테스트하기</Text>
-            </Pressable>
-
-            <Pressable
               onPress={() => router.push("/(app)/(tabs)/dc/dc3")}
               style={({ pressed }) => [styles.btnGhost, pressed ? { opacity: 0.9 } : null]}
             >
               <Text style={styles.btnGhostText}>나에게 꼭 맞는 투자 전략은?</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => router.replace("/(app)/invest")}
+              style={({ pressed }) => [styles.btnPrimary, pressed ? { opacity: 0.9 } : null]}
+            >
+              <Text style={styles.btnPrimaryText}>다시 테스트하기</Text>
             </Pressable>
           </View>
         </View>
@@ -174,7 +173,7 @@ const styles = StyleSheet.create({
     width: 300,
     height: 56,
     borderRadius: 28,
-    backgroundColor: Colors?.primary ?? "#4666FF",
+    backgroundColor: Colors?.white ?? "#4666FF",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: Colors?.primary ?? "#4666FF",
@@ -183,7 +182,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   btnPrimaryText: {
-    color: "#FFFFFF",
+    color: Colors?.black ?? "#121212",
     fontFamily: "BasicBold",
     fontSize: 16,
   },
@@ -192,7 +191,7 @@ const styles = StyleSheet.create({
     width: 300,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: Colors?.primary ?? "#EEF2FF",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: Colors?.primary ?? "#4666FF",
@@ -201,7 +200,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   btnGhostText: {
-    color: Colors?.primary ?? "#4666FF",
+    color: Colors?.white ?? "#4666FF",
     fontFamily: "BasicBold",
     fontSize: 15,
   },

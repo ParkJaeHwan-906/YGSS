@@ -435,7 +435,11 @@ export default function Dc4() {
             <Text style={styles.irpTextLine1}>잠 자고 있는 IRP 계좌도</Text>
             <Text style={styles.irpTextLine2}>깨우러 가볼까요?</Text>
 
-            <TouchableOpacity activeOpacity={0.9} style={styles.secondaryBtn}>
+            <TouchableOpacity
+                activeOpacity={0.9}
+                style={styles.secondaryBtn}
+                onPress={() => router.push("/irp/irp4")}
+            >
                 <Text style={styles.secondaryBtnText}>깨우러 가기</Text>
             </TouchableOpacity>
         </View>

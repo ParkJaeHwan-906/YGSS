@@ -1,4 +1,5 @@
 // app/(app)/invest/test.tsx
+import Animated, { SlideInRight, SlideOutLeft } from "react-native-reanimated";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
@@ -31,6 +32,10 @@ const ALCHI_IMAGES = [
   require("@/assets/char/upsetAlchi.png"),
 ];
 
+const STAGGER = 70;       // 항목 간 지연(ms) - 공통
+const EXIT_DUR = 220;     // 슬라이드 아웃 시간
+const ENTER_DUR = 260;    // 슬라이드 인 시간
+
 export default function InvestTest() {
   const router = useRouter();
   const pathname = usePathname();
@@ -45,6 +50,8 @@ export default function InvestTest() {
 
   // 질문번호 -> 랜덤 이미지 매핑
   const [imgMap, setImgMap] = useState<Record<number, number>>({});
+
+  const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
     if (!questions.length) return;
@@ -104,21 +111,23 @@ export default function InvestTest() {
 
   // 옵션 선택 → 나머지 연하게 → 200ms 후 다음 문항 or 결과 이동
   const onSelect = (q: ApiQuestion, o: ApiOption) => {
+    if (exiting) return;
     setSelectedNo(o.no);
     setAnswers(prev => ({ ...prev, [q.no]: o.no }));
-
+    setExiting(true);
+  
+    const totalWait = (q.options.length - 1) * STAGGER + EXIT_DUR + 100;
+  
     setTimeout(() => {
-      // 마지막 문항이면 결과로 이동
       if (idx >= questions.length - 1) {
-        const finalScore =
-          totalScore + (answers[q.no] ? 0 : o.score); // 방금 선택 반영
+        const finalScore = totalScore + (answers[q.no] ? 0 : o.score);
         router.push({ pathname: "/invest/loading", params: { score: String(finalScore) } });
         return;
       }
-      // 다음 문항으로
       setIdx(i => i + 1);
       setSelectedNo(null);
-    }, 200);
+      setExiting(false);
+    }, totalWait);
   };
 
   useEffect(() => {
@@ -157,6 +166,7 @@ export default function InvestTest() {
 
   const q = questions[idx];
   const stepText = `${idx + 1}/${questions.length}`;
+  const safeImgIdx = (imgMap[q.no] ?? (q.no % ALCHI_IMAGES.length)) as number;
 
   return (
     <>
@@ -187,47 +197,53 @@ export default function InvestTest() {
               <Text style={styles.stepText}>{stepText}</Text>
             </View>
 
-            {/* 알키 캐릭터 */}
             <Image
-              source={ALCHI_IMAGES[imgMap[q.no]]}
+              key={`hero-${q.no}`}
+              source={ALCHI_IMAGES[safeImgIdx]}
               style={styles.hero}
               resizeMode="contain"
             />
 
-            {/* 질문 */}
-            <Text style={styles.question}>
+            <Text key={`q-${q.no}`} style={styles.question}>
               Q{idx + 1}. {q.question}
             </Text>
           </View>
 
-          {/* 옵션 4가지 (API 응답 사용) */}
-          <View>
-            {q.options.map((o) => {
+          {/* 옵션 4가지 (계단형 in/out 유지) */}
+          <View key={`opts-${q.no}`}>
+            {q.options.map((o, i) => {
               const active = selectedNo === o.no || answers[q.no] === o.no;
               const dimmed =
                 (selectedNo !== null && selectedNo !== o.no) ||
                 (answers[q.no] && answers[q.no] !== o.no);
 
               return (
-                <Pressable
+                <Animated.View
                   key={`${q.no}-${o.no}`}
-                  onPress={() => onSelect(q, o)}
-                  style={({ pressed }) => [
-                    styles.cta,
-                    dimmed && styles.ctaDimmed,
-                    pressed && { opacity: 0.9 },
-                  ]}
+                  entering={SlideInRight.delay(STAGGER * i).duration(ENTER_DUR).springify().damping(16)}
+                  exiting={SlideOutLeft.delay(STAGGER * i).duration(EXIT_DUR).springify().damping(16)}
+                  style={{ width: "100%" }}
                 >
-                  <Text
-                    style={[
-                      styles.ctaText,
-                      dimmed && styles.ctaTextDim,
-                      active && styles.ctaTextActive,
+                  <Pressable
+                    disabled={exiting}
+                    onPress={() => onSelect(q, o)}
+                    style={({ pressed }) => [
+                      styles.cta,
+                      dimmed && styles.ctaDimmed,
+                      pressed && { opacity: 0.9 },
                     ]}
                   >
-                    {o.option}
-                  </Text>
-                </Pressable>
+                    <Text
+                      style={[
+                        styles.ctaText,
+                        dimmed && styles.ctaTextDim,
+                        active && styles.ctaTextActive,
+                      ]}
+                    >
+                      {o.option}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
               );
             })}
           </View>

@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ScrollView, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
+import { ScrollView, NativeSyntheticEvent, NativeScrollEvent, InteractionManager } from "react-native";
 import ListItem from "@/components/molecules/ListItem";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import Tab, { AssetGroup, CurrentTab } from "@/components/organisms/Tab";
@@ -27,6 +27,9 @@ import {
   type ListRow,
   type SortOrder,
 } from "@/src/api/dc";
+import { MotiView } from "moti";
+import Dict from "@/components/molecules/Dict";
+import { getDcBubbleText } from "@/src/utils/getDcBubble";
 
 
 const PAGE_SIZE = 10;
@@ -39,6 +42,7 @@ export default function Dc1() {
   const [group, setGroup] = useState<AssetGroup>("위험자산");
   const [tab, setTab] = useState<CurrentTab>("전체");
   const [sort, setSort] = useState<SortOrder>("desc");
+  const listHeight = useRef(0);
 
   // 데이터 & 페이지 적용
   const [items, setItems] = useState<ListRow[]>([]);
@@ -61,6 +65,26 @@ export default function Dc1() {
   const [showTop, setShowTop] = useState(false);
   const pressedMoreRef = useRef(false);
 
+  // 말풍선 상태
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const dictKey = `${group}-${tab}-${hasInteracted ? 1 : 0}`;
+
+  // 탭 변화 감지
+  const handleGroupChange = (g: AssetGroup) => {
+    setGroup(g);
+    setHasInteracted(true);
+  };
+  
+  const handleTabChange = (t: CurrentTab) => {
+    setTab(t);
+    setHasInteracted(true);
+  };
+
+  const bubble = useMemo(
+    () => getDcBubbleText(hasInteracted, group, tab),
+    [hasInteracted, group, tab]
+  );
+
   // 스크롤 핸들러
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const y = e.nativeEvent.contentOffset.y;
@@ -70,7 +94,6 @@ export default function Dc1() {
     // 충분히 위로 올라오면 숨김 (단, '더보기'를 누른 적이 없을 때만 자동 숨김)
     if (y <= 150 && showTop && !pressedMoreRef.current) setShowTop(false);
   };
-
 
   // 초기 로드(상태 변경 시 1회 요청하여 버퍼 채우고 첫 10개 세팅)
   const fetchInitial = async () => {
@@ -139,27 +162,28 @@ export default function Dc1() {
   // 최상단 이동 핸들러
   const handlePressToTop = () => {
     // 스크롤 맨 위로
-    scrollRef.current?.scrollTo({ y: 0, animated: true });
+    scrollRef.current?.scrollTo({ x: 0, y: 0, animated: true });
   
     // 리스트를 "처음 상태(10개)"로 복귀
-    const buf = bufferRef.current ?? [];
-    setItems(buf.slice(0, PAGE_SIZE));
-    setPage(0);
-    setHasMore(buf.length > PAGE_SIZE);
-  
-    // ‘더보기’ 플래그 초기화 & 버튼 숨김
-    pressedMoreRef.current = false;
-    setShowTop(false);
+    InteractionManager.runAfterInteractions(() => {
+      const buf = bufferRef.current ?? [];
+      setItems(buf.slice(0, PAGE_SIZE));
+      setPage(0);
+      setHasMore(buf.length > PAGE_SIZE);
+      pressedMoreRef.current = false;
+      setShowTop(false);
+    });
   };
 
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top','left','right']}>
       <ScrollView
         ref={scrollRef}
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        contentContainerStyle={{ padding: 20 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, flexGrow: 1 }}
       >
         {/* 상단 카드 */}
         <View style={styles.topContainer}>
@@ -178,6 +202,8 @@ export default function Dc1() {
             </TouchableOpacity>
           </View>
 
+          <View style={{ width: 14 }} />
+
           {/* 오른쪽 4 */}
           <View style={styles.colRight}>
             <TouchableOpacity
@@ -195,6 +221,23 @@ export default function Dc1() {
         {/* 알키 설명 박스 */}
         <View style={styles.explainBox}>
           <View style={styles.alchiBox}>
+            {/* 말풍선 */}
+            <View style={styles.dictBox}>
+              <MotiView
+                key={dictKey}
+                from={{ opacity: 0, rotateZ: "-2deg", translateY: 8 }}
+                animate={{ opacity: 1, rotateZ: "0deg", translateY: 0 }}
+                transition={{ type: "spring", damping: 18, stiffness: 200 }}
+                style={styles.dictBox}
+              >
+                <Dict
+                  title={bubble.title}
+                  desc={bubble.desc}
+                  style={{ width: 300, minHeight: 120 }}
+                />
+              </MotiView>
+            </View>
+            {/* 캐릭터 */}
             <Image
               source={require("@/assets/char/winkAlchi.png")}
               style={styles.alchiIcon}
@@ -203,60 +246,70 @@ export default function Dc1() {
         </View>
 
         {/* Tab 영역 */}
-        <View style={{ marginTop: 16 }}>
+        <View style={{ marginTop: 10 }}>
           <Tab
             group={group}
             tab={tab}
-            onGroupChange={setGroup}
-            onTabChange={setTab}
+            onGroupChange={handleGroupChange}
+            onTabChange={handleTabChange}
             sortOrder={sort}
             onToggleSort={() => setSort(sort === "desc" ? "asc" : "desc")}
           />
         </View>
 
         {/* 리스트 영역 */}
-        <View style={[styles.listContainer]}>
-          {loading ? (
-            <Text style={{ padding: 16 }}>불러오는 중…</Text>
-          ) : error ? (
-            <Text style={{ padding: 16, color: "red" }}>{error}</Text>
-          ) : items.length === 0 ? (
-            <Text style={{ padding: 16, color: "#666" }}>표시할 항목이 없어요.</Text>
-          ) : (
-            // ✅ ListItem으로 렌더링
-            items.map((it) => {
-              const destPath = it.kind === "BOND" ? "/dc/bond/[id]" : "/dc/etf_fund/[id]";
+        <View style={{ flexGrow: 1 }}>
+          <View
+            style={[styles.listContainer, { marginBottom: -20 }]}
+            onLayout={(e) => {
+              const h = e.nativeEvent.layout.height;
+              if (!loading && !error && items.length > 0) {
+                listHeight.current = h;
+              }
+            }}
+          >
+            {loading ? (
+              <View style={{ minHeight: listHeight.current || 300, justifyContent: "center" }}>
+                <Text style={{ padding: 16 }}>불러오는 중…</Text>
+              </View>
+            ) : error ? (
+              <Text style={{ padding: 16, color: "red" }}>{error}</Text>
+            ) : items.length === 0 ? (
+              <Text style={{ padding: 16, color: "#666" }}>표시할 항목이 없어요.</Text>
+            ) : (
+              items.map((it) => {
+                const destPath = it.kind === "BOND" ? "/dc/bond/[id]" : "/dc/etf_fund/[id]";
 
-              return (
-                <ListItem
-                  key={String(it.id)}
-                  title={it.title}
-                  subTitle={it.subTitle}
-                  rate={it.rate}
-                  risk={it.risk}
-                  onPress={() =>
-                  router.push({
-                    pathname: destPath,
-                    params: { id: String(it.id) },
-                  })
-                }
-              // rateColorBy="risk" // 기본이 risk라 생략 가능
-              />
-            )
-          })
-        )}
+                return (
+                  <ListItem
+                    key={String(it.id)}
+                    title={it.title}
+                    subTitle={it.subTitle}
+                    rate={it.rate}
+                    risk={it.risk}
+                    onPress={() =>
+                    router.push({
+                      pathname: destPath,
+                      params: { id: String(it.id) },
+                    })
+                  }
+                />
+              )
+            })
+          )}
 
-          {/* 🔹 스크롤 힌트(더 보기) */}
-          {hasMore && (
-            <Pressable onPress={loadMore} style={styles.moreHint}>
-              <Text style={styles.moreHintText}>더보기</Text>
-            </Pressable>
-          )}
-          {!hasMore && (
-            <View style={{ paddingVertical: 12, alignItems: "center" }}>
-              <Text style={{ color: Colors?.gray ?? "#8A8A8E" }}>마지막 항목입니다</Text>
-            </View>
-          )}
+            {/* 🔹 스크롤 힌트(더 보기) */}
+            {hasMore && (
+              <Pressable onPress={loadMore} style={styles.moreHint}>
+                <Text style={styles.moreHintText}>더보기</Text>
+              </Pressable>
+            )}
+            {!hasMore && (
+              <View style={{ paddingVertical: 12, alignItems: "center" }}>
+                <Text style={{ color: Colors?.gray ?? "#8A8A8E" }}>마지막 항목입니다</Text>
+              </View>
+            )}
+          </View>
         </View>
       </ScrollView>
 
@@ -282,18 +335,16 @@ const styles = StyleSheet.create({
   },
   topContainer: {
     flexDirection: "row",
-    columnGap: 14,         // gap 이슈 피해서 columnGap 사용 (지원됨)
     flexWrap: "nowrap",
     alignItems: "stretch",
-    marginTop: 30,
+    marginTop: 16,
   },
   // ← 비율은 래퍼에게
-  colLeft: { flex: 6 },
-  colRight: { flex: 4 },
+  colLeft:  { flexGrow: 6, flexShrink: 1, flexBasis: 0, minWidth: 0 },
+  colRight: { flexGrow: 4, flexShrink: 1, flexBasis: 0, minWidth: 0 },
 
-  // 카드 자체는 래퍼 너비를 100%로 채움
   box: {
-    width: "100%",
+    flex: 1,
     height: 160,
     borderRadius: 16,
     padding: 16,
@@ -321,7 +372,7 @@ const styles = StyleSheet.create({
   },
   // 알키 설명 박스
   explainBox: {
-    height: 300,
+    height: 400,
     padding: 10,
     marginTop: 10,
     alignItems: "center",
@@ -331,7 +382,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  dictBox: {
+    width: "100%",
+    alignSelf: "center",
+    marginRight: 10,
+    marginBottom: -30,
+  },
   alchiIcon: {
+    marginLeft: 160,
     width: 240,
     height: 240,
     resizeMode: "contain",
@@ -345,7 +403,7 @@ const styles = StyleSheet.create({
   },
   moreHint: {
     marginTop: 8,
-    borderRadius: 10,
+    marginBottom: 10,
     borderColor: Colors?.gray ?? "#E5E7EB",
     backgroundColor: Colors?.white ?? "#FFF",
     alignItems: "center",
