@@ -68,13 +68,11 @@ export default function DcDetail() {
                 const detailRes = await axios.get(detailUrl, {
                     headers: { Authorization: `A103 ${accessToken}` }
                 });
-                console.log(detailRes.data)
                 // 그래프 정보
                 const graphUrl = `${API_URL}/product/dc/${numericId}/graph`;
                 const graphRes = await axios.get(graphUrl, {
                     headers: { Authorization: `A103 ${accessToken}` }
                 });
-
                 setProductDetail(detailRes.data);
                 setGraphData(graphRes.data);
                 setLiked(detailRes.data.isLiked);

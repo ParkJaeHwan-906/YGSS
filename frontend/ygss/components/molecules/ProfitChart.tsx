@@ -33,7 +33,7 @@ export default function ProfitChart({ data }: { data: PriceData[] }) {
         );
     }
 
-    const baseDate = "2025-09-01"; // 기준일
+    const baseDate = data[data.length - 1].date; //마지막 데이터 기준일
 
     // 기간별 데이터 필터링
     const filteredData = useMemo(() => {
