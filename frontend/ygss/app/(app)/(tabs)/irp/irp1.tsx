@@ -27,7 +27,9 @@ import {
   type ListRow,
   type SortOrder,
 } from "@/src/api/dc";
-
+import { MotiView } from "moti";
+import Dict from "@/components/molecules/Dict";
+import { getIrpBubbleText } from "@/src/utils/getIrpBubble";
 
 const PAGE_SIZE = 10;
 
@@ -61,6 +63,26 @@ export default function Irp1() {
   const scrollRef = useRef<ScrollView>(null);
   const [showTop, setShowTop] = useState(false);
   const pressedMoreRef = useRef(false);
+
+  // 말풍선 상태
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const dictKey = `${group}-${tab}-${hasInteracted ? 1 : 0}`;
+
+  // 탭 변화 감지
+  const handleGroupChange = (g: AssetGroup) => {
+    setGroup(g);
+    setHasInteracted(true);
+  };
+  
+  const handleTabChange = (t: CurrentTab) => {
+    setTab(t);
+    setHasInteracted(true);
+  };
+
+  const bubble = useMemo(
+    () => getIrpBubbleText(hasInteracted, group, tab),
+    [hasInteracted, group, tab]
+  );
 
   // 스크롤 핸들러
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -199,6 +221,23 @@ export default function Irp1() {
         {/* 알키 설명 박스 */}
         <View style={styles.explainBox}>
           <View style={styles.alchiBox}>
+            {/* 말풍선 */}
+            <View style={styles.dictBox}>
+              <MotiView
+                key={dictKey}
+                from={{ opacity: 0, rotateZ: "-2deg", translateY: 8 }}
+                animate={{ opacity: 1, rotateZ: "0deg", translateY: 0 }}
+                transition={{ type: "spring", damping: 18, stiffness: 200 }}
+                style={styles.dictBox}
+              >
+                <Dict
+                  title={bubble.title}
+                  desc={bubble.desc}
+                  style={{ width: 300, minHeight: 120 }}
+                />
+              </MotiView>
+            </View>
+            {/* 캐릭터 */}
             <Image
               source={require("@/assets/char/pointAlchi.png")}
               style={styles.alchiIcon}
@@ -207,12 +246,12 @@ export default function Irp1() {
         </View>
 
         {/* Tab 영역 */}
-        <View style={{ marginTop: 16 }}>
+        <View style={{ marginTop: 10 }}>
           <Tab
             group={group}
             tab={tab}
-            onGroupChange={setGroup}
-            onTabChange={setTab}
+            onGroupChange={handleGroupChange}
+            onTabChange={handleTabChange}
             sortOrder={sort}
             onToggleSort={() => setSort(sort === "desc" ? "asc" : "desc")}
           />
@@ -298,7 +337,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "nowrap",
     alignItems: "stretch",
-    marginTop: 30,
+    marginTop: 16,
   },
   // ← 비율은 래퍼에게
   colLeft:  { flexGrow: 4, flexShrink: 1, flexBasis: 0, minWidth: 0 },
@@ -333,7 +372,7 @@ const styles = StyleSheet.create({
   },
   // 알키 설명 박스
   explainBox: {
-    height: 300,
+    height: 400,
     padding: 10,
     marginTop: 10,
     alignItems: "center",
@@ -343,7 +382,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  dictBox: {
+    width: "100%",
+    alignSelf: "center",
+    marginRight: 10,
+    marginBottom: -30,
+  },
   alchiIcon: {
+    marginLeft: 160,
     width: 240,
     height: 240,
     resizeMode: "contain",
