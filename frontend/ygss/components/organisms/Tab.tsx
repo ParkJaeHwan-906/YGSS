@@ -224,6 +224,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     flexDirection: "row",
     flexWrap: "wrap",
+    minHeight: 60,
   },
   leftWrap: {
     flex: 1,
