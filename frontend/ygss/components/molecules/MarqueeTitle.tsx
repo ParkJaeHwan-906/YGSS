@@ -1,4 +1,3 @@
-// components/molecules/MarqueeTitle.tsx
 import React, { useEffect, useState } from "react";
 import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
 import Animated, {
@@ -7,109 +6,120 @@ import Animated, {
   useSharedValue,
   withRepeat,
   withTiming,
+  cancelAnimation,
 } from "react-native-reanimated";
 
 type Props = {
   title: string;
-  delay?: number;          // 시작 지연(ms)
-  gap?: number;            // 텍스트 사이 간격(px)
-  speed?: number;          // px/s (고정 속도)  ← duration 대신 이걸로!
-  direction?: "left" | "right";
   textStyle?: any;
+  delay?: number;
+  gap?: number;
+  duration?: number;                 // 고정 주기(ms)
+  direction?: "left" | "right";
+  viewportWidth?: number;            // 기준 폭(없으면 onLayout)
+  threshold?: number;                // 글자수 컷(짧으면 안 돌림)
 };
 
 export default function MarqueeTitle({
   title,
-  delay = 300,
-  gap = 12,
-  speed = 50,              // 기본 50px/s (느리면 40, 빠르면 70 등으로)
-  direction = "left",
   textStyle,
+  delay = 300,
+  gap = 16,
+  duration = 6000,
+  direction = "left",
+  viewportWidth,
+  threshold = 15,
 }: Props) {
-  const [boxW, setBoxW] = useState<number>(0);
-  const [textW, setTextW] = useState<number>(0);
-  const offset = useSharedValue(0); // 누적 이동량
+  const [boxW, setBoxW] = useState(0);          // 실제 타이틀 영역 폭
+  const [trackW, setTrackW] = useState(0);      // 트랙(텍스트×2+gap) 실측 폭
+  const [shouldScroll, setShouldScroll] = useState(false); // 최종 스크롤 여부
+  const offset = useSharedValue(0);
 
-  const onBoxLayout = (e: LayoutChangeEvent) => setBoxW(Math.round(e.nativeEvent.layout.width));
-  const onMeasureLayout = (e: LayoutChangeEvent) => {
-    const w = Math.ceil(e.nativeEvent.layout.width);
-    if (w > 0 && w !== textW) setTextW(w);
+  // 1) 타이틀 영역 폭
+  const onBoxLayout = (e: LayoutChangeEvent) => {
+    if (viewportWidth) return;
+    const w = Math.round(e.nativeEvent.layout.width);
+    if (w > 0 && w !== boxW) setBoxW(w);
+  };
+  const baseW = viewportWidth ?? boxW;
+
+  // 2) "잠정" 스크롤 가정: 길이가 충분하고(글자수) 영역 폭이 결정되면 일단 마퀴 뷰 렌더
+  const longEnough = (title?.length ?? 0) > threshold;
+  const renderMarquee = longEnough && baseW > 0;
+
+  // 3) 트랙 실측으로 최종 판단
+  //    trackW = singleTextW * 2 + gap  => singleTextW = (trackW - gap) / 2
+  const singleTextW = trackW > 0 ? Math.max(0, (trackW - gap) / 2) : 0;
+  const period = shouldScroll ? singleTextW + gap : 0;
+
+  // 트랙 onLayout에서 실제 폭을 받고 최종 스크롤 여부 결정
+  const onTrackLayout = (e: LayoutChangeEvent) => {
+    const w = Math.round(e.nativeEvent.layout.width);
+    if (w > 0 && w !== trackW) setTrackW(w);
   };
 
-  const period = textW + gap;                     // 한 사이클 거리
-  const needsScroll = boxW > 0 && textW > boxW;   // 길 때만 스크롤
-
   useEffect(() => {
-    if (!needsScroll || period <= 0) {
+    if (!renderMarquee) {
+      setShouldScroll(false);
+      cancelAnimation(offset);
       offset.value = 0;
       return;
     }
-    // 한 사이클 시간을 '속도'로부터 계산
-    const durationMs = Math.max(16, Math.round((period / speed) * 1000));
+    // singleTextW가 잡히면 최종 결론
+    if (singleTextW > 0) {
+      setShouldScroll(singleTextW > baseW); // 텍스트 한 벌이 칸보다 길 때만 스크롤
+    }
+  }, [renderMarquee, singleTextW, baseW]);
 
-    // 방향에 따라 부호 결정
-    const target = (direction === "left" ? -period : period);
-
-    const start = () => {
-      // 0 -> target 무한 반복. 아래 모듈러 처리로 '점프' 없이 완전 연속.
+  // 4) 애니 시작/정지 (고정 duration)
+  useEffect(() => {
+    if (!shouldScroll || period <= 0) {
+      cancelAnimation(offset);
+      offset.value = 0;
+      return;
+    }
+    const target = direction === "left" ? -period : period;
+    const timer = setTimeout(() => {
       offset.value = withRepeat(
-        withTiming(target, { duration: durationMs, easing: Easing.linear }),
+        withTiming(target, { duration, easing: Easing.linear }),
         -1,
         false
       );
+    }, delay);
+    return () => {
+      clearTimeout(timer);
+      cancelAnimation(offset);
     };
+  }, [shouldScroll, period, direction, duration, delay]);
 
-    const t = setTimeout(start, delay);
-    return () => clearTimeout(t);
-  }, [needsScroll, period, speed, direction, delay]);
-
-  // 끊김 없는 모듈러 변환
   const trackStyle = useAnimatedStyle(() => {
-    if (!needsScroll || period <= 0) return { transform: [{ translateX: 0 }] };
+    if (!shouldScroll || period <= 0) return { transform: [{ translateX: 0 }] };
     const raw = offset.value;
     const mod =
       direction === "left"
-        ? (((raw % -period) + -period) % -period)     // 음수 주기
-        : (((raw % period) + period) % period);       // 양수 주기
+        ? (((raw % -period) + -period) % -period)
+        : (((raw % period) + period) % period);
     return { transform: [{ translateX: mod }] };
-  }, [needsScroll, period, direction]);
+  }, [shouldScroll, period, direction]);
 
   return (
-    <View style={styles.viewport} onLayout={onBoxLayout}>
-      {/* 폭 측정용: 화면 안에서 opacity 0로 정확 측정 */}
-      <Text
-        style={[styles.title, textStyle, styles.hiddenMeasure]}
-        onLayout={onMeasureLayout}
-        numberOfLines={undefined}
-      >
-        {title}
-      </Text>
-
-      {!needsScroll ? (
-        <Text style={[styles.title, textStyle]} numberOfLines={1} ellipsizeMode="tail">
+    <View
+      style={styles.viewport}
+      onLayout={viewportWidth ? undefined : onBoxLayout}
+    >
+      {!renderMarquee ? (
+        // 짧으면 고정 출력 (…생성 안 함)
+        <Text style={[styles.title, textStyle]} numberOfLines={1} ellipsizeMode="clip">
           {title}
         </Text>
       ) : (
-        <Animated.View
-          style={[
-            styles.track,
-            { width: period * 2 }, // 텍스트2 + gap
-            trackStyle,
-          ]}
-        >
-          <Text
-            style={[styles.title, textStyle, styles.scrollingText, { width: textW }]}
-            numberOfLines={1}
-            ellipsizeMode="clip"
-          >
+        // 일단 마퀴 뷰 렌더 → 트랙 폭 실측 → 최종 스크롤 여부/period 확정
+        <Animated.View style={[styles.track, trackStyle]} onLayout={onTrackLayout}>
+          <Text style={[styles.title, styles.noShrink, textStyle]} numberOfLines={1} ellipsizeMode="clip">
             {title}
           </Text>
           <View style={{ width: gap }} />
-          <Text
-            style={[styles.title, textStyle, styles.scrollingText, { width: textW }]}
-            numberOfLines={1}
-            ellipsizeMode="clip"
-          >
+          <Text style={[styles.title, styles.noShrink, textStyle]} numberOfLines={1} ellipsizeMode="clip">
             {title}
           </Text>
         </Animated.View>
@@ -120,14 +130,7 @@ export default function MarqueeTitle({
 
 const styles = StyleSheet.create({
   viewport: { width: "100%", overflow: "hidden" },
-  track: { flexDirection: "row", alignItems: "center", flexShrink: 0 },
-  title: { fontSize: 20, lineHeight: 22, color: "#111", fontFamily: "BasicBold" },
-  scrollingText: { flexShrink: 0 },
-  hiddenMeasure: {
-    position: "absolute",
-    opacity: 0,
-    left: 0,
-    zIndex: -1,
-    pointerEvents: "none",
-  },
+  track: { flexDirection: "row", alignItems: "center" },
+  noShrink: { flexShrink: 0 },
+  title: { fontSize: 16, lineHeight: 20, color: "#111", fontFamily: "BasicBold" },
 });

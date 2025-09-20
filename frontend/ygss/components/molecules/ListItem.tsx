@@ -1,5 +1,5 @@
 // ListItem.tsx
-import MarqueeTitle from "@/components/molecules/MarqueeTitle";
+// import MarqueeTitle from "@/components/molecules/MarqueeTitle";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -55,14 +55,9 @@ export default function ListItem({
   return (
     <Pressable style={styles.container} onPress={onPress}>
       <View style={styles.textWrap}>
-        <MarqueeTitle
-          title={title}
-          // duration={8000}
-          delay={600}
-          gap={14}
-          textStyle={styles.title}
-        />
-
+        <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+          {title}
+        </Text>
         <View style={styles.subRow}>
           <Text style={styles.sub}>{subTitle}</Text>
           <View style={[styles.badge, { backgroundColor: badgeBg }]}>
@@ -86,7 +81,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: "#E8EBF1",
     shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2,
   },
-  textWrap: { flex: 1 },
+  textWrap: { flex: 1, overflow: "hidden" },
   title: { fontFamily: "BasicBold", fontSize: 16, color: "#111" },
   subRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
   sub: { fontFamily: "BasicMedium", fontSize: 13, color: "#9AA0A6", marginRight: 8 },
