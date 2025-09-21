@@ -73,6 +73,7 @@ export default function DcDetail() {
                 const graphRes = await axios.get(graphUrl, {
                     headers: { Authorization: `A103 ${accessToken}` }
                 });
+                console.log(graphRes.data)
                 setProductDetail(detailRes.data);
                 setGraphData(graphRes.data);
                 setLiked(detailRes.data.isLiked);
