@@ -9,13 +9,11 @@ import com.ygss.backend.global.gms.GmsApiClient;
 import com.ygss.backend.global.gms.dto.Gpt5MiniRequestDto;
 import com.ygss.backend.global.redis.VectorRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChatBotServiceImpl implements ChatBotService{
@@ -30,15 +28,11 @@ public class ChatBotServiceImpl implements ChatBotService{
         ObjectMapper mapper = new ObjectMapper();
         try {
             String jsonResult = gmsApiClient.getEmbedding(request.getMessage());
-            log.debug("Bi-Encoder Begin");
             // Bi-Encoder
             List<AnswerDto> candidateList = getCandidateAnswerList(vectorRepository.searchAllPrefixes(gmsApiClient.getEmbeddingArr(jsonResult), 10));
-            log.debug("Bi-Encoder End\nresult : {}", candidateList);
             if(candidateList == null || candidateList.isEmpty()) return "잘 모르겠어요. 조금 더 자세히 질문해주세요.";
-            log.debug("Cross-Encoder Begin");
             // Cross-Encoder
             List<AnswerDto> accurateList = getAccurateList(request.getMessage(), candidateList);
-            log.debug("Cross-Encoder End\nresult : {}", candidateList);
             if(accurateList == null || accurateList.isEmpty()) return "잘 모르겠어요. 조금 더 자세히 질문해주세요.";
             return gmsApiClient.getAnswerText(gmsApiClient.getAnswer(new Gpt5MiniRequestDto(
                     request.getMessage(),
