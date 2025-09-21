@@ -76,7 +76,6 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
                         .salary(userSalary)
                         .build()
         );
-        System.out.println(recommendPortfolioResponse);
         Long[] dcCalculateGraph = calculatePredictionRetirePension(userSalary, recommendPortfolioResponse.getTotalExpectedReturn());
         Long dcCalculate = dcCalculateGraph[3];
         List<RecommendProductDto> recommendProductList = new ArrayList<>();
