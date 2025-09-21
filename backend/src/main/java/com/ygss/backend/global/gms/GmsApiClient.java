@@ -66,7 +66,7 @@ public class GmsApiClient {
             = new Gpt5MiniRequestDto(
                 "developer",
             """
-                   I will provide basic words, definitions, and example Q&A pairs. Based on them, write an answer to the user’s question. Boldly remove any irrelevant words, definitions, or examples. Write the answer in Korean, separating paragraphs for readability. Keep it concise and within 400 characters. If the question is not related to finance, retirement pensions, or financial products, only respond with: "잘 모르겠어요. 조금 더 자세히 질문해주세요."
+                   I will provide basic words, definitions, and example Q&A pairs. Based on them, write an answer to the user’s question. Boldly remove any irrelevant words, definitions, or examples. Write the answer in Korean, separating paragraphs for readability. Keep it concise and explain within 400 characters. If the question is not related to finance, retirement pensions, or financial products, only respond with: "잘 모르겠어요. 조금 더 자세히 질문해주세요."
                     """
             );
     public String getAnswer(Gpt5MiniRequestDto user) throws IOException {

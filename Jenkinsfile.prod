@@ -126,7 +126,7 @@ pipeline {
             ls -la src/
             echo "=== Dockerfile 확인 ==="
             cat Dockerfile
-            docker build --no-cache -t $AI_IMAGE:$AI_TAG .
+            docker build -t $AI_IMAGE:$AI_TAG .
             echo "✅ AI 이미지 빌드 완료: $AI_IMAGE:$AI_TAG"
           '''
         }
