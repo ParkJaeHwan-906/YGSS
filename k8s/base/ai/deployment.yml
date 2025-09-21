@@ -55,6 +55,14 @@ spec:
                   key: MYSQL_DATABASE
             - name: DATABASE_URL
               value: "mysql+pymysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@$(MYSQL_HOST):3306/$(MYSQL_DATABASE)"
+            - name: PYTHONPATH
+              value: "/app/src:/app"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            # - name: HF_HOME
+            #   value: "/app/saved_models/.cache"
+            # - name: TRANSFORMERS_CACHE
+            #   value: "/app/saved_models/.cache"
           resources:
             requests:
               cpu: "200m"
