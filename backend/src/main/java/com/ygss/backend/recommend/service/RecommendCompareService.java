@@ -1,15 +1,11 @@
 package com.ygss.backend.recommend.service;
 
-import com.ygss.backend.recommend.dto.RecommendCandidateDto;
-import com.ygss.backend.recommend.dto.RecommendCompareRequestDto;
-import com.ygss.backend.recommend.dto.RecommendCompareResponseDto;
-import com.ygss.backend.recommend.dto.RecommendPortfolioResponse;
+import com.ygss.backend.recommend.dto.*;
 
 public interface RecommendCompareService {
     void profitPrediction();
     RecommendCompareResponseDto recommendCompare(String email, RecommendCompareRequestDto request);
-    Long[] calculateOriginRetirePension(Long salary);
+    Long[] calculatePredictionRetirePension(Long salary, Double profixRate);
     RecommendCandidateDto searchProductsByInvestPersonality(Integer InvestPersonality);
-
-    RecommendPortfolioResponse getRecommendPortfolio(String email);
+    RecommendPortfolioResponse getRecommendPortfolio(RecommendPortfolioRequest request);
 }
