@@ -8,7 +8,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
  */
 export async function sendChatbotMessage(message: string, accessToken: string): Promise<string> {
   try {
-    const response = await axios.get(`${API_URL}/chat/send`, {
+    const response = await axios.post(`${API_URL}/chat/send`, {
       params: {
         message: message
       },
