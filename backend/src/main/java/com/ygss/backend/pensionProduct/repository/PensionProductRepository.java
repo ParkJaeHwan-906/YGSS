@@ -5,6 +5,7 @@ import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
 import com.ygss.backend.pensionProduct.dto.request.UpdateProfitRequest;
 import com.ygss.backend.pensionProduct.dto.response.*;
+import com.ygss.backend.recommend.dto.RecommendProductDto;
 import org.apache.ibatis.annotations.*;
 import org.springframework.stereotype.Repository;
 
@@ -580,4 +581,19 @@ public interface PensionProductRepository {
     })
     Double SelectBestBondProfit();
 
+    @Select("""
+            SELECT
+            rpp.id AS 'id',
+            rpp.product AS 'product',
+            c.company AS 'company',
+            rppt.product_type AS 'productType',
+            rpp.next_year_profit_rate AS 'profitPrediction',
+            rpp.risk_grade_id AS 'riskGradeId'
+            FROM retire_pension_products rpp
+            JOIN retire_pension_product_type rppt ON rpp.product_type_id = rppt.id
+            JOIN retire_pension_systype rps ON rps.id = rpp.systype_id
+            JOIN companies c ON c.id = rpp.company_id
+            WHERE rpp.id = #{productId}
+            """)
+    Optional<RecommendProductDto> selectProductById(Long productId);
 }

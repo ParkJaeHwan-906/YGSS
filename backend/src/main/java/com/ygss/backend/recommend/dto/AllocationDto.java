@@ -11,16 +11,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class AllocationDto {
-
+    // 상품 코드
     @JsonProperty("asset_code")
-    private Integer assetCode;
-
+    private Long assetCode;
+    // 추천 투자 비율
     @JsonProperty("allocation_percentage")
     private Double allocationPercentage;
-
+    // 예상 수익률
     @JsonProperty("expected_return")
     private Double expectedReturn;
-
+    // 위험도
     @JsonProperty("risk_score")
     private Double riskScore;
 }

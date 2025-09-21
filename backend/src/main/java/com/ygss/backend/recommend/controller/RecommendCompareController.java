@@ -1,10 +1,11 @@
 package com.ygss.backend.recommend.controller;
 
-import com.ygss.backend.recommend.dto.AllocationDto;
-import com.ygss.backend.recommend.dto.RecommendCandidateDto;
-import com.ygss.backend.recommend.dto.RecommendCompareRequestDto;
-import com.ygss.backend.recommend.dto.RecommendPortfolioResponse;
+import com.ygss.backend.recommend.dto.*;
 import com.ygss.backend.recommend.service.RecommendCompareServiceImpl;
+import com.ygss.backend.user.dto.EditUserInfoResponseDto;
+import com.ygss.backend.user.dto.UserAccountsDto;
+import com.ygss.backend.user.repository.UserAccountsRepository;
+import com.ygss.backend.user.service.UserServiceImpl;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ import java.util.List;
 @RequestMapping("/recommend")
 public class RecommendCompareController {
     private final RecommendCompareServiceImpl recommendCompareService;
+    private final UserServiceImpl userService;
     /**
      *  로그인하지 않은 사용자의 상품 추천 -> ??
      */
@@ -70,11 +72,15 @@ public class RecommendCompareController {
      *  포트폴리오 추천
      */
     @GetMapping("/product")
-    public ResponseEntity<?> getRecommendedPortfolio(
-            @AuthenticationPrincipal String email
-    ){
+    public ResponseEntity<?> getRecommendedPortfolio(@AuthenticationPrincipal String email){
         try{
-            return ResponseEntity.ok(recommendCompareService.getRecommendPortfolio(email));
+            EditUserInfoResponseDto user = userService.getUserInfoByUserEmail(email);
+            return ResponseEntity.ok(recommendCompareService.getRecommendPortfolio(
+                    RecommendPortfolioRequest.builder()
+                            .riskGradeId(user.getRiskGradeId())
+                            .salary(user.getSalary())
+                            .build()
+            ));
         }catch (RuntimeException e){
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -88,7 +94,7 @@ public class RecommendCompareController {
             @AuthenticationPrincipal String email
     ){
         try{
-            return ResponseEntity.ok(recommendCompareService.getRecommendPortfolioTest(email));
+            return ResponseEntity.ok(recommendCompareService.getRecommendPortfolioTest());
         }catch (RuntimeException e){
             return ResponseEntity.badRequest().body(e.getMessage());
         }
