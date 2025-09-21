@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ygss.backend.global.gms.dto.Gpt5MiniRequestDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -16,6 +17,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Component
 public class GmsApiClient {
     @Value("${gms.secret.key}")
@@ -72,6 +74,7 @@ public class GmsApiClient {
                     """
             );
     public String getAnswer(Gpt5MiniRequestDto user) throws IOException {
+        log.debug("gpt5-nano begin");
         Map<String, Object> body = Map.of(
                 "model", "gpt-5-nano",
                 "messages", List.of(
