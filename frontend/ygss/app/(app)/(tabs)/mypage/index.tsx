@@ -143,7 +143,7 @@ export default function Mypage() {
                 </View>
 
                 {/* 찜 상품 */}
-                <ImageList items={likedItems} initialCount={3} step={5} header="나의 찜 상품" emptyText="찜한 상품이 없습니다." />
+                <ImageList items={likedItems} initialCount={3} step={5} header="나의 찜 상품" emptyText="찜한 상품이 없습니다." from="mypage" />
 
                 {/* 로그아웃 버튼 */}
                 <Pressable onPress={handleLogout} style={styles.logoutButton}>
