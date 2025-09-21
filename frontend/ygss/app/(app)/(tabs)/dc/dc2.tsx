@@ -1,6 +1,8 @@
 // app/(app)/(tabs)/dc/dc2.tsx
 
+import { useAppSelector } from "@/src/store/hooks";
 import { Colors } from "@/src/theme/colors";
+import axios from "axios";
 import { Stack, useRouter } from "expo-router";
 import { MotiView } from "moti";
 import { useEffect } from "react";
@@ -17,6 +19,32 @@ import {
 
 export default function Dc2() {
   const router = useRouter();
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
+
+  const API_URL = process.env.EXPO_PUBLIC_API_URL as string;
+
+  // 미리 호출해놓기
+  useEffect(() => {
+    const fetchAndGo = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/recommend/compare`, {
+          headers: { Authorization: `A103 ${accessToken}` },
+        });
+        const productList = res.data.recommendProductList ?? [];
+
+        setTimeout(() => {
+          router.replace({
+            pathname: "/(app)/(tabs)/dc/dc3",
+            params: { data: JSON.stringify(productList) }, // state 전달
+          });
+        }, 2500);
+      } catch (err) {
+        console.error("추천상품 미리 불러오기 실패:", err);
+      }
+    };
+
+    fetchAndGo();
+  }, []);
 
   useEffect(() => {
     // 2.5초 후 다음 화면으로 자동 이동

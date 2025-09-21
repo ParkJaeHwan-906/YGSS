@@ -1,13 +1,20 @@
+import { useRouter } from "expo-router";
 import { Image, StyleSheet, Text, View } from "react-native";
 
 type ItemCardProps = {
+    id: number;
     title: string;
     rate: number;
     icon?: any;
 };
 
-export default function ItemCard({ title, rate, icon }: ItemCardProps) {
+export default function ItemCard({ id, title, rate, icon }: ItemCardProps) {
     const isPositive = rate >= 0;
+    const router = useRouter();
+
+    const handlePress = () => {
+        router.push(`/(app)/(tabs)/dc/etf_fund/${id}`);
+    };
 
     return (
         <View style={styles.card}>
@@ -44,16 +51,17 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
         elevation: 4,
     },
-    cardTitle: { fontSize: 18, fontFamily: "BasicBold", color: "#111" },
-    cardRate: { marginTop: 8, fontSize: 18, fontFamily: "BasicBold" },
+    cardTitle: { fontSize: 20, fontFamily: "BasicBold", color: "#111", textAlign: "center" },
+    cardRate: { marginTop: 8, fontSize: 18, fontFamily: "BasicBold", textAlign: "center" },
     up: { color: "#FF2C2C" },
     down: { color: "#2F6FFF" },
     cardBadge: {
-        width: 64,
-        height: 64,
+        width: 70,
+        height: 70,
         resizeMode: "contain",
         position: "absolute",
-        right: 18,
+        left: "50%",
+        transform: [{ translateX: -15 }],
         bottom: 18,
     },
 });

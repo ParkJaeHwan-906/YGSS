@@ -43,7 +43,6 @@ export default function InvestChar({ slices }: InvestCharProps) {
 
   const [showBias, setShowBias] = useState(false);
   const translateY = useRef(new RNAnimated.Value(0)).current;
-  const slide = useSharedValue(0);
 
   // 위아래 화살표 애니메이션
   useEffect(() => {
@@ -65,16 +64,23 @@ export default function InvestChar({ slices }: InvestCharProps) {
     ).start();
   }, [translateY]);
 
+
   // Bias 토글 애니메이션
+  const slide = useSharedValue(0);
+  const [contentHeight, setContentHeight] = useState(0);
   useEffect(() => {
-    slide.value = withTiming(showBias ? 1 : 0, { duration: 300 });
+    slide.value = withTiming(showBias ? 1 : 0, {
+      duration: 400,
+      easing: Easing.inOut(Easing.cubic),
+    });
   }, [showBias]);
 
+  // 높이와 투명도 애니메이션
   const biasStyle = useAnimatedStyle(() => ({
+    height: interpolate(slide.value, [0, 1], [0, contentHeight]),
     opacity: slide.value,
-    transform: [{ translateY: slide.value === 1 ? 0 : -20 }],
-    height: slide.value === 1 ? "auto" : 0,
   }));
+
 
   const palette = {
     ETF: "#8BB6FF",
@@ -91,7 +97,7 @@ export default function InvestChar({ slices }: InvestCharProps) {
     }));
   }, [slices]);
 
-  // 👉 Hook은 무조건 컴포넌트 최상단에서만 실행 (조건문 X)
+  //  Hook은 무조건 컴포넌트 최상단에서만 실행 (조건문 X)
 
   // chart 계산
   const total = baseData.reduce((a, c) => a + (c.amount || 0), 0) || 1;
@@ -179,8 +185,8 @@ export default function InvestChar({ slices }: InvestCharProps) {
   const innerRadius = () =>
     interpolate(ringProgress.value, [0, 0.6, 1], [baseInner, baseInner + 4, baseInner]);
 
-  // =========================================
-  // 👉 UI
+
+  //  UI
   // =========================================
 
   // slices 없음 → 안내문만
@@ -320,7 +326,16 @@ export default function InvestChar({ slices }: InvestCharProps) {
       </RNAnimated.View>
 
       <Animated.View style={[{ overflow: "hidden" }, biasStyle]}>
-        <InvestBias />
+        <View
+          onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
+          style={{ position: "absolute", opacity: 0 }} // 높이만 측정용
+        >
+          <InvestBias />
+        </View>
+
+        <View>
+          <InvestBias />
+        </View>
       </Animated.View>
     </View>
   );

@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
   boxTitle: { fontFamily: "BasicBold", fontSize: 18, marginBottom: 6 },
   boxDesc: { fontFamily: "BasicMedium", fontSize: 12, lineHeight: 18 },
   textLight: { color: Colors?.black ?? "#111" },
-  textLightSub: { color: Colors?.gray ?? "#9A9A9A" },
+  textLightSub: { color: "#6F6F6F" },
   boxIcon: {
     width: 60,
     height: 60,

@@ -13,12 +13,14 @@ export type ImageListData = {
   title: string;
   subTitle: string;
   rate: number;
+  from?: string;
 };
 
 type Props = {
   header?: string;
   items: ImageListData[];
   emptyText?: string;
+  from?: string;
   initialCount?: number; // 기본 3개 노출
   step?: number;         // 클릭 시 5개씩 증가
 };
@@ -27,6 +29,7 @@ export default function ImageList({
   items,
   header = "목록",
   emptyText = "데이터가 없습니다.",
+  from,
   initialCount = 3,
   step = 5,
 }: Props) {
@@ -55,6 +58,7 @@ export default function ImageList({
               title={it.title}
               subTitle={it.subTitle}
               rate={it.rate}
+              from={from}
               showDivider={idx < sliced.length - 1}
             />
           ))}

@@ -11,6 +11,7 @@ type ImageListItemProps = {
   title: string;
   subTitle: string;
   rate: number;
+  from?: string;
   showDivider?: boolean; // 마지막 항목이면 false로
 };
 
@@ -21,6 +22,7 @@ export default function ImageListItem({
   title,
   subTitle,
   rate,
+  from,
   showDivider = true,
 }: ImageListItemProps & { id: number; type: "BOND" | "ETF_FUND" }) {
   const router = useRouter();
@@ -30,9 +32,15 @@ export default function ImageListItem({
 
   const handlePress = () => {
     if (type === "BOND") {
-      router.push(`/dc/bond/${id}`);
+      router.push({
+        pathname: "/dc/bond/[id]",
+        params: { id: String(id), ...(from ? { from } : {}) },
+      });
     } else {
-      router.push(`/dc/etf_fund/${id}`);
+      router.push({
+        pathname: "/dc/etf_fund/[id]",
+        params: { id: String(id), ...(from ? { from } : {}) },
+      });
     }
   };
 
