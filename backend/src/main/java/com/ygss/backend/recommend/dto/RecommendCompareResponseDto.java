@@ -1,5 +1,6 @@
 package com.ygss.backend.recommend.dto;
 
+import com.ygss.backend.pensionProduct.dto.entity.PensionProduct;
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,5 +15,5 @@ public class RecommendCompareResponseDto {
     private Long dcCalculate;                               // DC 형 예상 퇴직금
     private Double dcCalculateRate;                           // DC 형 예상 수익률
     private Long[] dcCalculateGraph;                        // DC 형 그래프 ( 3 5 7 10 )
-    private List<RecommendProductDto> recommendProductList; // 상품 목록 ( id, 상품명, 회사, 예상 수익률 )
+    private List<PensionProduct> recommendProductList; // 상품 목록 ( id, 상품명, 회사, 예상 수익률 )
 }
