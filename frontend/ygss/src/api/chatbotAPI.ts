@@ -6,23 +6,28 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 /**
  * 챗봇에게 메시지를 보내고 응답 문자열을 받아옵니다
  */
-export async function sendChatbotMessage(message: string, accessToken: string): Promise<string> {
+export async function sendChatbotMessage(
+  message: string,
+  accessToken: string
+): Promise<string> {
   try {
-    const response = await axios.post(`${API_URL}/chat/send`, {
-      params: {
-        message: message
-      },
-      headers: {
-        Authorization: `A103 ${accessToken}`,
-      },
-      timeout: 30000,
-    });
+    const response = await axios.post(
+      `${API_URL}/chat/send`,
+      { message },
+      {
+        headers: {
+          Authorization: `A103 ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 30000,
+      }
+    );
 
     // 응답에서 메시지 문자열 파싱
     return response.data.message || response.data.response || response.data || '응답을 받을 수 없습니다.';
 
   } catch (error: any) {
-    
+    console.error('챗봇 응답 중 오류 발생:', error);
     if (error.code === 'ECONNABORTED') {
       throw new Error('응답 시간이 초과되었습니다. 다시 시도해주세요.');
     } else if (error.response?.status === 401) {
