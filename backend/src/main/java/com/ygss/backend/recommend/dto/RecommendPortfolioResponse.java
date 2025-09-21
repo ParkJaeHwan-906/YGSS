@@ -13,23 +13,21 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class RecommendPortfolioResponse {
+    // 개별 추천 상품 Top 3
     private List<AllocationDto> allocations;
-
+    // 전체 수익률 예측값
     @JsonProperty("total_expected_return")
     private Double totalExpectedReturn;
-
+    // 전체 위험도
     @JsonProperty("total_risk_score")
     private Double totalRiskScore;
-
+    // 효용 극대화 비율
     @JsonProperty("sharpe_ratio")
     private Double sharpeRatio;
-
+    // 위험도
     @JsonProperty("risk_grade_id")
     private Integer riskGradeId;
-
+    // 분석날짜
     @JsonProperty("analysis_date")
     private String analysisDate;
-
-    // 추가: 상품 정보
-    private List<PensionProduct> products;
 }
