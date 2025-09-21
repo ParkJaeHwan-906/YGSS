@@ -42,15 +42,11 @@ public class RecommendCompareController {
      */
     @GetMapping("/compare")
     public ResponseEntity<?> compareRetirePensionProduct(
-            @RequestParam(required = false) Long investorPersonalityId,
-            @RequestParam(required = false) Long salary,
+            @Nullable RecommendCompareRequestDto request,
             @AuthenticationPrincipal String email) {
         try {
-            return ResponseEntity.ok(recommendCompareService.recommendCompare(email, RecommendCompareRequestDto
-                    .builder()
-                            .investorPersonalityId(investorPersonalityId)
-                            .salary(salary)
-                    .build()));
+            System.out.println(request);
+            return ResponseEntity.ok(recommendCompareService.recommendCompare(email, request));
         } catch (Exception e) {
             log.error("Recommend Retire Pension Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
