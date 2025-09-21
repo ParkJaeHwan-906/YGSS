@@ -45,7 +45,6 @@ public class RecommendCompareController {
             @Nullable RecommendCompareRequestDto request,
             @AuthenticationPrincipal String email) {
         try {
-            System.out.println(request);
             return ResponseEntity.ok(recommendCompareService.recommendCompare(email, request));
         } catch (Exception e) {
             log.error("Recommend Retire Pension Failed : {}", e.getMessage());
