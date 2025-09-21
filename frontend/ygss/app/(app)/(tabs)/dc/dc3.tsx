@@ -20,11 +20,12 @@ export default function Dc3() {
     const fetchRecommend = async () => {
       try {
         const res = await axios.get(`${API_URL}/recommend/product`, {
+          //body 비어있게
           headers: {
             Authorization: `A103 ${accessToken}`,
           },
         });
-        console.log("추천상품 응답:", res.data);
+        console.log("추천상품 응답:", res);
 
         // 예시 응답 구조: [{ productName, companyName, finalProfitRate, type }]
         const mapped: ImageListData[] = res.data.map((it: any) => ({
