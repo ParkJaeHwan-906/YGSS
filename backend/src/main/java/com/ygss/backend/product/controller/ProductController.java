@@ -5,8 +5,6 @@ import com.ygss.backend.product.service.ProductServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.security.Principal;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -96,6 +94,16 @@ public class ProductController {
             return ResponseEntity.ok(productService.selectBondDetailById(bondId, email));
         } catch (Exception e) {
             log.error("Load DC BOND Product Detail Failed : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+    }
+
+    @GetMapping("/personal")
+    public ResponseEntity<?> loadAllProductByPersonal(@AuthenticationPrincipal String email) {
+        try {
+            return ResponseEntity.ok(productService.selectAllProductByPersonal(email));
+        } catch (Exception e) {
+            log.error("Load All Product By Personal Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }

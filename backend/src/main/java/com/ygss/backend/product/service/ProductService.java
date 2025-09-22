@@ -42,4 +42,11 @@ public interface ProductService {
      */
     List<BondProductResponseDto> selectAllBondProduct(ProductListRequestDto request);
     BondDto selectBondDetailById(Long bondProductId,String email);
+
+    /**
+     * 개인형 맞춤 상품
+     * 채권 + ETF + 펀드
+     * 투자 성향 반영
+     */
+    PersonalRecommendProductResopnseDto selectAllProductByPersonal(String userEmail);
 }

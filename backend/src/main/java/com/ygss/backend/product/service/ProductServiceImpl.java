@@ -1,6 +1,5 @@
 package com.ygss.backend.product.service;
 
-import com.ygss.backend.global.exception.UserNotFoundException;
 import com.ygss.backend.pensionProduct.dto.response.BondDto;
 import com.ygss.backend.pensionProduct.repository.PensionProductRepository;
 import com.ygss.backend.product.dto.*;
@@ -77,5 +76,14 @@ public class ProductServiceImpl implements ProductService {
         BondDto result = retirePensionProductRepository.selectBondById(bondProductId).orElseThrow(() -> new IllegalArgumentException("Not Found Bond Product"));
         result.setIsLiked(userEmail == null ? null : exist);
         return result;
+    }
+
+    @Override
+    public PersonalRecommendProductResopnseDto selectAllProductByPersonal(String userEmail) {
+        // 1. 투자 성향이 있는지 조회
+        Long riskGradeId = userEmail == null ? 5L : userAccountsRepository.selectRiskGradeIdByUserEmail(userEmail)
+                .orElse(5L);
+
+        return new PersonalRecommendProductResopnseDto(retirePensionProductRepository.selectAllProductByPersonal(riskGradeId));
     }
 }
