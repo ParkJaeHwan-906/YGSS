@@ -18,7 +18,7 @@ public class RetirePensionProductsScheduler {
     private final RetirePensionProductsRepository retirePensionProductsRepository;
     private final RetirePensionProductPriceLogRepository retirePensionProductPriceLogRepository;
 
-    @Scheduled(cron = "0 0 4 * * *")
+//    @Scheduled(cron = "0 0 4 * * *")
     public void updateLatestProductProfitPrediction() {
         try {
             List<RetirePensionSimpleDto> retirePensionProductList =
