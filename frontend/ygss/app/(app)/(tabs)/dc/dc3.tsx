@@ -57,9 +57,11 @@ export default function Dc3() {
 
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: Colors?.back ?? "#F4F6FF" }]}
+      style={[styles.safeArea, { backgroundColor: Colors?.back ?? "#F4F6FF" }]} edges={['top']}
     >
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 0 }} >
         {/* ===== Header ===== */}
         <View style={styles.header}>
           <View>
