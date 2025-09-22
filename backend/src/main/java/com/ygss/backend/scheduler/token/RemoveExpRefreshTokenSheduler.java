@@ -1,4 +1,4 @@
-package com.ygss.backend.scheduler.token.scheduler;
+package com.ygss.backend.scheduler.token;
 
 import com.ygss.backend.auth.repository.UserRefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
