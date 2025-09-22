@@ -17,27 +17,31 @@ export default function Dc3() {
       const { productList, top3 } = JSON.parse(data);
 
       const mapped: ImageListData[] = productList.map((it: any) => ({
+        id: it.id,
         logo:
           it.productType === "BOND"
             ? require("@/assets/icon/bond.png")
-            : it.productType === "FUND"
+            : it.productType === "펀드"
               ? require("@/assets/icon/fund.png")
               : require("@/assets/icon/etf.png"),
         title: it.product,
         subTitle: it.company,
         rate: it.profitPrediction ?? 0,
+        type: it.productType,
       }));
 
       const mappedTop3: ImageListData[] = top3.map((it: any) => ({
+        id: it.id,
         logo:
           it.productType === "BOND"
             ? require("@/assets/icon/bond.png")
-            : it.productType === "FUND"
+            : it.productType === "펀드"
               ? require("@/assets/icon/fund.png")
               : require("@/assets/icon/etf.png"),
         title: it.product,
         subTitle: it.company,
         rate: it.profitPrediction ?? 0,
+        type: it.productType,
       }));
 
       return {
@@ -53,9 +57,11 @@ export default function Dc3() {
 
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: Colors?.back ?? "#F4F6FF" }]}
+      style={[styles.safeArea, { backgroundColor: Colors?.back ?? "#F4F6FF" }]} edges={['top']}
     >
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 0 }} >
         {/* ===== Header ===== */}
         <View style={styles.header}>
           <View>
@@ -78,7 +84,7 @@ export default function Dc3() {
           items={rest}
           header="추천 상품"
           emptyText="추천 가능한 상품이 없습니다."
-          initialCount={5}
+          initialCount={3}
           step={5}
         />
       </ScrollView>

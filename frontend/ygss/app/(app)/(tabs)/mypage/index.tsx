@@ -78,7 +78,7 @@ export default function Mypage() {
                     })),
                     ...likedBond.map((it: any) => ({
                         id: it.id,
-                        type: "채권",
+                        type: "BOND",
                         logo: require("@/assets/icon/bond.png"), // 채권 아이콘 예시
                         title: it.productName,
                         subTitle: it.publisher,
@@ -127,7 +127,8 @@ export default function Mypage() {
                     {user?.totalRetirePension !== null && user?.totalRetirePension !== undefined && (
                         <MyMoney
                             amount={user.totalRetirePension}
-                            rate={0} // TODO: 실제 수익률 값으로 교체 필요
+                            from="mypage"
+                        // rate={0} // TODO: 실제 수익률 값으로 교체 필요
                         />
                     )}
                 </View>

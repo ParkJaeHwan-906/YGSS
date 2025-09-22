@@ -8,7 +8,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export type ImageListData = {
   id: number,
-  type: "BOND" | "ETF_FUND",
+  type: "ETF" | "펀드" | "BOND";
   logo?: any;
   title: string;
   subTitle: string;
@@ -76,7 +76,10 @@ export default function ImageList({
 }
 
 const styles = StyleSheet.create({
-  wrap: { width: "100%", backgroundColor: Colors.white, padding: 16 },
+  wrap: {
+    width: "100%", backgroundColor: Colors.white, paddingHorizontal: 16,
+    paddingTop: 16, paddingBottom: 0,
+  },
   header: {
     fontSize: 18,
     fontFamily: "BasicBold",

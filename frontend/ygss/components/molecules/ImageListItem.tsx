@@ -6,7 +6,7 @@ import { Image, ImageSourcePropType, Pressable, StyleSheet, Text, View } from "r
 
 type ImageListItemProps = {
   id: number;
-  type: "BOND" | "ETF_FUND";
+  type: "ETF" | "펀드" | "BOND";
   logo?: ImageSourcePropType;
   title: string;
   subTitle: string;
@@ -24,7 +24,7 @@ export default function ImageListItem({
   rate,
   from,
   showDivider = true,
-}: ImageListItemProps & { id: number; type: "BOND" | "ETF_FUND" }) {
+}: ImageListItemProps & { id: number; type: "ETF" | "펀드" | "BOND" }) {
   const router = useRouter();
   const isUp = rate >= 0;
   const rateText = `${isUp ? "+" : ""}${rate.toFixed(1)}%`;

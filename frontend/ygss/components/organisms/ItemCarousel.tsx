@@ -57,7 +57,7 @@ export default function ItemCarousel({ items }: Props) {
                                 marginHorizontal: SPACING / 2,
                             }}
                         >
-                            <ItemCard id={item.id} title={item.title} rate={item.rate} />
+                            <ItemCard id={item.id} title={item.title} rate={item.rate} type={item.type} />
                         </Animated.View>
                     );
                 }}

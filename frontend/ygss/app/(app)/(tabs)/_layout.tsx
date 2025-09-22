@@ -51,7 +51,7 @@ export default function TabLayout() {
               <Ionicons name="home" size={size} color={focused ? "skyblue" : color} />
             ),
           }}
-          listeners={{ focus: () => router.replace("/(app)/(tabs)/home") }}
+        // listeners={{ focus: () => router.replace("/(app)/(tabs)/home") }}
 
         />
         <Tabs.Screen
@@ -74,7 +74,7 @@ export default function TabLayout() {
           listeners={{
             tabPress: (e) => {
               e.preventDefault(); // 기본 이동 막기
-              router.replace("/(app)/(tabs)/dc/dc1");
+              router.push("/(app)/(tabs)/dc/dc1");
             },
           }}
         />
@@ -98,7 +98,7 @@ export default function TabLayout() {
           listeners={{
             tabPress: (e) => {
               e.preventDefault();
-              router.replace("/(app)/(tabs)/irp/irp1");
+              router.push("/(app)/(tabs)/irp/irp1");
             },
           }} />
         <Tabs.Screen
@@ -109,7 +109,7 @@ export default function TabLayout() {
               <Ionicons name="person" size={size} color={focused ? "skyblue" : color} />
             ),
           }}
-          listeners={{ focus: () => router.replace("/(app)/(tabs)/mypage") }}
+        // listeners={{ focus: () => router.replace("/(app)/(tabs)/mypage") }}
 
         />
 
