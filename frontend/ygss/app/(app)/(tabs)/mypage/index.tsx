@@ -78,7 +78,7 @@ export default function Mypage() {
                     })),
                     ...likedBond.map((it: any) => ({
                         id: it.id,
-                        type: "채권",
+                        type: "BOND",
                         logo: require("@/assets/icon/bond.png"), // 채권 아이콘 예시
                         title: it.productName,
                         subTitle: it.publisher,
