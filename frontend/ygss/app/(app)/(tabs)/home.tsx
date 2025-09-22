@@ -10,6 +10,7 @@ import {
   Dimensions,
   Image,
   Platform,
+  Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -133,7 +134,7 @@ export default function Home() {
 
           </View>
 
-          {/* DC 상품 Top3 */}
+          {/* 찜상품 top 9 */}
           <View style={styles.topList}>
             {loadingPlan ? (
               <Text style={{ padding: 16, color: Colors.gray }}>불러오는 중…</Text>
@@ -144,19 +145,19 @@ export default function Home() {
             )}
           </View>
 
-          <View style={styles.myInfo}>
+          <Pressable onPress={() => router.push("/mypage")}>
             {/* 내 자산 현황 */}
             <View style={styles.moneyContainer}>
               {user?.totalRetirePension !== null && user?.totalRetirePension !== undefined && (
                 <MyMoney
                   amount={user.totalRetirePension}
-                  rate={0} // TODO: 실제 수익률 값으로 교체 필요
+                  from="home"
+                // rate={0} // TODO: 실제 수익률 값으로 교체 필요
                 />
               )}
             </View>
-
-            {/* 포트폴리오 구성 */}
-          </View>
+          </Pressable>
+          {/* 포트폴리오 구성 */}
         </ScrollView>
       </SafeAreaView>
     </>
@@ -348,14 +349,10 @@ const styles = StyleSheet.create({
     marginHorizontal: -20,
     backgroundColor: Colors?.white,
     paddingVertical: 12,
-    marginBottom: 16,
-  },
-  myInfo: {
-    marginHorizontal: -20,
-    backgroundColor: Colors?.white,
+    marginBottom: 10,
   },
   moneyContainer: {
     marginBottom: 10,
-    paddingHorizontal: 16,
+    // paddingHorizontal: -10,
   },
 });

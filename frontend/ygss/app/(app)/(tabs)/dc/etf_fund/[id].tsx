@@ -104,6 +104,7 @@ export default function DcDetail() {
         return () => backHandler.remove();
     }, [from]);
 
+    // 화살표 애니메이션
     const translateY = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -124,6 +125,44 @@ export default function DcDetail() {
             ])
         ).start();
     }, [translateY]);
+
+    // 종목 구성 애니메이션
+    const [showRatio, setShowRatio] = useState(false);
+    const opacity = useRef(new Animated.Value(0)).current;
+    const slideY = useRef(new Animated.Value(-20)).current; // 위에서 내려오는 효과
+
+    const toggleRatio = () => {
+        if (showRatio) {
+            // 사라질 때
+            Animated.parallel([
+                Animated.timing(opacity, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(slideY, {
+                    toValue: -20,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+            ]).start(() => setShowRatio(false));
+        } else {
+            // 보이게 할 때
+            setShowRatio(true);
+            Animated.parallel([
+                Animated.timing(opacity, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(slideY, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -164,13 +203,26 @@ export default function DcDetail() {
                             />
                             <Text style={styles.pointText}>종목 구성은 이렇게 되어 있어요 !</Text>
                             <Animated.View style={{ transform: [{ translateY }] }}>
-                                <Ionicons name="chevron-down-outline" size={24} color="black" />
+                                <Ionicons
+                                    name="chevron-down-outline"
+                                    size={24}
+                                    color="black"
+                                    onPress={toggleRatio}
+                                />
                             </Animated.View>
                         </View>
 
-                        <View style={styles.ratioContainer}>
-                            <ItemRatio data={graphData.doughnutChart} />
-                        </View>
+                        {showRatio && (
+                            <Animated.View
+                                style={[
+                                    styles.ratioContainer,
+                                    { opacity, transform: [{ translateY: slideY }] },
+                                ]}
+                            >
+                                <ItemRatio data={graphData.doughnutChart} />
+                            </Animated.View>
+                        )}
+
                         <View>
                             <Caution />
                         </View>

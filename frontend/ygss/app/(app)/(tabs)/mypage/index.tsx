@@ -127,7 +127,8 @@ export default function Mypage() {
                     {user?.totalRetirePension !== null && user?.totalRetirePension !== undefined && (
                         <MyMoney
                             amount={user.totalRetirePension}
-                            rate={0} // TODO: 실제 수익률 값으로 교체 필요
+                            from="mypage"
+                        // rate={0} // TODO: 실제 수익률 값으로 교체 필요
                         />
                     )}
                 </View>
