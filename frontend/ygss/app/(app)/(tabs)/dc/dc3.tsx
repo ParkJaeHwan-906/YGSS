@@ -13,9 +13,8 @@ export default function Dc3() {
 
   const { top3, rest } = useMemo(() => {
     if (!data) return { top3: [], rest: [] };
-
     try {
-      const productList = JSON.parse(data);
+      const { productList, top3 } = JSON.parse(data);
 
       const mapped: ImageListData[] = productList.map((it: any) => ({
         logo:
@@ -29,15 +28,28 @@ export default function Dc3() {
         rate: it.profitPrediction ?? 0,
       }));
 
+      const mappedTop3: ImageListData[] = top3.map((it: any) => ({
+        logo:
+          it.productType === "BOND"
+            ? require("@/assets/icon/bond.png")
+            : it.productType === "FUND"
+              ? require("@/assets/icon/fund.png")
+              : require("@/assets/icon/etf.png"),
+        title: it.product,
+        subTitle: it.company,
+        rate: it.profitPrediction ?? 0,
+      }));
+
       return {
-        top3: mapped.slice(0, 3),
+        top3: mappedTop3,
         rest: mapped.slice(3),
       };
     } catch (err) {
       console.error("추천상품 데이터 파싱 실패:", err);
       return { top3: [], rest: [] };
     }
-  }, [data]);
+  }, [data]); 6
+
 
   return (
     <SafeAreaView

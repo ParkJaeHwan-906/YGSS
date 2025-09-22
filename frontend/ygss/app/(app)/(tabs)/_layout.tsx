@@ -1,21 +1,18 @@
 // app/(app)/(tabs)/_layout.tsx
-import { Tabs, usePathname } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
-
 import { HapticTab } from '@/components/HapticTab';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { LogBox } from 'react-native';
+import { Tabs, usePathname, useRouter } from 'expo-router';
+import React from 'react';
+import { LogBox, Platform, Text } from 'react-native';
 
 // 챗봇 관련 imports
 
-import { useChatbot } from '@/hooks/useChatbot';
 import ChatBotScreen from "@/components/chatbot/ChatBotScreen";
 import FloatingChatButton from "@/components/chatbot/FloatingChatButton";
+import { useChatbot } from '@/hooks/useChatbot';
 import { Modal } from 'react-native';
 
 // 특정 경고 메시지를 무시하도록 설정
@@ -60,10 +57,19 @@ export default function TabLayout() {
         <Tabs.Screen
           name="dc"
           options={{
-            tabBarLabel: "DC",
-            tabBarIcon: ({ color, size, focused }) => (
-              <Ionicons name="compass-outline" size={size} color={focused ? "skyblue" : color} />
+            tabBarLabel: () => null,
+            tabBarIcon: ({ focused }) => (
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontFamily: "BasicBold",
+                  color: focused ? "skyblue" : "gray",
+                }}
+              >
+                DC
+              </Text>
             ),
+            tabBarIconStyle: { marginTop: 6 },
           }}
           listeners={{
             tabPress: (e) => {
@@ -75,10 +81,19 @@ export default function TabLayout() {
         <Tabs.Screen
           name="irp"
           options={{
-            tabBarLabel: "IRP",
-            tabBarIcon: ({ color, size, focused }) => (
-              <Ionicons name="search" size={size} color={focused ? "skyblue" : color} />
+            tabBarLabel: () => null,
+            tabBarIcon: ({ focused }) => (
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontFamily: "BasicBold",
+                  color: focused ? "skyblue" : "gray",
+                }}
+              >
+                IRP
+              </Text>
             ),
+            tabBarIconStyle: { marginTop: 6 }, // ← 수직 위치 조정
           }}
           listeners={{
             tabPress: (e) => {
