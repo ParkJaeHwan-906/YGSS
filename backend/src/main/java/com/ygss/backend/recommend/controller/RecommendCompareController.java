@@ -27,10 +27,10 @@ public class RecommendCompareController {
     /**
      *  로그인하지 않은 사용자의 상품 추천 -> ??
      */
-    @GetMapping("/public/compare")
-    public ResponseEntity<?> publicCompareRetirePensionProduct(RecommendCompareRequestDto request) {
+    @GetMapping("/public/compare/dc")
+    public ResponseEntity<?> publicCompareRetirePensionDcProduct(RecommendCompareRequestDto request) {
         try {
-            return ResponseEntity.ok(recommendCompareService.recommendCompare(null, request));
+            return ResponseEntity.ok(recommendCompareService.recommendCompare(null, request, true));
         } catch (Exception e) {
             log.error("Recommend Retire Pension Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
@@ -40,12 +40,40 @@ public class RecommendCompareController {
     /**
      * 로그인 한 사용자의 상품 추천
      */
-    @GetMapping("/compare")
-    public ResponseEntity<?> compareRetirePensionProduct(
+    @GetMapping("/compare/dc")
+    public ResponseEntity<?> compareRetirePensionDcProduct(
             @Nullable RecommendCompareRequestDto request,
             @AuthenticationPrincipal String email) {
         try {
-            return ResponseEntity.ok(recommendCompareService.recommendCompare(email, request));
+            return ResponseEntity.ok(recommendCompareService.recommendCompare(email, request, true));
+        } catch (Exception e) {
+            log.error("Recommend Retire Pension Failed : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+    }
+
+    /**
+     *  로그인하지 않은 사용자의 상품 추천 -> ??
+     */
+    @GetMapping("/public/compare/irp")
+    public ResponseEntity<?> publicCompareRetirePensionIrpProduct(RecommendCompareRequestDto request) {
+        try {
+            return ResponseEntity.ok(recommendCompareService.recommendCompare(null, request, false));
+        } catch (Exception e) {
+            log.error("Recommend Retire Pension Failed : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+    }
+
+    /**
+     * 로그인 한 사용자의 상품 추천
+     */
+    @GetMapping("/compare/irp")
+    public ResponseEntity<?> compareRetirePensionIrpProduct(
+            @Nullable RecommendCompareRequestDto request,
+            @AuthenticationPrincipal String email) {
+        try {
+            return ResponseEntity.ok(recommendCompareService.recommendCompare(email, request, false));
         } catch (Exception e) {
             log.error("Recommend Retire Pension Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
@@ -72,7 +100,7 @@ public class RecommendCompareController {
      *  포트폴리오 추천
      */
     @GetMapping("/product")
-    public ResponseEntity<?> getRecommendedPortfolio(@AuthenticationPrincipal String email){
+    public ResponseEntity<?> getRecommendDcPortfolio(@AuthenticationPrincipal String email){
         try{
             EditUserInfoResponseDto user = userService.getUserInfoByUserEmail(email);
             return ResponseEntity.ok(recommendCompareService.getRecommendPortfolio(
@@ -81,20 +109,6 @@ public class RecommendCompareController {
                             .salary(user.getSalary())
                             .build()
             ));
-        }catch (RuntimeException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    /**
-     *  FAST API 응답이 오지 않아 더미 데이터를 사용하는 코드
-     */
-    @GetMapping("/product/test")
-    public ResponseEntity<?> AIAPIResponseExample(
-            @AuthenticationPrincipal String email
-    ){
-        try{
-            return ResponseEntity.ok(recommendCompareService.getRecommendPortfolioTest());
         }catch (RuntimeException e){
             return ResponseEntity.badRequest().body(e.getMessage());
         }
