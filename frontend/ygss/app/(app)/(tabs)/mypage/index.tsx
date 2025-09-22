@@ -122,7 +122,7 @@ export default function Mypage() {
                     <Ionicons name="chevron-forward-outline" size={22} color="#333" />
                 </Pressable>
 
-                <View style={styles.moneyContainer}>
+                <Pressable style={styles.moneyContainer}>
                     {/* 내 자산 현황 */}
                     {user?.totalRetirePension !== null && user?.totalRetirePension !== undefined && (
                         <MyMoney
@@ -131,7 +131,7 @@ export default function Mypage() {
                         // rate={0} // TODO: 실제 수익률 값으로 교체 필요
                         />
                     )}
-                </View>
+                </Pressable>
                 {/* 비밀번호 확인 모달 */}
                 <PasswordConfirmModal
                     visible={modalVisible}
