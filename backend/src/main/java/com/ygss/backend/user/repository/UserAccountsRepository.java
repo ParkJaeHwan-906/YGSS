@@ -29,8 +29,8 @@ public interface UserAccountsRepository {
     @Select("SELECT user_id FROM user_accounts WHERE email LIKE #{userEmail} AND `exit` IS NULL")
     Optional<Long> selectUserIdByEmail(String userEmail);
 
-    @Select("SELECT risk_grade_id FROM user_accounts WHERE email LIKE #{userEmail}")
-    Optional<Long> selectRiskGradeIdByUserEmail(String Email);
+    @Select("SELECT risk_grade_id FROM user_accounts WHERE email LIKE #{userEmail} AND `exit` IS NULL;")
+    Optional<Long> selectRiskGradeIdByUserEmail(String userEmail);
 
     @Update("""
             UPDATE `user_accounts` SET

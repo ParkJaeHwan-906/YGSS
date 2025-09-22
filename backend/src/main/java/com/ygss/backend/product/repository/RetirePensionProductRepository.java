@@ -110,4 +110,38 @@ public interface RetirePensionProductRepository {
             "WHERE b.id = #{bondId}"
     })
     Optional<BondDto> selectBondById(@Param("bondId") Long bondId);
+
+    /**
+     * 개인형 추천 상품 조회
+     * 채권 + ETF + 펀드
+     * 개인 투자 성향 반영
+     */
+    @Select("""
+            SELECT
+            rpp.id,
+            rpp.product,
+            CASE
+            WHEN rpp.product_type_id=1 THEN 'ETF'
+            WHEN rpp.product_type_id=2 THEN '펀드'
+            END AS 'productType',
+            rpp.risk_grade_id,
+            c.company,
+            rpp.next_year_profit_rate AS 'profitPrediction'
+            FROM retire_pension_products rpp
+            JOIN companies c ON c.id = rpp.company_id
+            WHERE rpp.risk_grade_id <= #{riskGradeId}
+            UNION
+            SELECT
+            bp.id,
+            bp.product,
+            CASE
+            WHEN bp.product_type_id=3 THEN 'BOND'
+            END AS 'productType',
+            bp.risk_grade_id,
+            bp.publisher AS 'company',
+            bp.final_profit_rate AS 'profitPrediction'
+            FROM bond_products bp
+            WHERE bp.risk_grade_id <= #{riskGradeId};
+            """)
+    List<RetirePensionProductResponseDto> selectAllProductByPersonal(Long riskGradeId);
 }
