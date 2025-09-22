@@ -27,15 +27,19 @@ export default function Dc2() {
   useEffect(() => {
     const fetchAndGo = async () => {
       try {
-        const res = await axios.get(`${API_URL}/recommend/compare`, {
+        const res = await axios.get(`${API_URL}/product/personal`, {
           headers: { Authorization: `A103 ${accessToken}` },
         });
-        const productList = res.data.recommendProductList ?? [];
+        console.log(res.data);
+        const productList = res.data.productList ?? [];
+        const top3 = res.data.top3 ?? [];
 
         setTimeout(() => {
           router.replace({
             pathname: "/(app)/(tabs)/dc/dc3",
-            params: { data: JSON.stringify(productList) }, // state 전달
+            params: {
+              data: JSON.stringify({ productList, top3 })
+            },
           });
         }, 2500);
       } catch (err) {
