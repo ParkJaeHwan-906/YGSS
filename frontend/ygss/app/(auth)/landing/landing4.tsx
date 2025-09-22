@@ -114,11 +114,8 @@ export default function Landing4() {
     return Number.isFinite(n) && n > 0 ? n : 2;
   }, [parsedPid]);
 
-  // 디버깅 콘솔
-  useEffect(() => {
-    console.log("[L4] params(raw):", { qsSalary, pid });
-    console.log("[L4] params(parsed):", { yearlySalary, investorPersonalityId });
-  }, [qsSalary, pid, yearlySalary, investorPersonalityId]);
+  // 릴리스 행잉 회피(preview 버전)
+  const controllerRef = React.useRef<AbortController | null>(null);
 
   // ====== API 호출 (비회원 전용) ======
   const fetchPublicCompare = async () => {
@@ -127,32 +124,37 @@ export default function Landing4() {
       investorPersonalityId,
       salary: yearlySalary * 10000, // ★ 중요: 단위 보정
     };
-  
-    console.log("[L4] REQUEST /recommend/public/compare", { API_URL, params });
-  
-    // ── 2) AbortController 로 취소 가능하게
-    const controller = new AbortController();
-  
+ 
+    controllerRef.current?.abort();
+    controllerRef.current = new AbortController();
     setLoading(true);
     setErrMsg(null);
     console.time("[L4] fetchPublicCompare");
+
+    const hardTimeout = new Promise<never>((_, rej) =>
+      setTimeout(() => {
+        controllerRef.current?.abort();
+        rej(new Error("HARD_TIMEOUT"));
+      }, 10000)
+    );
   
     try {
-      const { data, status } = await axios.get<CompareResp>(
-        `${API_URL}/recommend/public/compare`,
+      const axiosPromise = axios.get<CompareResp>(
+        `${API_URL}/recommend/public/compare/dc`,
         {
           params,
-          timeout: 8000,                // ★ 8초 타임아웃
-          signal: controller.signal,    // ★ 화면 이탈 시 취소
-          validateStatus: s => s >= 200 && s < 300, // 2xx 외엔 throw
+          timeout: 8000,
+          validateStatus: s => s >= 200 && s < 300,
+          headers: {
+            Accept: "application/json",
+            "User-Agent": "ygss-app/preview",
+          },
         }
       );
-  
-      console.timeEnd("[L4] fetchPublicCompare");
-      console.log("[L4] RESPONSE status:", status);
-      console.log("[L4] RESPONSE graphs same?",
-        JSON.stringify(data.dcCalculateGraph) === JSON.stringify(data.dbCalculateGraph)
-      );
+      const { data, status } = await Promise.race([
+        axiosPromise,
+        hardTimeout,
+      ]);
   
       setData(data);
     } catch (e: any) {
@@ -178,9 +180,6 @@ export default function Landing4() {
     } finally {
       setLoading(false);
     }
-  
-    // 화면 이탈 시 요청 취소
-    return () => controller.abort();
   };
 
   useEffect(() => {
@@ -190,10 +189,7 @@ export default function Landing4() {
       return;
     }
     if (!Number.isFinite(yearlySalary) || yearlySalary <= 0) {
-      // 연봉이 없으면 이전 단계로 유도
-      Alert.alert("연봉 정보가 필요해요", "이전 단계에서 연봉을 입력해 주세요.", [
-        { text: "확인", onPress: () => router.replace("/(auth)/landing/landing2") },
-      ]);
+      setErrMsg("연봉 정보가 필요해요, 이전 단계에서 입력을 확인해주세요.");
       setLoading(false);
       return;
     }
@@ -203,7 +199,7 @@ export default function Landing4() {
       return;
     }
     fetchPublicCompare();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => controllerRef.current?.abort();
   }, [investorPersonalityId, yearlySalary]);
 
   // 원 → 만원으로 변환해서 차트/축에 사용
@@ -213,8 +209,8 @@ export default function Landing4() {
   const dbFinal = pickByYear(data?.dbCalculateGraph, 10);
   const dcChartData = toLineSeries(dcGraphMan);
   const dbChartData = toLineSeries(dbGraphMan);
-  const dcMaxVal = niceMax(Math.max(...dcGraphMan, 0) * 1.1);
-  const dbMaxVal = niceMax(Math.max(...dbGraphMan, 0) * 1.1);
+  const dcMaxVal = Math.max(1, niceMax(Math.max(...dcGraphMan, 0) * 1.1));
+  const dbMaxVal = Math.max(1, niceMax(Math.max(...dbGraphMan, 0) * 1.1));
 
   // 컴포넌트 내부 (return 위)
   const horizontalPad = 24;
