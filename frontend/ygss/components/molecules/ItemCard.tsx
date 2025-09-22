@@ -1,23 +1,29 @@
 import { useRouter } from "expo-router";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text } from "react-native";
 
 type ItemCardProps = {
     id: number;
     title: string;
     rate: number;
+    type: "ETF" | "펀드" | "BOND";
     icon?: any;
 };
 
-export default function ItemCard({ id, title, rate, icon }: ItemCardProps) {
+export default function ItemCard({ id, title, rate, type, icon }: ItemCardProps) {
     const isPositive = rate >= 0;
     const router = useRouter();
 
     const handlePress = () => {
-        router.push(`/(app)/(tabs)/dc/etf_fund/${id}`);
+        const idParam = String(id);
+        if (type === "BOND") {
+            router.push({ pathname: "/(app)/(tabs)/dc/bond/[id]", params: { id: idParam } });
+        } else {
+            router.push({ pathname: "/(app)/(tabs)/dc/etf_fund/[id]", params: { id: idParam } });
+        }
     };
 
     return (
-        <View style={styles.card}>
+        <Pressable onPress={handlePress} style={styles.card}>
             <Text style={styles.cardTitle}>{title}</Text>
             <Text style={[styles.cardRate, isPositive ? styles.up : styles.down]}>
                 {isPositive ? `+${rate.toFixed(2)}%` : `${rate.toFixed(2)}%`}
@@ -26,7 +32,7 @@ export default function ItemCard({ id, title, rate, icon }: ItemCardProps) {
                 source={icon || require("@/assets/icon/star.png")}
                 style={styles.cardBadge}
             />
-        </View>
+        </Pressable>
     );
 }
 

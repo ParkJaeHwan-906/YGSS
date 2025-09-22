@@ -16,7 +16,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL as string;
 
 export default function DcDetail() {
     const { id } = useLocalSearchParams<{ id: string }>();
-    const numericId = Number(id); // params는 string으로 받아오기 때문에 숫자로 변환
+    const numericId = id ? Number(id) : null; // params는 string으로 받아오기 때문에 숫자로 변환
     const [loading, setLoading] = useState(true);
     const [liked, setLiked] = useState<boolean | null>(null);
     const [loadingLike, setLoadingLike] = useState(false);

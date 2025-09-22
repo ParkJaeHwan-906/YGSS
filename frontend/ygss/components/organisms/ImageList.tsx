@@ -8,7 +8,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export type ImageListData = {
   id: number,
-  type: "BOND" | "ETF_FUND",
+  type: "ETF" | "펀드" | "BOND";
   logo?: any;
   title: string;
   subTitle: string;

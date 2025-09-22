@@ -30,7 +30,6 @@ export default function Dc2() {
         const res = await axios.get(`${API_URL}/product/personal`, {
           headers: { Authorization: `A103 ${accessToken}` },
         });
-        console.log(res.data);
         const productList = res.data.productList ?? [];
         const top3 = res.data.top3 ?? [];
 
