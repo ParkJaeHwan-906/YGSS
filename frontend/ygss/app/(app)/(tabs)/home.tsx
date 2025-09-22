@@ -146,17 +146,16 @@ export default function Home() {
 
           <View style={styles.myInfo}>
             {/* 내 자산 현황 */}
-            <View style={styles.moneyContainer}>
-              {user?.totalRetirePension !== null && user?.totalRetirePension !== undefined && (
-                <MyMoney
-                  amount={user.totalRetirePension}
-                  rate={0} // TODO: 실제 수익률 값으로 교체 필요
-                />
-              )}
-            </View>
-
-            {/* 포트폴리오 구성 */}
+            {user?.totalRetirePension != null && user?.totalRetirePension != undefined && (
+              <View style={styles.moneyContainer}>
+                  <MyMoney
+                    amount={user.totalRetirePension}
+                    rate={0} // TODO: 실제 수익률 값으로 교체 필요
+                  />
+              </View>
+            )}
           </View>
+
         </ScrollView>
       </SafeAreaView>
     </>
