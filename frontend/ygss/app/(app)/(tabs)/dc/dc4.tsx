@@ -130,11 +130,11 @@ export default function Dc4() {
       let headers: any | undefined;
 
       if (isWhatIf) {
-        url = `${API_URL}/recommend/public/compare`;
+        url = `${API_URL}/recommend/public/compare/dc`;
         params = { investorPersonalityId: riskGradeId, salary: inputSalary };
       } else {
         // 프로필 기준
-        url = `${API_URL}/recommend/compare`;
+        url = `${API_URL}/recommend/compare/dc`;
         headers = { Authorization: `A103 ${accessToken}` };
       }
 
