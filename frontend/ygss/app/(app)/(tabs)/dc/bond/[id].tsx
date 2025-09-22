@@ -6,9 +6,9 @@ import { useAppSelector } from "@/src/store/hooks";
 import { Colors } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Animated, Easing, Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Animated, BackHandler, Easing, Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -21,6 +21,21 @@ export default function DcDetail() {
     const [liked, setLiked] = useState<boolean | null>(null);
     const [loadingLike, setLoadingLike] = useState(false);
     const accessToken = useAppSelector((s) => s.auth.accessToken);
+    const router = useRouter();
+    const { from } = useLocalSearchParams<{ from: string }>();
+
+    // 마이페이지에서 온 경우
+    useEffect(() => {
+        const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
+            if (from === "mypage") {
+                router.back();
+                return true;
+            }
+            return false;
+        });
+
+        return () => backHandler.remove();
+    }, [from]);
 
     const handleLikeToggle = async () => {
         try {

@@ -95,7 +95,7 @@ export default function DcDetail() {
     useEffect(() => {
         const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
             if (from === "mypage") {
-                router.replace("/mypage"); // 마이페이지로 고정
+                router.back();
                 return true;
             }
             return false;
