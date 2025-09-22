@@ -1,15 +1,12 @@
 package com.ygss.backend.recommend.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ygss.backend.pensionProduct.dto.entity.PensionProduct;
 import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
 import com.ygss.backend.pensionProduct.dto.response.BondDto;
 import com.ygss.backend.pensionProduct.repository.PensionProductRepository;
-import com.ygss.backend.product.repository.RetirePensionProductRepository;
 import com.ygss.backend.recommend.dto.*;
-import com.ygss.backend.recommend.dto.entity.UserPortfolioCache;
 import com.ygss.backend.recommend.repository.RecommendCacheRepository;
 import com.ygss.backend.user.dto.UserAccountsDto;
 import com.ygss.backend.user.repository.UserAccountsRepository;
@@ -20,15 +17,11 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -43,14 +36,6 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
     /**
-     * Fast API 를 사용하여, 수익률 예측
-     */
-    @Override
-    public void profitPrediction() {
-
-    }
-
-    /**
      * 상품을 비교하여 추천
      * 로그인한 회원
      *  - 투자 성향이 있는 사용자
@@ -58,7 +43,7 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
      * 로그인 하지 않은 사용자
      */
     @Override
-    public RecommendCompareResponseDto recommendCompare(String email, RecommendCompareRequestDto request) {
+    public RecommendCompareResponseDto recommendCompare(String email, RecommendCompareRequestDto request, Boolean dc) {
         // 투자 성향 가져오기
         UserAccountsDto user = userAccountsRepository.selectByUserEmail(email)
                 .orElse(null);
@@ -72,7 +57,7 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
         // DC
         RecommendPortfolioResponse recommendPortfolioResponse = getRecommendPortfolio(
                 RecommendPortfolioRequest.builder()
-                        .riskGradeId(investorPersonalityId)
+                        .riskGradeId(investorPersonalityId + (dc ? 1 : -1))     // DC 형은 조금 더 공격적인 투자, IRP 는 조금 소극적인 투자
                         .salary(userSalary)
                         .build()
         );
@@ -95,34 +80,7 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
     }
 
     /**
-     * 기하 급수의 합을 이용한 누적 수익률 시뮬레이션 함수
-     */
-    Long[] simulate(Long origin, Double rate, Long salary) {
-        Long[] result = new Long[4];
-        Long annualContribution = salary / 12;
-        double annualRate = rate / 100.0;
-
-        int[] targetYears = {1, 3, 5, 7};
-
-        for(int i = 0; i < 4; i++) {
-            int years = targetYears[i];
-
-            if (Math.abs(annualRate) < 1e-10) {
-                // rate가 0에 가까울 때
-                result[i] = (long) Math.round(origin + annualContribution * years);
-            } else {
-                // 기하급수 공식으로 O(1) 계산
-                double r = 1 + annualRate;
-                double totalAmount = origin * Math.pow(r, years) +
-                        annualContribution * (Math.pow(r, years) - 1) / annualRate;
-                result[i] = Math.round(totalAmount);
-            }
-        }
-
-        return result;
-    }
-    /**
-     * 나의 퇴직 연금 계산
+     * 나의 퇴직 연금 계산 -> 이자율을 기반으로 계산
      * salary : 연봉 정보
      */
     @Override
@@ -173,7 +131,9 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
     @Override
     public RecommendPortfolioResponse getRecommendPortfolio(RecommendPortfolioRequest request) {
         try{
-            String url = fastApiBaseUrl + "/portfolio/analyze";
+            String url = fastApiBaseUrl + "/portfolio/analyze";     // 추후 /dc 추가
+
+            request.limitFieldRange();      // riskGradeId 값 보정
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -185,6 +145,8 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
             return response.getBody();
         } catch (Exception e) {
 //            throw new RuntimeException("포트폴리오 추천 중 오류 발생: " + e.getMessage(), e);
+            
+            // AI 완성 전 목업 코드
             return RecommendPortfolioResponse.builder()
                     .allocations(List.of(
                             AllocationDto.builder()
@@ -213,27 +175,6 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
                     .analysisDate("2025-09-19T13:36:46.166218")
                     .build();
 
-        }
-    }
-
-    public RecommendPortfolioResponse getRecommendPortfolioTest() {
-        try{
-            log.debug("목업 데이터 호출");
-            List<AllocationDto> allocationDtos = new ArrayList<>();
-            allocationDtos.add(AllocationDto.builder().assetCode(1L).build());
-            allocationDtos.add(AllocationDto.builder().assetCode(2L).build());
-            allocationDtos.add(AllocationDto.builder().assetCode(122L).build());
-            allocationDtos.add(AllocationDto.builder().assetCode(313L).build());
-            RecommendPortfolioResponse fastAPIResponse =RecommendPortfolioResponse.builder().
-                    allocations(allocationDtos).
-                    analysisDate("today").
-                    totalExpectedReturn(4.55).
-                    riskGradeId(1).
-                    build();
-
-            return fastAPIResponse;
-        } catch (Exception e) {
-            throw new RuntimeException("포트폴리오 추천 중 오류 발생: " + e.getMessage(), e);
         }
     }
 }
