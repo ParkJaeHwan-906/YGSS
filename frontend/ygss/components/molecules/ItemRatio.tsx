@@ -1,4 +1,3 @@
-
 import { Colors } from "@/src/theme/colors";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -21,7 +20,6 @@ const SWITCH_DURATION = 1100;
 const INTERVAL = 2800;
 
 export default function ItemRatio({ data }: { data: DoughnutItem[] }) {
-  // API로 넘어온 데이터 → PieChart 형식으로 변환
   const chartData = useMemo(() => {
     if (!data || data.length === 0) return [];
     const colors = ["#4666FF", "#8BB6FF", "#A28BFF", "#FFBFE1", "#FFF1D1", "#EEF1FF"];
@@ -34,15 +32,26 @@ export default function ItemRatio({ data }: { data: DoughnutItem[] }) {
 
   const [focusedIndex, setFocusedIndex] = useState(0);
   const prevIndexRef = useRef(0);
-  const nextIndexRef = useRef(0);
 
   const enter = useSharedValue(0);
   const progress = useSharedValue(1);
 
+  // 안전하게 다음 인덱스로 넘어가기
+  const handleNext = (next: number) => {
+    prevIndexRef.current = focusedIndex; // 항상 현재 인덱스를 이전 값으로 저장
+    setFocusedIndex(next);
+
+    progress.value = 0;
+    progress.value = withTiming(1, {
+      duration: SWITCH_DURATION,
+      easing: Easing.inOut(Easing.cubic),
+    });
+  };
+
   useEffect(() => {
     if (chartData.length === 0) return;
 
-    // 첫 입장 애니메이션
+    // 첫 진입 애니메이션
     enter.value = withTiming(1, {
       duration: ENTER_DURATION,
       easing: Easing.out(Easing.cubic),
@@ -50,36 +59,19 @@ export default function ItemRatio({ data }: { data: DoughnutItem[] }) {
 
     const id = setInterval(() => {
       const next = (focusedIndex + 1) % chartData.length;
-      progress.value = 0;
-      prevIndexRef.current = focusedIndex;
-      setFocusedIndex(next);
-      setTimeout(() => {
-        progress.value = withTiming(1, {
-          duration: SWITCH_DURATION,
-          easing: Easing.inOut(Easing.cubic),
-        });
-      }, 16);
+      handleNext(next);
     }, INTERVAL);
 
     return () => clearInterval(id);
-  }, [focusedIndex, chartData.length, enter, progress]);
+  }, [focusedIndex, chartData.length]);
 
   const pieData = chartData.map((it, i) => ({
     ...it,
     focused: i === focusedIndex,
-    onPress: () => {
-      prevIndexRef.current = focusedIndex;   // 이전 index 기억
-      setFocusedIndex(i);                    // 눌린 index로 이동
-
-      // 애니메이션 초기화 후 실행
-      progress.value = 0;
-      progress.value = withTiming(1, {
-        duration: 0, // 즉시 적용
-      });
-    },
+    onPress: () => handleNext(i), // 터치 시에도 동일 로직
   }));
 
-  const prevIdx = prevIndexRef.current;
+  const prevIdx = prevIndexRef.current ?? focusedIndex;
   const current = chartData[focusedIndex];
   const previous = chartData[prevIdx] || current;
 
@@ -88,17 +80,11 @@ export default function ItemRatio({ data }: { data: DoughnutItem[] }) {
     const t = enter.value * progress.value;
     return {
       opacity: t,
-      transform: [{ scale: interpolate(t, [0, 1], [0.96, 1]) }],
-    };
-  });
-  const prevStyle = useAnimatedStyle(() => {
-    const t = enter.value * progress.value;
-    return {
-      opacity: 1 - t,
-      transform: [{ scale: interpolate(t, [0, 1], [1, 0.98]) }],
-      position: "absolute",
-      left: 0, right: 0, top: 0, bottom: 0,
-      alignItems: "center", justifyContent: "center",
+      transform: [
+        {
+          translateY: interpolate(t, [0, 1], [20, 0]), // 밑에서 위로 올라오는 효과
+        },
+      ],
     };
   });
 
@@ -126,7 +112,6 @@ export default function ItemRatio({ data }: { data: DoughnutItem[] }) {
 
   return (
     <View style={styles.card}>
-
       <View style={styles.chartWrapper}>
         <Animated.View style={chartMotion}>
           <PieChart
@@ -139,29 +124,46 @@ export default function ItemRatio({ data }: { data: DoughnutItem[] }) {
             sectionAutoFocus
             showGradient
             labelsPosition="outward"
+            // centerLabelComponent 안쪽만 발췌
             centerLabelComponent={() => (
-              <View style={{ width: 110, height: 50, alignItems: "center", justifyContent: "center" }}>
-                {/* 이전 라벨 */}
-                <Animated.View style={prevStyle}>
-                  <Text style={{ fontSize: 18, fontFamily: "BasicBold", color: Colors.black }}>
-                    {previous.label}
-                  </Text>
-                  <Text style={{ fontSize: 12, fontFamily: "BasicMedium", color: "#666", marginTop: 2 }}>
-                    {previous.value.toFixed(2)}%
-                  </Text>
-                </Animated.View>
-
-                {/* 현재 라벨 */}
-                <Animated.View style={[{ alignItems: "center" }, currentStyle]}>
-                  <Text style={{ fontSize: 18, fontFamily: "BasicBold", color: Colors.black }}>
+              <View
+                style={{
+                  width: 110,
+                  minHeight: 50,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingHorizontal: 4,
+                }}
+              >
+                <Animated.View style={currentStyle}>
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontFamily: "BasicBold",
+                      color: Colors.black,
+                      textAlign: "center",
+                    }}
+                    numberOfLines={1}               // 한 줄만
+                    adjustsFontSizeToFit            // 길면 자동 축소
+                    minimumFontScale={0.7}          // 최소 70%까지 줄임
+                  >
                     {current.label}
                   </Text>
-                  <Text style={{ fontSize: 12, fontFamily: "BasicMedium", color: "#666", marginTop: 2 }}>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontFamily: "BasicMedium",
+                      color: "#666",
+                      marginTop: 2,
+                      textAlign: "center",          // 퍼센트도 중앙
+                    }}
+                  >
                     {current.value.toFixed(2)}%
                   </Text>
                 </Animated.View>
               </View>
             )}
+
           />
         </Animated.View>
       </View>
