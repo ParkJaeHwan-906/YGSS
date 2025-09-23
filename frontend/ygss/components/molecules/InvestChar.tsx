@@ -64,7 +64,6 @@ export default function InvestChar({ slices }: InvestCharProps) {
     ).start();
   }, [translateY]);
 
-
   // Bias 토글 애니메이션
   const slide = useSharedValue(0);
   const [contentHeight, setContentHeight] = useState(0);
@@ -75,12 +74,10 @@ export default function InvestChar({ slices }: InvestCharProps) {
     });
   }, [showBias]);
 
-  // 높이와 투명도 애니메이션
   const biasStyle = useAnimatedStyle(() => ({
     height: interpolate(slide.value, [0, 1], [0, contentHeight]),
     opacity: slide.value,
   }));
-
 
   const palette = {
     ETF: "#8BB6FF",
@@ -97,8 +94,6 @@ export default function InvestChar({ slices }: InvestCharProps) {
     }));
   }, [slices]);
 
-  //  Hook은 무조건 컴포넌트 최상단에서만 실행 (조건문 X)
-
   // chart 계산
   const total = baseData.reduce((a, c) => a + (c.amount || 0), 0) || 1;
   const pct = (amt: number) => Math.round((amt / total) * 100);
@@ -110,15 +105,14 @@ export default function InvestChar({ slices }: InvestCharProps) {
   }));
 
   const [focusedIndex, setFocusedIndex] = useState(0);
-  const prevIndexRef = useRef(0);
-
   const labelProgress = useSharedValue(0);
   const ringProgress = useSharedValue(0);
 
-  // PieChart 라벨 전환 애니메이션
+  // 라벨/도넛 애니메이션
   useEffect(() => {
-    if (baseData.length === 0) return; // 데이터 없으면 애니메이션 안 돌림
+    if (baseData.length === 0) return;
 
+    // 첫 진입
     labelProgress.value = withTiming(1, {
       duration: ENTER_DURATION,
       easing: Easing.inOut(Easing.cubic),
@@ -129,7 +123,6 @@ export default function InvestChar({ slices }: InvestCharProps) {
     });
 
     const id = setInterval(() => {
-      prevIndexRef.current = focusedIndex;
       const next = (focusedIndex + 1) % baseData.length;
       setFocusedIndex(next);
 
@@ -149,35 +142,26 @@ export default function InvestChar({ slices }: InvestCharProps) {
     return () => clearInterval(id);
   }, [focusedIndex, baseData.length]);
 
-  const prevIdx = prevIndexRef.current;
-  const current = baseData[focusedIndex];
-  const previous = baseData[prevIdx];
+  // 라벨 스타일
+  const currentStyle = useAnimatedStyle(() => {
+    const t = labelProgress.value;
+    return {
+      opacity: t,
+      transform: [
+        { translateY: interpolate(t, [0, 1], [20, 0]) }, // 밑에서 위로
+        { scale: interpolate(t, [0, 1], [0.96, 1]) },
+      ],
+    };
+  });
 
-  const currentStyle = useAnimatedStyle(() => ({
-    opacity: labelProgress.value,
-    transform: [{ scale: interpolate(labelProgress.value, [0, 1], [0.96, 1]) }],
-  }));
-  const prevStyle = useAnimatedStyle(() => ({
-    opacity: 1 - labelProgress.value,
-    transform: [{ scale: interpolate(labelProgress.value, [0, 1], [1, 0.98]) }],
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    alignItems: "center",
-    justifyContent: "center",
-  }));
-
+  // 도넛 펄스
   const baseRadius = 85;
   const baseInner = 55;
 
   const animatedChartStyle = useAnimatedStyle(() => {
     const scale = interpolate(ringProgress.value, [0, 0.6, 1], [1, 1.04, 1]);
     const rotate = interpolate(ringProgress.value, [0, 0.5, 1], [0, 0.06, 0]);
-    return {
-      transform: [{ rotateZ: `${rotate}rad` }, { scale }],
-    };
+    return { transform: [{ rotateZ: `${rotate}rad` }, { scale }] };
   });
 
   const radius = () =>
@@ -185,11 +169,7 @@ export default function InvestChar({ slices }: InvestCharProps) {
   const innerRadius = () =>
     interpolate(ringProgress.value, [0, 0.6, 1], [baseInner, baseInner + 4, baseInner]);
 
-
-  //  UI
-  // =========================================
-
-  // slices 없음 → 안내문만
+  // slices 없음 → 안내문
   if (baseData.length === 0) {
     return (
       <View style={styles.card}>
@@ -201,19 +181,13 @@ export default function InvestChar({ slices }: InvestCharProps) {
         <Image source={require("@/assets/char/sadAlchi.png")} style={styles.sadAlchi} />
         <Text style={styles.nolikeText}>찜한 상품이 없습니다</Text>
 
-        {investType === "?????" ? (
-          <Pressable onPress={() => setShowBias((prev) => !prev)}>
-            <Text style={styles.emptyText}>투자 성향 테스트를 해보세요!</Text>
-          </Pressable>
-        ) : (
-          <Pressable onPress={() => setShowBias((prev) => !prev)}>
-            <Text style={styles.emptyText}>다시 투자 성향 테스트를 해보세요!</Text>
-          </Pressable>
-        )}
+        <Pressable onPress={() => setShowBias((prev) => !prev)}>
+          <Text style={styles.emptyText}>
+            {investType === "?????" ? "투자 성향 테스트를 해보세요!" : "다시 투자 성향 테스트를 해보세요!"}
+          </Text>
+        </Pressable>
 
-        <RNAnimated.View
-          style={[{ transform: [{ translateY: translateY }] }, styles.arrowStyle]}
-        >
+        <RNAnimated.View style={[{ transform: [{ translateY }] }, styles.arrowStyle]}>
           <Pressable onPress={() => setShowBias(!showBias)}>
             <Ionicons
               name={showBias ? "chevron-up-outline" : "chevron-down-outline"}
@@ -230,20 +204,16 @@ export default function InvestChar({ slices }: InvestCharProps) {
     );
   }
 
-  // slices 있음 → PieChart + 범례
+  // slices 있음 → PieChart
   return (
     <View style={styles.card}>
-      {investType === "?????" ? (
-        <Text style={styles.titleText}>
-          {userName}님은{"\n"}
-          <Text style={styles.highlight}>{investType}</Text> 입니다.
-        </Text>
-      ) : (
-        <Text style={styles.titleText}>
-          {userName}님은{"\n"}
-          <Text style={styles.highlight}>'{investType}'</Text> 입니다.
-        </Text>
-      )}
+      <Text style={styles.titleText}>
+        {userName}님은{"\n"}
+        <Text style={styles.highlight}>
+          {investType === "?????" ? investType : `'${investType}'`}
+        </Text>{" "}
+        입니다.
+      </Text>
 
       <View style={styles.chartWrapper}>
         <Text
@@ -258,12 +228,10 @@ export default function InvestChar({ slices }: InvestCharProps) {
         >
           나의 관심 상품
         </Text>
+
         <Animated.View style={animatedChartStyle}>
           <PieChart
-            data={chartBase.map((it, i) => ({
-              ...it,
-              focused: i === focusedIndex,
-            }))}
+            data={chartBase.map((it, i) => ({ ...it, focused: i === focusedIndex }))}
             donut
             radius={radius()}
             innerRadius={innerRadius()}
@@ -272,28 +240,25 @@ export default function InvestChar({ slices }: InvestCharProps) {
             sectionAutoFocus
             showGradient
             labelsPosition="outward"
-            centerLabelComponent={() => (
-              <View
-                style={{
-                  width: 140,
-                  height: 60,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {/* 이전 라벨 */}
-                <Animated.View style={prevStyle}>
-                  <Text style={styles.centerTitle}>{previous.label}</Text>
-                  <Text style={styles.centerPct}>{pct(previous.amount)}%</Text>
-                </Animated.View>
-
-                {/* 현재 라벨 */}
-                <Animated.View style={[{ alignItems: "center" }, currentStyle]}>
-                  <Text style={styles.centerTitle}>{current.label}</Text>
-                  <Text style={styles.centerPct}>{pct(current.amount)}%</Text>
-                </Animated.View>
-              </View>
-            )}
+            centerLabelComponent={() => {
+              const slice = chartBase[focusedIndex];
+              return (
+                <View
+                  style={{
+                    width: 140,
+                    height: 60,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                  }}
+                >
+                  <Animated.View style={currentStyle}>
+                    <Text style={styles.centerTitle}>{slice.label}</Text>
+                    <Text style={styles.centerPct}>{pct(slice.value)}%</Text>
+                  </Animated.View>
+                </View>
+              );
+            }}
           />
         </Animated.View>
       </View>
@@ -310,18 +275,13 @@ export default function InvestChar({ slices }: InvestCharProps) {
         ))}
       </View>
 
-      {investType === "?????" ? (
-        <Pressable onPress={() => setShowBias((prev) => !prev)}>
-          <Text style={styles.emptyText}>투자 성향 테스트를 해보세요!</Text>
-        </Pressable>
-      ) : (
-        <Pressable onPress={() => setShowBias((prev) => !prev)}>
-          <Text style={styles.emptyText}>다시 투자 성향 테스트를 해보세요!</Text>
-        </Pressable>
-      )}
-      <RNAnimated.View
-        style={[{ transform: [{ translateY: translateY }] }, styles.arrowStyle]}
-      >
+      <Pressable onPress={() => setShowBias((prev) => !prev)}>
+        <Text style={styles.emptyText}>
+          {investType === "?????" ? "투자 성향 테스트를 해보세요!" : "다시 투자 성향 테스트를 해보세요!"}
+        </Text>
+      </Pressable>
+
+      <RNAnimated.View style={[{ transform: [{ translateY }] }, styles.arrowStyle]}>
         <Pressable onPress={() => setShowBias(!showBias)}>
           <Ionicons
             name={showBias ? "chevron-up-outline" : "chevron-down-outline"}
@@ -334,11 +294,10 @@ export default function InvestChar({ slices }: InvestCharProps) {
       <Animated.View style={[{ overflow: "hidden" }, biasStyle]}>
         <View
           onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
-          style={{ position: "absolute", opacity: 0 }} // 높이만 측정용
+          style={{ position: "absolute", opacity: 0 }}
         >
           <InvestBias />
         </View>
-
         <View>
           <InvestBias />
         </View>
@@ -378,8 +337,14 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 26,
   },
-  centerTitle: { fontSize: 16, fontFamily: "BasicBold", color: Colors.black },
-  centerPct: { fontSize: 11, fontFamily: "BasicMedium", color: "#8A8AA3", marginTop: 1 },
+  centerTitle: { fontSize: 16, fontFamily: "BasicBold", color: Colors.black, textAlign: "center" },
+  centerPct: {
+    fontSize: 11,
+    fontFamily: "BasicMedium",
+    color: "#8A8AA3",
+    marginTop: 1,
+    textAlign: "center",
+  },
   legendContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
