@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 public class RedisScheduler {
     private final RedisServiceImpl redisService;
 
-    @Scheduled(fixedRate = 1000*60*60*6)    // 6 시간 단위로
+//    @Scheduled(fixedRate = 1000*60*60*6)    // 6 시간 단위로
     public void updateTextEmbeddingVector() {
         try {
             log.info("Scheduler Excute : Redis Text Embedding Update");
