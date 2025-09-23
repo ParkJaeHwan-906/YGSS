@@ -194,7 +194,7 @@ export default function Irp1() {
             {/* --- 잠시 막아두기 */}
             <TouchableOpacity
               style={[styles.box, styles.boxLeft]}
-              onPress={() => router.push("/irp/irp4")}
+              onPress={() => router.push("/irp/irp2")}
               activeOpacity={0.9}
             >
               <Text style={[styles.boxTitle, styles.boxTitleLight]}>IRP 상품 추천</Text>
@@ -214,8 +214,8 @@ export default function Irp1() {
               onPress={() => router.push("/irp/irp4")}
               activeOpacity={0.9}
             >
-              <Text style={[styles.boxTitle, { color: Colors?.white ?? "#111" }]}>맞춤형 IRP 계좌</Text>
-              <Text style={[styles.boxDesc, { color: Colors?.white ?? "#333" }]}>IRP 계좌 추천 받고, {"\n"}더욱 든든한 노후를 준비해요!</Text>
+              <Text style={[styles.boxTitle, { color: Colors?.white ?? "#111" }]}>IRP 예측 수익률</Text>
+              <Text style={[styles.boxDesc, { color: Colors?.white ?? "#333" }]}>IRP 월 납입금으로,{"\n"}예상 수익률을 확인해보세요! </Text>
               <Image source={require("@/assets/icon/chart.png")} style={styles.boxIcon} />
             </TouchableOpacity>
           </View>
