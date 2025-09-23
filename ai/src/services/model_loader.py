@@ -4,6 +4,9 @@ import joblib
 from typing import Dict, Any, Optional
 from config.settings import settings
 import logging
+import json
+from pathlib import Path
+import httpx
 
 # TensorFlow를 선택적으로 import
 try:
@@ -53,66 +56,53 @@ class ModelLoader:
             logger.error(f"최신 파일 해석 실패: {e}")
             return None
         
-    def load_lstm_model(self, model_name: str, version: str = "latest") -> Optional[Any]:
-        """LSTM 모델 로드"""
+    def load_lstm_model(self, asset_type: str, model_hash: str) -> Optional[Any]:
+        """asset_type와 model_hash로 정확한 LSTM 모델 파일을 로드합니다.
+
+        기대 경로: <MODEL_BASE_PATH>/<asset_type>/lstm_models/lstm_<model_hash>.h5
+        """
         try:
-            lstm_dir = os.path.join(self.model_base_path, "lstm_models")
-            model_path = self._resolve_latest_file(lstm_dir, model_name, ".h5", version)
-            if model_path is None:
-                logger.error(f"LSTM 모델 파일을 찾을 수 없습니다: 디렉토리={lstm_dir}, prefix={model_name}, version={version}")
+            base_dir = os.path.join(self.model_base_path, asset_type.lower())
+            lstm_dir = os.path.join(base_dir, "lstm_models")
+            model_path = os.path.join(lstm_dir, f"lstm_{model_hash}.h5")
+            if not os.path.exists(model_path):
+                logger.error(f"LSTM 모델 파일을 찾을 수 없습니다: {model_path}")
                 return None
-                
-            # 모델 로드
+
             if not HAS_TENSORFLOW:
                 logger.error("TensorFlow가 설치되지 않아 LSTM 모델을 로드할 수 없습니다")
                 return None
-            
+
             model = tf.keras.models.load_model(model_path)
-            # 캐시 키는 실제 로드된 파일명 기준으로 보정
-            loaded_version = os.path.splitext(os.path.basename(model_path))[0].replace(f"{model_name}_", "")
-            self.models[f"lstm_{model_name}_{loaded_version}"] = model
-            
-            # 스케일러 로드
-            # 스케일러는 별도 디렉토리 또는 동일 디렉토리에서 접두사 일치로 탐색
-            scaler_dir_candidates = [
-                os.path.join(self.model_base_path, "lstm_models"),
-                os.path.join(self.model_base_path, "scalers"),
-                os.path.join(self.model_base_path, "scalers_models"),
-            ]
-            scaler = None
-            for sdir in scaler_dir_candidates:
-                scaler_path = self._resolve_latest_file(sdir, f"scaler_{model_name}", ".pkl", version)
-                if scaler_path and os.path.exists(scaler_path):
-                    with open(scaler_path, 'rb') as f:
-                        scaler = pickle.load(f)
-                    self.scalers[f"lstm_{model_name}_{loaded_version}"] = scaler
-                    break
-            
-            logger.info(f"LSTM 모델 로드 완료: {model_name}_{loaded_version}")
+            self.models[f"lstm_{asset_type}_{model_hash}"] = model
+
+            logger.info(f"LSTM 모델 로드 완료: {model_path}")
             return model
-            
+
         except Exception as e:
             logger.error(f"LSTM 모델 로드 실패: {e}")
             return None
     
-    def load_prophet_model(self, etf_code: str, version: str = "latest") -> Optional[Any]:
-        """Prophet 모델 로드"""
+    def load_prophet_model(self, asset_type: str, model_hash: str) -> Optional[Any]:
+        """asset_type와 model_hash로 정확한 Prophet 모델 파일을 로드합니다.
+
+        기대 경로: <MODEL_BASE_PATH>/<asset_type>/prophet_models/prophet_<model_hash>.pkl
+        """
         try:
-            prophet_dir = os.path.join(self.model_base_path, "prophet_models")
-            model_path = self._resolve_latest_file(prophet_dir, etf_code, ".pkl", version)
-            if model_path is None:
-                logger.error(f"Prophet 모델 파일을 찾을 수 없습니다: 디렉토리={prophet_dir}, prefix={etf_code}, version={version}")
+            base_dir = os.path.join(self.model_base_path, asset_type.lower())
+            prophet_dir = os.path.join(base_dir, "prophet_models")
+            model_path = os.path.join(prophet_dir, f"prophet_{model_hash}.pkl")
+            if not os.path.exists(model_path):
+                logger.error(f"Prophet 모델 파일을 찾을 수 없습니다: {model_path}")
                 return None
-                
-            # 모델 로드
+
             with open(model_path, 'rb') as f:
                 model = pickle.load(f)
-            
-            loaded_version = os.path.splitext(os.path.basename(model_path))[0].replace(f"{etf_code}_", "")
-            self.models[f"prophet_{etf_code}_{loaded_version}"] = model
-            logger.info(f"Prophet 모델 로드 완료: {etf_code}_{loaded_version}")
+
+            self.models[f"prophet_{asset_type}_{model_hash}"] = model
+            logger.info(f"Prophet 모델 로드 완료: {model_path}")
             return model
-            
+
         except Exception as e:
             logger.error(f"Prophet 모델 로드 실패: {e}")
             return None
@@ -183,6 +173,75 @@ class ModelLoader:
             logger.error(f"모델 목록 조회 실패: {e}")
         
         return available_models
+    
+    def get_latest_model_hash(self, asset_type: str) -> Optional[str]:
+        """주어진 asset_type의 최신 모델 해시값을 찾아 반환"""
+        try:
+            base_path = Path(self.model_base_path) / asset_type.lower()
+            metadata_dir = base_path / "metadata"
+            if not metadata_dir.exists():
+                logger.error(f"메타데이터 디렉토리가 존재하지 않습니다: {metadata_dir}")
+                return None
+            
+            # glob 결과를 리스트로 변환하여 비어있는지 확인
+            metadata_files = list(metadata_dir.glob("metadata_*.json"))
+            if not metadata_files:
+                logger.error(f"메타데이터 파일이 존재하지 않습니다: {metadata_dir}")
+                return None
+
+            latest_file = max(metadata_files, key=os.path.getmtime)
+            return latest_file.stem.split('_')[-1]
+        except Exception as e:
+            logger.error(f"최신 모델 해시값 찾기 실패: {e}")
+            return None
+
+    def get_metadata(self, asset_type: str, model_hash: Optional[str] = None):
+        """
+        asset_code에 대한 메타데이터를 가져옵니다.
+        model_hash가 주어지지 않으면 최신 모델의 메타데이터를 가져옵니다.
+        """
+        if asset_type is None:
+            logger.error("asset_type cannot be None")
+            return None
+            
+        if model_hash is None:
+            model_hash = self.get_latest_model_hash(asset_type)
+            if model_hash is None:
+                raise FileNotFoundError(f"{asset_type}에 대한 최신 모델 메타데이터를 찾을 수 없습니다.")
+
+        base_path = Path(self.model_base_path) / asset_type.lower()
+        metadata_path = base_path / "metadata" / f"metadata_{model_hash}.json"
+        
+        if not metadata_path.exists():
+            raise FileNotFoundError(f"메타데이터 파일을 찾을 수 없습니다: {metadata_path}")
+        
+        with open(metadata_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    import httpx # 비동기 HTTP 클라이언트 라이브러리
+
+    # API 호출을 위한 기본 URL
+
+    async def get_asset_profit_rate(asset_code: str) -> Optional[float]:
+        """
+        주어진 자산 코드에 대한 내년 예상 수익률을 API 호출로 가져옵니다.
+        """
+        url = f"https://j13a103.p.ssafy.io/api/pension/product/{asset_code}"
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, timeout=5.0)  # 타임아웃 5초 설정
+                response.raise_for_status()  # 4xx, 5xx 에러 발생 시 예외 처리
+                data = response.json()
+                
+                # API 응답 구조에 맞게 수익률 필드 추출
+                profit_rate = data.get('product', {}).get('nextYearProfitRate')
+                
+                if profit_rate is None:
+                    logger.warning(f"API 응답에 'nextYearProfitRate'가 없습니다: {url}")
+                    return 0.0
+                return float(profit_rate)
+        except Exception as exc:
+            logger.error(f"API 호출 중 예외 발생: {exc}")
+            return 0.0
 
 # 전역 모델 로더 인스턴스
 model_loader = ModelLoader()

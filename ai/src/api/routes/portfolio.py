@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Optional
 from pydantic import BaseModel
 from services.portfolio_analyzer import portfolio_analyzer
+# from services.model_loader import get_metadata, get_asset_profit_rate
+# from prediction import predict_best
 import json
 import logging
 import numpy as np
@@ -9,11 +11,18 @@ import numpy as np
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+class AssetList(BaseModel):
+    id: int
+    asset_type: str
+    risk_grade_id: int
+    reserve: int
+    predicted_return: float
+
 class PortfolioAnalysisRequest(BaseModel):
-    salary: Optional[float] = None
-    total_retire_pension: Optional[float] = None
+    salary: Optional[int] = None
+    total_retire_pension: Optional[int] = None
     risk_grade_id: int = 1  # 1: conservative ~ 5: very aggressive
-    # asset_list: List[str]
+    asset_list: List[AssetList]
 
 class PortfolioAllocation(BaseModel):
     asset_code: int
@@ -35,73 +44,58 @@ class SavePortfolioRequest(BaseModel):
     allocations: Dict[str, float]
     risk_grade_id: int
 
-
 @router.post("/analyze", response_model=PortfolioAnalysisResponse)
 async def analyze_portfolio(request: PortfolioAnalysisRequest):
-    """포트폴리오 분석 및 최적화 (DB 비의존)"""
     try:
-        # 포트폴리오 분석 수행 (내부적으로 예측 서비스 호출)
+        if not request.asset_list:
+            raise HTTPException(status_code=400, detail="분석할 상품 리스트가 없습니다.")
+
+        # Pass the full asset_list to the analyzer
+        assets_for_analysis = [a.model_dump() for a in request.asset_list]
+
         analysis_result = portfolio_analyzer.analyze_portfolio(
             salary=request.salary,
             total_retire_pension=request.total_retire_pension,
-            risk_grade_id=request.risk_grade_id
-            # assest_list=request.asset_list
+            risk_grade_id=request.risk_grade_id,
+            asset_list=assets_for_analysis,
         )
         if analysis_result is None:
             raise HTTPException(status_code=400, detail="포트폴리오 분석에 실패했습니다")
 
-        # 응답 데이터 구성 (개별 ETF의 예상 수익률/리스크 간단 계산) 
         allocations = []
-        asset_scores = {}
         for asset_code, allocation_pct in analysis_result['asset_allocations'].items():
-            predictions = analysis_result['individual_predictions'].get(asset_code, [])
-            if predictions:
-                asset_return = (predictions[-1] - predictions[0]) / predictions[0] if len(predictions) > 1 else 0.05
-                # risk_grade_id: 1(안정형) ~ 5(공격형)
-                # 기본 위험허용도 = 0.05, 등급당 가중치 = 0.05
-                asset_risk = 0.05 + 0.05 * request.risk_grade_id
-            else:
-                asset_return = 0.05
-                asset_risk = 0.2
-
-            if asset_risk > 0:
-                rf = 0.03
-                returns = [ (predictions[i+1]-predictions[i]) / predictions[i] for i in range(len(predictions)-1) ]
-                asset_return = np.mean(returns)
-                asset_volatility = np.std(returns) if len(returns) > 1 else 0.1
-                sharpe = (asset_return - rf) / asset_volatility
-            else:
-                sharpe = 0
-            asset_scores[asset_code] = sharpe
-
-        # 4. 위험성향에 맞춘 Top-K (예: 3개) 선택
-        top_k = sorted(asset_scores.items(), key=lambda x: x[1], reverse=True)[:3]
-
-        total_score = sum(score for _, score in top_k) or 1
-        for asset_code, score in top_k:
-            pct = score / total_score
-            allocations.append(PortfolioAllocation(
-                asset_code=asset_code,
-                allocation_percentage=round(pct * 100, 2),
-                expected_return=asset_scores[asset_code] * 0.1,  # 단순 scaling, 실제로는 리스크 대비 기대수익 계산 필요
-                risk_score=1 / (1 + asset_scores[asset_code])
-            ))
-
-        # 5. 최종 응답 반환
+            # 할당 비율이 0보다 큰 경우에만 리스트에 추가
+            if allocation_pct > 0.0:
+                predicted_return = analysis_result['individual_predictions'].get(asset_code, 0.05)
+                asset_risk = portfolio_analyzer._get_asset_risk(
+                    next(a.risk_grade_id for a in request.asset_list if a.id == asset_code),
+                    next(a.reserve for a in request.asset_list if a.id == asset_code)
+                )
+                
+                allocations.append(PortfolioAllocation(
+                    asset_code=asset_code,
+                    allocation_percentage=round(allocation_pct * 100, 2),
+                    expected_return=predicted_return,
+                    risk_score=asset_risk
+                ))
+            
+        # 할당 비율이 높은 순으로 정렬
+        allocations.sort(key=lambda x: x.allocation_percentage, reverse=True)
+        
         return PortfolioAnalysisResponse(
             allocations=allocations,
-            total_expected_return=sum(a.expected_return for a in allocations),
-            total_risk_score=sum(a.risk_score for a in allocations),
-            sharpe_ratio=max(asset_scores.values()) if asset_scores else 0,
+            total_expected_return=sum(a.expected_return * a.allocation_percentage / 100 for a in allocations),
+            total_risk_score=sum(a.risk_score * a.allocation_percentage / 100 for a in allocations),
+            sharpe_ratio=0, # Placeholder, as it's complex to re-calculate here
             risk_grade_id=request.risk_grade_id,
             analysis_date=analysis_result['analysis_date']
         )
-    
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"포트폴리오 분석 실패: {e}")
         raise HTTPException(status_code=500, detail="포트폴리오 분석 중 오류가 발생했습니다")
+
 
 
 @router.post("/save")
