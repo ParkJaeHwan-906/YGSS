@@ -1,35 +1,36 @@
 // app/(app)/(tabs)/irp/irp1.tsx
 
-import { Colors } from "@/src/theme/colors";
-import { useRouter } from "expo-router";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ScrollView, NativeSyntheticEvent, NativeScrollEvent, InteractionManager } from "react-native";
+import Dict from "@/components/molecules/Dict";
 import ListItem from "@/components/molecules/ListItem";
-import React, { useEffect, useState, useRef, useMemo } from "react";
 import Tab, { AssetGroup, CurrentTab } from "@/components/organisms/Tab";
 import {
+  fetchBond,
   fetchDcAll,
   fetchDcEtfs,
   fetchPensionFunds,
-  fetchBond,
-  normalizeDcToList,
   normalizeBondToList,
+  normalizeDcToList,
   type ListRow,
   type SortOrder,
 } from "@/src/api/dc";
-import { MotiView } from "moti";
-import Dict from "@/components/molecules/Dict";
+import { Colors } from "@/src/theme/colors";
 import { getIrpBubbleText } from "@/src/utils/getIrpBubble";
+import { useRouter } from "expo-router";
+import { MotiView } from "moti";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Image,
+  InteractionManager,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const PAGE_SIZE = 10;
 
@@ -73,7 +74,7 @@ export default function Irp1() {
     setGroup(g);
     setHasInteracted(true);
   };
-  
+
   const handleTabChange = (t: CurrentTab) => {
     setTab(t);
     setHasInteracted(true);
@@ -87,7 +88,7 @@ export default function Irp1() {
   // 스크롤 핸들러
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const y = e.nativeEvent.contentOffset.y;
-  
+
     // 일정 이상 내려가면 표시 (예: 400px)
     if (y > 400 && !showTop) setShowTop(true);
     // 충분히 위로 올라오면 숨김 (단, '더보기'를 누른 적이 없을 때만 자동 숨김)
@@ -160,24 +161,24 @@ export default function Irp1() {
   };
 
   // 최상단 이동 핸들러
-    const handlePressToTop = () => {
-      // 스크롤 맨 위로
-      scrollRef.current?.scrollTo({ x: 0, y: 0, animated: true });
-    
-      // 리스트를 "처음 상태(10개)"로 복귀
-      InteractionManager.runAfterInteractions(() => {
-        const buf = bufferRef.current ?? [];
-        setItems(buf.slice(0, PAGE_SIZE));
-        setPage(0);
-        setHasMore(buf.length > PAGE_SIZE);
-        pressedMoreRef.current = false;
-        setShowTop(false);
-      });
-    };
+  const handlePressToTop = () => {
+    // 스크롤 맨 위로
+    scrollRef.current?.scrollTo({ x: 0, y: 0, animated: true });
+
+    // 리스트를 "처음 상태(10개)"로 복귀
+    InteractionManager.runAfterInteractions(() => {
+      const buf = bufferRef.current ?? [];
+      setItems(buf.slice(0, PAGE_SIZE));
+      setPage(0);
+      setHasMore(buf.length > PAGE_SIZE);
+      pressedMoreRef.current = false;
+      setShowTop(false);
+    });
+  };
 
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top','left','right']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <ScrollView
         ref={scrollRef}
         onScroll={handleScroll}
@@ -189,9 +190,11 @@ export default function Irp1() {
         <View style={styles.topContainer}>
           {/* 왼쪽 6 */}
           <View style={styles.colLeft}>
+
+            {/* --- 잠시 막아두기 */}
             <TouchableOpacity
               style={[styles.box, styles.boxLeft]}
-              onPress={() => router.push("/irp/irp2")}
+              onPress={() => router.push("/irp/irp4")}
               activeOpacity={0.9}
             >
               <Text style={[styles.boxTitle, styles.boxTitleLight]}>IRP 상품 추천</Text>
@@ -288,15 +291,15 @@ export default function Irp1() {
                     rate={it.rate}
                     risk={it.risk}
                     onPress={() =>
-                    router.push({
-                      pathname: destPath,
-                      params: { id: String(it.id) },
-                    })
-                  }
-                />
-              )
-            })
-          )}
+                      router.push({
+                        pathname: destPath,
+                        params: { id: String(it.id) },
+                      })
+                    }
+                  />
+                )
+              })
+            )}
 
             {/* 🔹 스크롤 힌트(더 보기) */}
             {hasMore && (
@@ -340,7 +343,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   // ← 비율은 래퍼에게
-  colLeft:  { flexGrow: 4, flexShrink: 1, flexBasis: 0, minWidth: 0 },
+  colLeft: { flexGrow: 4, flexShrink: 1, flexBasis: 0, minWidth: 0 },
   colRight: { flexGrow: 6, flexShrink: 1, flexBasis: 0, minWidth: 0 },
 
   box: {

@@ -100,7 +100,7 @@ export default function InvestResult() {
           {/* 액션 */}
           <View style={{ gap: 10, marginTop: 12 }}>
             <Pressable
-              onPress={() => router.push("/(app)/(tabs)/dc/dc3")}
+              onPress={() => router.push("/(app)/(tabs)/dc/dc2")}
               style={({ pressed }) => [styles.btnGhost, pressed ? { opacity: 0.9 } : null]}
             >
               <Text style={styles.btnGhostText}>나에게 꼭 맞는 투자 전략은?</Text>
