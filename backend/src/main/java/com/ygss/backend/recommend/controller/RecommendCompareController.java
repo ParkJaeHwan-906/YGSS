@@ -32,7 +32,7 @@ public class RecommendCompareController {
         try {
             return ResponseEntity.ok(recommendCompareService.recommendCompare(null, request, true));
         } catch (Exception e) {
-            log.error("Recommend Retire Pension Failed : {}", e.getMessage());
+            log.error("Recommend Retire Pension DC Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
@@ -47,7 +47,7 @@ public class RecommendCompareController {
         try {
             return ResponseEntity.ok(recommendCompareService.recommendCompare(email, request, true));
         } catch (Exception e) {
-            log.error("Recommend Retire Pension Failed : {}", e.getMessage());
+            log.error("Recommend Retire Pension DC Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
@@ -60,7 +60,7 @@ public class RecommendCompareController {
         try {
             return ResponseEntity.ok(recommendCompareService.recommendCompare(null, request, false));
         } catch (Exception e) {
-            log.error("Recommend Retire Pension Failed : {}", e.getMessage());
+            log.error("Recommend Retire Pension IRP Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
@@ -75,7 +75,7 @@ public class RecommendCompareController {
         try {
             return ResponseEntity.ok(recommendCompareService.recommendCompare(email, request, false));
         } catch (Exception e) {
-            log.error("Recommend Retire Pension Failed : {}", e.getMessage());
+            log.error("Recommend Retire Pension IRP Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }

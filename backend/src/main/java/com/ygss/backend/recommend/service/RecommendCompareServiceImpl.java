@@ -50,7 +50,7 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
                 .orElse(null);
         Long investorPersonalityId = (user == null || user.getRiskGradeId() == null) ? request.getInvestorPersonalityId() : user.getRiskGradeId();
         if(investorPersonalityId == null) throw new IllegalArgumentException("Bad Request");
-        Long userSalary = user == null ? request.getSalary() : user.getSalary();
+        Long userSalary = user == null ? request.getSalary() : dc ? user.getSalary() : request.getSalary();
         if(userSalary == null) throw new IllegalArgumentException("Bad Request");
         // DB
         Long[] dbCalculateGraph = calculatePredictionRetirePension(userSalary, 0.041);       // 임시로 24년도 기준 복리 적용
