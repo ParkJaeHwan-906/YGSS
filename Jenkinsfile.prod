@@ -2,302 +2,371 @@ pipeline {
   agent any
 
   environment {
-    // 배포 환경 (infra-refactor → master 변경)
     DOCKER_IMAGE  = 'ygss-backend'
+    AI_IMAGE      = 'ygss-ai' 
     DOCKER_TAG    = "v${BUILD_NUMBER}"
-    AI_IMAGE      = 'ygss-ai'
     AI_TAG        = "v${BUILD_NUMBER}"
     K8S_NAMESPACE = 'ygss-prod'
+    KUBECONFIG    = '/etc/rancher/k3s/k3s.yaml'
 
-    // k3s kubeconfig
-    KUBECONFIG = '/etc/rancher/k3s/k3s.yaml'
-
-    // Jenkins Credentials
     MYSQL_PASSWORD = credentials('mysql-password')
     JWT_SECRET     = credentials('jwt-secret')
     GMS_SECRET_KEY = credentials('gms-secret-key')
+    REDIS_PASSWORD = credentials('redis-password')
   }
 
   options {
-    buildDiscarder(logRotator(numToKeepStr: '3'))
-    timeout(time: 20, unit: 'MINUTES')
+    buildDiscarder(logRotator(numToKeepStr: '5'))
+    timeout(time: 15, unit: 'MINUTES')
     timestamps()
     disableConcurrentBuilds()
   }
 
   stages {
-    stage('체크아웃') {
+    stage('체크아웃 & 변경 분석') {
       steps {
-        echo '🔄 마스터 브랜치 체크아웃'
+        echo '체크아웃 및 변경사항 분석'
         git branch: 'master',
             url: 'https://lab.ssafy.com/s13-bigdata-recom-sub1/S13P21A103.git',
             credentialsId: 'gitlab-git-token'
 
         script {
           env.GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-        }
-        echo "🚀 배포 빌드 시작 - 커밋: ${env.GIT_COMMIT}"
-      }
-    }
+          
+          // 빌드 번호와 커밋을 함께 저장하는 방식
+          def lastBuildInfo = sh(script: "cat /tmp/jenkins-last-build-info 2>/dev/null || echo 'FIRST_BUILD:0'", returnStdout: true).trim()
+          def (prevCommit, prevBuildNum) = lastBuildInfo.split(':')
+          def currentCommit = env.GIT_COMMIT
+          def currentBuildNum = env.BUILD_NUMBER
+          
+          echo "이전 빌드: ${prevCommit} (빌드 #${prevBuildNum})"
+          echo "현재 빌드: ${currentCommit} (빌드 #${currentBuildNum})"
+          
+          // 진짜 동일한 커밋인지 확인 (연속된 빌드 번호 + 같은 커밋)
+          def isConsecutiveBuild = (currentBuildNum.toInteger() - prevBuildNum.toInteger()) == 1
+          def isSameCommit = (prevCommit == currentCommit)
+          
+          if (isSameCommit && isConsecutiveBuild) {
+            // 진짜 동일한 커밋 재빌드
+            echo "연속된 빌드에서 동일한 커밋 감지 - 모든 빌드 스킵"
+            env.BUILD_BACKEND = 'false'
+            env.BUILD_AI = 'false'
+            env.SKIP_REASON = 'SAME_COMMIT'
+          } else if (prevCommit == 'FIRST_BUILD') {
+            // 첫 빌드
+            echo "첫 번째 빌드 - 전체 빌드 실행"
+            env.BUILD_BACKEND = 'true'
+            env.BUILD_AI = 'true'
+            env.SKIP_REASON = 'FIRST_BUILD'
+          } else {
+            // 다른 커밋이거나 비연속 빌드 - 변경사항 분석
+            echo "커밋 변경 감지 - 변경사항 분석 실행"
+            
+            def changedFiles = sh(
+              script: "git diff --name-only ${prevCommit} ${currentCommit} || echo 'backend/ ai/'",
+              returnStdout: true
+            ).trim()
 
-    stage('브랜치 가드') {
-      steps {
-        script {
-          def current = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
-          if (!current.contains('master')) {
-            error "This pipeline runs only on master branch. Current: ${current}"
+            echo "변경된 파일들:"
+            echo "${changedFiles}"
+            
+            env.BUILD_BACKEND = changedFiles.contains('backend/') ? 'true' : 'false'
+            env.BUILD_AI = changedFiles.contains('ai/') ? 'true' : 'false'
+            env.SKIP_REASON = 'SELECTIVE'
+            
+            // 안전장치
+            if (env.BUILD_BACKEND == 'false' && env.BUILD_AI == 'false') {
+              echo "주요 변경사항 감지 안됨, 안전을 위해 전체 빌드"
+              env.BUILD_BACKEND = 'true'
+              env.BUILD_AI = 'true'
+              env.SKIP_REASON = 'SAFETY_FALLBACK'
+            }
           }
+
+          echo """
+빌드 계획:
+• Backend 빌드: ${env.BUILD_BACKEND}
+• AI 빌드: ${env.BUILD_AI}
+• 스킵 이유: ${env.SKIP_REASON}
+• 연속 빌드: ${isConsecutiveBuild}
+          """
         }
       }
     }
 
-    stage('소스 검증') {
+    stage('툴 설치') {
       steps {
         sh '''
-          set -euo pipefail
-          echo "🔍 필수 파일 확인"
-          [ -f backend/build.gradle ] || { echo "❌ backend/build.gradle 없음"; exit 1; }
-          [ -f backend/Dockerfile   ] || { echo "❌ backend/Dockerfile 없음"; exit 1; }
-          [ -f ai/Dockerfile ] || { echo "❌ ai/Dockerfile 없음"; exit 1; }
-          [ -f ai/requirements.txt ] || { echo "❌ ai/requirements.txt 없음"; exit 1; }
-          [ -d k8s/base ] && [ -d k8s/overlays/prod ] || { echo "❌ k8s overlay 없음"; exit 1; }
-          echo "✅ 필수 파일 확인 완료"
-        '''
-      }
-    }
-
-    stage('kustomize 설치 확인') {
-      steps {
-        sh '''
-          set -euo pipefail
-          if command -v kustomize &> /dev/null; then
-            echo "✅ kustomize 이미 설치됨"
-          else
-            echo "📦 kustomize v5.7.1 설치 중..."
+          if ! command -v kustomize &> /dev/null; then
             curl -Lo kustomize.tar.gz "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.7.1/kustomize_v5.7.1_linux_amd64.tar.gz"
-            tar -xzf kustomize.tar.gz
-            sudo mv kustomize /usr/local/bin/
-            sudo chmod +x /usr/local/bin/kustomize
-            rm -f kustomize.tar.gz
-            echo "✅ kustomize 설치 완료"
+            tar -xzf kustomize.tar.gz && sudo mv kustomize /usr/local/bin/ && rm -f kustomize.tar.gz
           fi
         '''
       }
     }
 
-    stage('AI Base Image 확인') {
+    stage('백엔드 빌드') {
+      when {
+        environment name: 'BUILD_BACKEND', value: 'true'
+      }
+      steps {
+        echo '백엔드 빌드 시작'
+        dir('backend') {
+          sh '''
+            chmod +x ./gradlew
+            ./gradlew clean build -x test --no-daemon
+            docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+            docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:latest
+            echo "백엔드 빌드 완료: $DOCKER_TAG"
+          '''
+        }
+      }
+    }
+
+    stage('백엔드 캐시 재사용') {
+      when {
+        environment name: 'BUILD_BACKEND', value: 'false'
+      }
       steps {
         script {
-          def baseExists = sh(
-            script: "docker images | grep ygss-ai-base",
-            returnStatus: true
-          ) == 0
+          echo '백엔드 빌드 스킵 - 캐시 재사용'
           
-          if (!baseExists) {
-            echo "🤖 AI Base 이미지 빌드 중..."
-            sh "cd ai && docker build -f Dockerfile.base -t ygss-ai-base:latest ."
+          def latestExists = sh(
+            script: "docker images -q $DOCKER_IMAGE:latest 2>/dev/null || true",
+            returnStdout: true
+          ).trim()
+          
+          if (latestExists) {
+            sh "docker tag $DOCKER_IMAGE:latest $DOCKER_IMAGE:$DOCKER_TAG"
+            echo "기존 백엔드 이미지 재사용: latest → $DOCKER_TAG"
           } else {
-            echo "✅ AI Base 이미지 재사용"
+            echo "기존 latest 이미지 없음, 강제 빌드 전환"
+            env.BUILD_BACKEND = 'true'
+            dir('backend') {
+              sh '''
+                chmod +x ./gradlew
+                ./gradlew clean build -x test --no-daemon
+                docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+                docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:latest
+              '''
+            }
           }
         }
       }
     }
 
-    stage('백엔드 빌드') {
-      steps {
-        echo '🔨 백엔드 빌드'
-        dir('backend') {
-          sh '''
-            set -euo pipefail
-            chmod +x ./gradlew
-            ./gradlew clean build -x test --no-daemon
-          '''
-        }
+    stage('AI 빌드') {
+      when {
+        environment name: 'BUILD_AI', value: 'true'
       }
-    }
-
-    stage('AI 서버 빌드') {
       steps {
-        echo '🤖 AI FastAPI 서버 빌드'
+        echo 'AI 빌드 시작'
+        
+        script {
+          // AI Base 이미지 확인
+          def baseExists = sh(
+            script: 'docker images -q ygss-ai-base:latest 2>/dev/null || true',
+            returnStdout: true
+          ).trim()
+          
+          if (!baseExists) {
+            echo 'AI Base 이미지 빌드 필요'
+            dir('ai') {
+              sh 'docker build -f Dockerfile.base -t ygss-ai-base:latest .'
+            }
+          }
+        }
+
         dir('ai') {
           sh '''
-            set -euo pipefail
-            echo "=== AI 빌드 전 파일 확인 ==="
-            ls -la src/
-            echo "=== Dockerfile 확인 ==="
-            cat Dockerfile
             docker build -t $AI_IMAGE:$AI_TAG .
-            echo "✅ AI 이미지 빌드 완료: $AI_IMAGE:$AI_TAG"
+            docker tag $AI_IMAGE:$AI_TAG $AI_IMAGE:latest
+            echo "AI 빌드 완료: $AI_TAG"
           '''
         }
       }
     }
 
-    stage('Docker 이미지 빌드') {
+    stage('AI 캐시 재사용') {
+      when {
+        environment name: 'BUILD_AI', value: 'false'
+      }
       steps {
-        dir('backend') {
-          sh '''
-            set -euo pipefail
-            echo '🐳 Docker 이미지 빌드'
-            docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
-            echo "✅ 이미지 빌드 완료: $DOCKER_IMAGE:$DOCKER_TAG"
-          '''
+        script {
+          echo 'AI 빌드 스킵 - 캐시 재사용'
+          
+          def latestExists = sh(
+            script: "docker images -q $AI_IMAGE:latest 2>/dev/null || true", 
+            returnStdout: true
+          ).trim()
+          
+          if (latestExists) {
+            sh "docker tag $AI_IMAGE:latest $AI_IMAGE:$AI_TAG"
+            echo "기존 AI 이미지 재사용: latest → $AI_TAG"
+          } else {
+            echo "기존 latest 이미지 없음, 강제 빌드 전환"
+            env.BUILD_AI = 'true'
+            
+            // Base 이미지 확인 후 빌드
+            def baseExists = sh(script: 'docker images -q ygss-ai-base:latest 2>/dev/null || true', returnStdout: true).trim()
+            if (!baseExists) {
+              dir('ai') {
+                sh 'docker build -f Dockerfile.base -t ygss-ai-base:latest .'
+              }
+            }
+            dir('ai') {
+              sh '''
+                docker build -t $AI_IMAGE:$AI_TAG .
+                docker tag $AI_IMAGE:$AI_TAG $AI_IMAGE:latest
+              '''
+            }
+          }
         }
       }
     }
 
-    stage('k3s(containerd) 이미지 import') {
+    stage('이미지 Import') {
       steps {
-        sh '''
-          set -Eeuo pipefail
-          echo "📦 Docker → k3s(containerd) import"
-
-          docker save "$DOCKER_IMAGE:$DOCKER_TAG" -o "/tmp/$DOCKER_IMAGE-$DOCKER_TAG.tar"
-          sudo -n /usr/local/bin/k3s ctr images import "/tmp/$DOCKER_IMAGE-$DOCKER_TAG.tar"
-          rm -f "/tmp/$DOCKER_IMAGE-$DOCKER_TAG.tar"
-          echo "✅ Backend containerd import 완료"
-        '''
-      }
-    }
-
-    stage('AI 이미지 import') {
-      steps {
-        sh '''
-          set -Eeuo pipefail
-          echo "📦 AI Docker → k3s(containerd) import"
-
-          docker save "$AI_IMAGE:$AI_TAG" -o "/tmp/$AI_IMAGE-$AI_TAG.tar"
-          sudo -n /usr/local/bin/k3s ctr images import "/tmp/$AI_IMAGE-$AI_TAG.tar"
-          rm -f "/tmp/$AI_IMAGE-$AI_TAG.tar"
-          echo "✅ AI containerd import 완료"
-        '''
+        script {
+          echo "이미지 Import 시작"
+          echo "• Backend 빌드 여부: ${env.BUILD_BACKEND}"
+          echo "• AI 빌드 여부: ${env.BUILD_AI}"
+          
+          // Backend import
+          if (env.BUILD_BACKEND == 'true') {
+            sh '''
+              echo "Backend 이미지 k3s import"
+              docker save "$DOCKER_IMAGE:$DOCKER_TAG" -o "/tmp/backend-$DOCKER_TAG.tar"
+              sudo /usr/local/bin/k3s ctr images import "/tmp/backend-$DOCKER_TAG.tar"
+              rm -f "/tmp/backend-$DOCKER_TAG.tar"
+              echo "Backend 이미지 import 완료"
+            '''
+          } else {
+            echo "Backend import 스킵"
+          }
+          
+          // AI import
+          if (env.BUILD_AI == 'true') {
+            sh '''
+              echo "AI 이미지 k3s import"
+              docker save "$AI_IMAGE:$AI_TAG" -o "/tmp/ai-$AI_TAG.tar"
+              sudo /usr/local/bin/k3s ctr images import "/tmp/ai-$AI_TAG.tar"
+              rm -f "/tmp/ai-$AI_TAG.tar"
+              echo "AI 이미지 import 완료"
+            '''
+          } else {
+            echo "AI import 스킵"
+          }
+          
+          if (env.BUILD_BACKEND == 'false' && env.BUILD_AI == 'false') {
+            echo "Import할 새 이미지 없음 (모두 캐시 재사용)"
+          }
+        }
       }
     }
 
     stage('K8s Secret 생성') {
       steps {
         sh '''
-          set -euo pipefail
-          echo '🔐 Kubernetes Secret 생성/업데이트'
           kubectl create namespace $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-
           kubectl -n $K8S_NAMESPACE create secret generic backend-secrets \
             --from-literal=MYSQL_PASSWORD="$MYSQL_PASSWORD" \
             --from-literal=JWT_SECRET="$JWT_SECRET" \
             --from-literal=GMS_SECRET_KEY="$GMS_SECRET_KEY" \
+            --from-literal=REDIS_PASSWORD="$REDIS_PASSWORD" \
             --dry-run=client -o yaml | kubectl apply -f -
-
-          echo '✅ Secret 생성 완료'
         '''
       }
     }
 
-    stage('Kustomize 매니페스트 준비') {
+    stage('배포') {
       steps {
         sh '''
-          set -euo pipefail
-          echo "⚙️ Kustomize 매니페스트 준비"
-          
           cd k8s/overlays/prod
           
           # 이미지 태그 설정
           kustomize edit set image ygss-backend:${DOCKER_TAG}
           kustomize edit set image ygss-ai:${AI_TAG}
           
-          # dry-run으로 검증
+          # 검증 후 배포
           kustomize build . | kubectl apply --dry-run=client -f -
-          echo "✅ 매니페스트 검증 완료"
-        '''
-      }
-    }
-
-    stage('Kubernetes 배포') {
-      steps {
-        sh '''
-          set -euo pipefail
-          echo '🚢 Kubernetes 배포'
-          
-          cd k8s/overlays/prod
           kubectl apply -k .
-          kubectl -n $K8S_NAMESPACE rollout status deployment/backend --timeout=300s
-          kubectl -n $K8S_NAMESPACE rollout status deployment/ai --timeout=300s
-
-          echo '=== 리소스 현황 ==='
-          kubectl -n $K8S_NAMESPACE get all
         '''
+        
+        script {
+          echo "배포 rollout 상태 확인"
+          echo "• Backend rollout 필요: ${env.BUILD_BACKEND}"
+          echo "• AI rollout 필요: ${env.BUILD_AI}"
+          
+          // 빌드된 것들만 rollout 대기
+          if (env.BUILD_BACKEND == 'true') {
+            echo "Backend 배포 대기 중..."
+            sh 'kubectl -n $K8S_NAMESPACE rollout status deployment/backend --timeout=300s'
+          }
+          if (env.BUILD_AI == 'true') {
+            echo "AI 배포 대기 중..."
+            sh 'kubectl -n $K8S_NAMESPACE rollout status deployment/ai --timeout=300s'
+          }
+          
+          if (env.BUILD_BACKEND == 'false' && env.BUILD_AI == 'false') {
+            echo "Rollout 대기 없음 (이미지 변경 없음)"
+          }
+        }
       }
     }
 
     stage('헬스체크') {
       steps {
+        sleep(time: 10, unit: 'SECONDS')
+        
         script {
-          echo '⏳ Pod 시작 대기 중...'
-          sleep(time: 15, unit: 'SECONDS')
+          echo "헬스체크 시작"
+          echo "• Backend 체크 필요: ${env.BUILD_BACKEND}"
+          echo "• AI 체크 필요: ${env.BUILD_AI}"
           
-          echo '🏥 백엔드 헬스체크'
-          timeout(time: 3, unit: 'MINUTES') {
-            waitUntil {
-              def code = sh(
-                script: '''
-                  curl -s -k -o /dev/null -w "%{http_code}" \
-                       --connect-timeout 10 \
-                       --max-time 30 \
-                       https://j13a103.p.ssafy.io/api/infra || echo 000
-                ''',
-                returnStdout: true
-              ).trim()
-              echo "백엔드 헬스체크: ${code}"
-              return (code == '200')
+          // 빌드된 것들만 헬스체크
+          if (env.BUILD_BACKEND == 'true') {
+            echo '백엔드 헬스체크'
+            timeout(time: 2, unit: 'MINUTES') {
+              waitUntil {
+                def code = sh(script: 'curl -s -o /dev/null -w "%{http_code}" https://j13a103.p.ssafy.io/api/infra || echo 000', returnStdout: true).trim()
+                echo "백엔드 응답: ${code}"
+                return (code == '200')
+              }
             }
           }
           
-          echo '🤖 AI 헬스체크'
-          timeout(time: 3, unit: 'MINUTES') {
-            waitUntil {
-              def aiCode = sh(
-                script: '''
-                  curl -s -k -o /dev/null -w "%{http_code}" \
-                       --connect-timeout 10 \
-                       --max-time 30 \
-                       https://j13a103.p.ssafy.io/ai/health/ || echo 000
-                ''',
-                returnStdout: true
-              ).trim()
-              echo "AI 헬스체크: ${aiCode}"
-              return (aiCode == '200')
+          if (env.BUILD_AI == 'true') {
+            echo 'AI 헬스체크'
+            timeout(time: 2, unit: 'MINUTES') {
+              waitUntil {
+                def code = sh(script: 'curl -s -o /dev/null -w "%{http_code}" https://j13a103.p.ssafy.io/ai/health/ || echo 000', returnStdout: true).trim()
+                echo "AI 응답: ${code}"
+                return (code == '200')
+              }
             }
           }
           
-          echo '✅ 모든 헬스체크 통과!'
+          if (env.BUILD_BACKEND == 'false' && env.BUILD_AI == 'false') {
+            echo "헬스체크 스킵 (새 배포 없음)"
+          }
         }
       }
     }
 
-    stage('이미지 정리') {
+    stage('정리') {
       steps {
         sh '''
-          set -euo pipefail
-          echo '🧹 이미지 정리'
-
-          KEEP=2
-          
-          TAGS=$(docker images "$DOCKER_IMAGE" --format '{{.Tag}}' | grep -E '^v[0-9]+' | sort -V -r || true)
-          COUNT=0
-          for t in $TAGS; do
-            COUNT=$((COUNT+1))
-            if [ $COUNT -le $KEEP ]; then continue; fi
-            docker rmi "$DOCKER_IMAGE:$t" 2>/dev/null || true
+          # 특정 이미지만 안전하게 정리 (최근 3개 버전 유지)
+          for image in ygss-backend ygss-ai; do
+            OLD_TAGS=$(docker images $image --format '{{.Tag}}' | grep -E '^v[0-9]+' | sort -V -r | tail -n +4)
+            for tag in $OLD_TAGS; do
+              docker rmi "$image:$tag" 2>/dev/null || true
+            done
           done
           
-          AI_TAGS=$(docker images "$AI_IMAGE" --format '{{.Tag}}' | grep -E '^v[0-9]+' | sort -V -r || true)
-          COUNT=0
-          for t in $AI_TAGS; do
-            COUNT=$((COUNT+1))
-            if [ $COUNT -le $KEEP ]; then continue; fi
-            docker rmi "$AI_IMAGE:$t" 2>/dev/null || true
-          done
-          
-          docker image prune -f || true
+          # 댕글링 이미지만 정리
+          docker image prune -f
         '''
       }
     }
@@ -305,33 +374,33 @@ pipeline {
 
   post {
     success {
+      // 빌드 성공 시에만 현재 빌드 정보 저장
+      script {
+        sh "echo '${env.GIT_COMMIT}:${env.BUILD_NUMBER}' > /tmp/jenkins-last-build-info"
+      }
+      
       echo """
-✅ 배포 성공!
+스마트 배포 완료!
 
-• 브랜치: master
+📋 요약:
 • 커밋: ${env.GIT_COMMIT}
-• 백엔드: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
-• AI: ${env.AI_IMAGE}:${env.AI_TAG}
+• Backend 빌드: ${env.BUILD_BACKEND}
+• AI 빌드: ${env.BUILD_AI}
+• 스킵 이유: ${env.SKIP_REASON}
 
-🔗 테스트 엔드포인트:
-• 백엔드: https://j13a103.p.ssafy.io/api/infra
+🔗 엔드포인트:
+• Backend: https://j13a103.p.ssafy.io/api/infra
 • AI: https://j13a103.p.ssafy.io/ai/health/
-"""
+      """
     }
     failure {
-      echo '❌ 배포 실패! 디버깅 정보'
+      echo '배포 실패!'
       sh '''
-        set -euo pipefail
-        echo '=== Pods ==='
         kubectl -n $K8S_NAMESPACE get pods -o wide || true
-        echo '=== 백엔드 로그 ==='
-        kubectl -n $K8S_NAMESPACE logs -l app=backend --tail=30 || true
-        echo '=== AI 로그 ==='
-        kubectl -n $K8S_NAMESPACE logs -l app=ai --tail=30 || true
-        echo '=== Deployment 상태 ==='
-        kubectl -n $K8S_NAMESPACE describe deployment backend || true
-        kubectl -n $K8S_NAMESPACE describe deployment ai || true
+        kubectl -n $K8S_NAMESPACE logs -l app=backend --tail=20 || true
+        kubectl -n $K8S_NAMESPACE logs -l app=ai --tail=20 || true
       '''
+      // 실패 시에는 빌드 정보를 저장하지 않음 (다음 빌드에서 재시도)
     }
     always {
       cleanWs()
