@@ -123,7 +123,7 @@ export default function Home() {
                 style={[styles.card, styles.squareCard, styles.cardRight]}
                 activeOpacity={0.9}
               >
-                <Text style={styles.boxTitle}>IRP 계좌 추천</Text>
+                <Text style={styles.boxTitle}>IRP 예상 수익률</Text>
                 <Text style={styles.boxDesc}>노후자금을{"\n"}더 든든하게!</Text>
                 <Image
                   source={require("@/assets/icon/pig.png")}
