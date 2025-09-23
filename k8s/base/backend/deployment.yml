@@ -52,6 +52,11 @@ spec:
                 secretKeyRef:
                   name: backend-secrets
                   key: GMS_SECRET_KEY
+            - name: SPRING_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: REDIS_PASSWORD
           resources:
             requests:
               cpu: "200m"
