@@ -50,6 +50,7 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
                 .orElse(null);
         Long investorPersonalityId = (user == null || user.getRiskGradeId() == null) ? request.getInvestorPersonalityId() : user.getRiskGradeId();
         if(investorPersonalityId == null) throw new IllegalArgumentException("Bad Request");
+        if(!dc) request.accYear();
         Long userSalary = user == null ? request.getSalary() : dc ? user.getSalary() : request.getSalary();
         if(userSalary == null) throw new IllegalArgumentException("Bad Request");
         // DB
