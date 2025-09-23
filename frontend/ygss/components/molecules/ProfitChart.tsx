@@ -13,7 +13,6 @@ type PriceData = {
 
 type RangeType = "3M" | "6M" | "1Y" | "YTD";
 const RANGE_LABELS: Record<RangeType, string> = {
-    // "1M": "1개월",
     "3M": "3개월",
     "6M": "6개월",
     "1Y": "1년",
