@@ -77,7 +77,7 @@ export default function Irp3() {
                 {/* ===== Carousel (Top3) ===== */}
                 <View style={styles.carouselTrack}>
                     <ItemCarousel items={top3} />
-                    <Text style={styles.caption}>대표 수익률은 3개월 기준입니다.</Text>
+                    <Text style={styles.caption}>EFT와 펀드의 대표 수익률은 3개월 기준입니다</Text>
                 </View>
 
                 <ImageList
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
         textAlign: "center",
         color: Colors?.gray ?? "#8B8B8B",
         fontFamily: "BasicMedium",
-        fontSize: 12,
+        fontSize: 10,
         marginBottom: 10,
     },
 });

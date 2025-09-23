@@ -5,7 +5,7 @@ import { Colors } from "@/src/theme/colors";
 import axios from "axios";
 import { Stack, useRouter } from "expo-router";
 import { MotiView } from "moti";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Image,
   KeyboardAvoidingView,
@@ -58,6 +58,25 @@ export default function Irp2() {
     return () => clearTimeout(timer);
   }, [router]);
 
+  // ==== caption 애니메이션 ====
+  const fullText = "알키가 당신에게 딱 맞는 \n 상품을 고르는 중이에요 ... !";
+  const letters = fullText.split("");   // 문자열을 배열로 쪼갬
+  const [displayText, setDisplayText] = useState("");
+
+  useEffect(() => {
+    let i = 0;
+    const interval = setInterval(() => {
+      i++;
+      if (i <= fullText.length) {
+        setDisplayText(fullText.substring(0, i));
+      } else {
+        clearInterval(interval);
+      }
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -85,7 +104,7 @@ export default function Irp2() {
                 resizeMode="contain"
               />
             </MotiView>
-            <Text style={styles.caption}>알키가 당신에게 딱 맞는 상품을{"\n"}고르는 중이에요 ...</Text>
+            <Text style={styles.caption}>{displayText}</Text>
           </View>
         </SafeAreaView>
       </KeyboardAvoidingView>
@@ -107,7 +126,7 @@ const styles = StyleSheet.create({
   },
   caption: {
     fontFamily: "BasicBold",
-    fontSize: 12,
+    fontSize: 14,
     color: Colors.black,
     textAlign: "center",
   },
