@@ -27,8 +27,8 @@ public class GmsApiClient {
 
     public GmsApiClient() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofSeconds(30));
-        factory.setReadTimeout(Duration.ofMinutes(5));
+        factory.setConnectTimeout(Duration.ofSeconds(60));
+        factory.setReadTimeout(Duration.ofMinutes(10));
 
         this.client = RestClient.builder()
                 .requestFactory(factory)
