@@ -41,7 +41,7 @@ public class ChatBotServiceImpl implements ChatBotService{
                     accurateList.stream().map(AnswerDto::getAnswer).toList(),
                     getChatLogsBySid(sid)
                     )));
-            if(!answer.equals("잘 모르겠어요. 조금 더 자세히 질문해주세요.")) chatLogsRepository.insertChatLog(sid, request.getMessage(), answer);
+            if(!answer.replaceAll("[^가-힣a-zA-Z0-9]", "").equals("잘 모르겠어요. 조금 더 자세히 질문해주세요.".replaceAll("[^가-힣a-zA-Z0-9]", ""))) chatLogsRepository.insertChatLog(sid, request.getMessage(), answer);
             return ChatBotResponseDto.builder()
                     .sid(sid)
                     .answer(answer)
