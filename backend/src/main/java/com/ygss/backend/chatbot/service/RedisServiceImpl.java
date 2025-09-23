@@ -28,7 +28,8 @@ public class RedisServiceImpl implements RedisService {
 
         QnAList.forEach(QnA -> {
             try {
-                String jsonResult = gmsApiClient.getEmbedding(QnA.getQuestion().replace(" ", ""));
+//                String jsonResult = gmsApiClient.getEmbedding(QnA.getQuestion().replace(" ", ""));
+                String jsonResult = gmsApiClient.getEmbedding(QnA.getQuestion().replaceAll("[^가-힣a-zA-Z0-9]", ""));
                 redisService.saveVectorChunk("term", QnA.getTermId(), QnA.getId(), "Q", gmsApiClient.getEmbeddingArr(jsonResult));
             } catch (IOException e) {
                     throw new RuntimeException("Text Embedding Failed");

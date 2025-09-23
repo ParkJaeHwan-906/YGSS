@@ -2,7 +2,6 @@ package com.ygss.backend.chatbot.controller;
 
 import com.ygss.backend.chatbot.dto.SendChatRequestDto;
 import com.ygss.backend.chatbot.service.ChatBotServiceImpl;
-import com.ygss.backend.chatbot.term.TermDic;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class ChatBotController {
     private final ChatBotServiceImpl chatBotService;
-    private final TermDic termDic;
 
     @PostMapping({"/send/", "/send/{sid}"})
     public ResponseEntity<?> sendToChatBot(@RequestBody SendChatRequestDto request, @PathVariable(required = false) String sid) {
@@ -27,10 +25,11 @@ public class ChatBotController {
         }
     }
 
-    @GetMapping("/send/{term}")
-    public ResponseEntity<?> sendToChatBotTerm(@PathVariable String term) {
+    @GetMapping({"/send/{term}/", "/send/{term}/{sid}"})
+    public ResponseEntity<?> sendToChatBotTerm(@PathVariable String term, @PathVariable(required = false) String sid) {
         try {
-            return ResponseEntity.ok(termDic.getTermMap().get(term));
+
+            return ResponseEntity.ok(chatBotService.answerQuickTerm(term, sid));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("처리 중 문제가 발생했어요. 다시 시도해주세요.");
         }
