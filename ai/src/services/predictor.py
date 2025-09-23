@@ -92,7 +92,7 @@ class PredictionService:
             logger.error(f"Prophet 예측 실패: {e}")
             return None
     
-    def ensemble_predict(self, etf_code: str, input_data: np.ndarray, future_periods: int = 30, 
+    def predict_ensemble(self, etf_code: str, input_data: np.ndarray, future_periods: int = 30, 
                         ensemble_version: str = "latest") -> Optional[Dict]:
         """앙상블 예측"""
         try:
@@ -155,7 +155,22 @@ class PredictionService:
         except Exception as e:
             logger.error(f"앙상블 계산 실패: {e}")
             return []
-    
+            
+    def predict_best(etf_code: str, input_data: np.ndarray, future_periods: int, meta: dict) -> Optional[Dict]:
+        model_name = meta['model_info']['best_model_name']
+
+        input_data=np.array([[1, 2, 3, 4, 5]] * 12),
+        future_periods=12,
+
+        if model_name == "lstm":
+            return prediction_service.predict_lstm(etf_code, input_data=input_data)
+        elif model_name == "prophet":
+            return prediction_service.predict_prophet(etf_code, future_periods)
+        elif model_name == "ensemble":
+            return prediction_service.predict_ensemble(etf_code, input_data=input_data, future_periods=future_periods)
+        else:
+            return None  # 정의되지 않은 경우
+
     def _calculate_confidence(self, prediction: np.ndarray) -> float:
         """예측 신뢰도 계산 (간단한 버전)"""
         try:

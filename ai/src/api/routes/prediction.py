@@ -55,7 +55,7 @@ async def predict_etf(request: PredictionRequest):
             else:
                 input_array = np.array(request.input_data)
                 
-            result = prediction_service.ensemble_predict(
+            result = prediction_service.predict_ensemble(
                 etf_code=request.etf_code,
                 input_data=input_array,
                 future_periods=request.future_periods

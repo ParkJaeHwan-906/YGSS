@@ -8,4 +8,8 @@ import lombok.Data;
 public class RecommendCompareRequestDto {
     private Long investorPersonalityId;
     private Long salary;
+
+    public void accYear() {
+        this.salary *= 12;
+    }
 }
