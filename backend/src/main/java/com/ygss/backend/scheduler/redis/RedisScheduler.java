@@ -15,7 +15,9 @@ public class RedisScheduler {
     @Scheduled(fixedRate = 1000*60*60*6)    // 6 시간 단위로
     public void updateTextEmbeddingVector() {
         try {
+            log.info("Scheduler Excute : Redis Text Embedding Update");
             redisService.updateRedisTermDIc();
+            log.info("Scheduler Executed");
         } catch (Exception e) {
             log.error("Text Embedding Scheduler Failed : {}", e.getMessage());
         }
