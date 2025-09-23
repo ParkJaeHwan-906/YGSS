@@ -6,6 +6,8 @@ import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
 import com.ygss.backend.pensionProduct.dto.response.BondDto;
 import com.ygss.backend.pensionProduct.repository.PensionProductRepository;
+import com.ygss.backend.product.repository.ProductDetailRepository;
+import com.ygss.backend.product.repository.RetirePensionProductRepository;
 import com.ygss.backend.recommend.dto.*;
 import com.ygss.backend.recommend.repository.RecommendCacheRepository;
 import com.ygss.backend.user.dto.UserAccountsDto;
@@ -32,8 +34,7 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
 
     private final UserAccountsRepository userAccountsRepository;
     private final PensionProductRepository pensionProductRepository;
-    private final RecommendCacheRepository recommendCacheRepository;
-    private final ObjectMapper objectMapper;
+    private final ProductDetailRepository productDetailRepository;
     private final RestTemplate restTemplate;
     /**
      * 상품을 비교하여 추천
@@ -134,6 +135,7 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
             String url = fastApiBaseUrl + "/portfolio/analyze";     // 추후 /dc 추가
 
             request.limitFieldRange();      // riskGradeId 값 보정
+            request.setProductList(productDetailRepository.selectProductForRecommend(request.getRiskGradeId()));
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -145,7 +147,7 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
             return response.getBody();
         } catch (Exception e) {
 //            throw new RuntimeException("포트폴리오 추천 중 오류 발생: " + e.getMessage(), e);
-            
+            log.error("fail : {}", e.getMessage());
             // AI 완성 전 목업 코드
             return RecommendPortfolioResponse.builder()
                     .allocations(List.of(
@@ -174,7 +176,6 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
                     .riskGradeId(1)
                     .analysisDate("2025-09-19T13:36:46.166218")
                     .build();
-
         }
     }
 }
