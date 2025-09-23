@@ -49,7 +49,7 @@ public class Gpt5MiniRequestDto {
                     The answers that are most similar to my question are as follows:
                     %s
                 
-                    If there are no similar answers, please analyze the previous conversation flow and generate a response based on the context.
+                    If there are no similar answers, please analyze the previous conversation flow and generate a response based on the context. When analyzing the previous conversation, start with the most recent dialogue. If no relevant context or topic is found, go further back step by step until you can understand the flow.
                 
                     The previous conversation flow is as follows:
                     %s

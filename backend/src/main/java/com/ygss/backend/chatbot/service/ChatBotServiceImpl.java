@@ -3,6 +3,7 @@ package com.ygss.backend.chatbot.service;
 import com.ygss.backend.chatbot.dto.*;
 import com.ygss.backend.chatbot.repository.ChatDummyRepository;
 import com.ygss.backend.chatbot.repository.ChatLogsRepository;
+import com.ygss.backend.chatbot.term.TermDic;
 import com.ygss.backend.global.gms.GmsApiClient;
 import com.ygss.backend.global.gms.dto.Gpt5MiniRequestDto;
 import com.ygss.backend.global.redis.VectorRepository;
@@ -22,12 +23,14 @@ public class ChatBotServiceImpl implements ChatBotService{
     private final ChatDummyRepository chatDummyRepository;
     private final TermDictionaryServiceImpl termDictionaryService;
     private final ChatLogsRepository chatLogsRepository;
+    private final TermDic termDic;
 
     @Override
     public ChatBotResponseDto requestAnswer(SendChatRequestDto request, String sid) {
         try {
             if(sid == null || sid.isEmpty()) sid = generateSid();
-            String jsonResult = gmsApiClient.getEmbedding(request.getMessage().replace(" ", ""));
+//            String jsonResult = gmsApiClient.getEmbedding(request.getMessage().replace(" ", ""));
+            String jsonResult = gmsApiClient.getEmbedding(request.getMessage().replaceAll("[^가-힣a-zA-Z0-9]", ""));
             // Bi-Encoder
             List<AnswerDto> candidateList = getCandidateAnswerList(vectorRepository.searchAllPrefixes(gmsApiClient.getEmbeddingArr(jsonResult), 10));
             // Cross-Encoder
@@ -74,5 +77,18 @@ public class ChatBotServiceImpl implements ChatBotService{
         String sid = UUID.randomUUID().toString();
         while(chatLogsRepository.selectCntBySid(sid) > 0) sid = UUID.randomUUID().toString();
         return sid;
+    }
+
+    @Override
+    public ChatBotResponseDto answerQuickTerm(String term, String sid) {
+        if(sid == null) sid = generateSid();
+        String answer = termDic.getTermMap().get(term);
+
+        chatLogsRepository.insertChatLog(sid, term, answer);
+
+        return ChatBotResponseDto.builder()
+                .sid(sid)
+                .answer(answer)
+                .build();
     }
 }

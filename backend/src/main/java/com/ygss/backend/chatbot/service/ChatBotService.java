@@ -10,4 +10,5 @@ public interface ChatBotService {
     List<AnswerDto> getCandidateAnswerList(List<SearchResultDto> candidateList);
     List<ChatLogDto> getChatLogsBySid(String sid);
     String generateSid();
+    ChatBotResponseDto answerQuickTerm(String term, String sid);
 }
