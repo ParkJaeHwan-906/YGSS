@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Animated, BackHandler, Easing, Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Animated, BackHandler, Easing, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const fireIcon = require("@/assets/icon/fire.png");
@@ -33,6 +33,8 @@ export default function DcDetail() {
     const router = useRouter();
     const { from } = useLocalSearchParams<{ from: string }>();
 
+    const [showModal, setShowModal] = useState(false);
+
     const handleLikeToggle = async () => {
         try {
             setLoadingLike(true);
@@ -49,6 +51,10 @@ export default function DcDetail() {
             );
             // API 응답이 true/false
             setLiked(res.data === true);
+
+            if (res.data === true) {
+                setShowModal(true);
+            }
         } catch (err: any) {
             console.log(err)
             console.error("찜하기 요청 실패:", err.response?.status);
@@ -242,6 +248,42 @@ export default function DcDetail() {
                     </Button>
                 </>
             )}
+
+            {/* 찜 완료 모달 */}
+            <Modal
+                visible={showModal}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalBox}>
+                        <Text style={styles.modalTitle}>찜 완료 ✓</Text>
+                        <Text style={styles.modalText}>해당 상품을 찜 목록에 추가하였습니다</Text>
+
+                        <View style={styles.modalButtons}>
+                            <Pressable
+                                style={[styles.modalBtn, { backgroundColor: "#ccc" }]}
+                                onPress={() => setShowModal(false)}
+                            >
+                                <Text style={[styles.modalBtnText, { color: Colors.black }]}>
+                                    닫기
+                                </Text>
+                            </Pressable>
+                            <Pressable
+                                style={[styles.modalBtn, { backgroundColor: Colors.primary }]}
+                                onPress={() => {
+                                    setShowModal(false);
+                                    router.push("/(app)/(tabs)/mypage");
+                                }}
+                            >
+                                <Text style={styles.modalBtnText}>마이페이지로 이동</Text>
+                            </Pressable>
+
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -279,5 +321,46 @@ const styles = StyleSheet.create({
         width: 200,
         height: 200,
         alignSelf: "center",
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        justifyContent: "flex-end",
+    },
+    modalBox: {
+        backgroundColor: Colors.white,
+        borderRadius: 12,
+        paddingVertical: 24,
+        paddingHorizontal: 20,
+        width: "100%",
+        alignItems: "center",
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontFamily: "BasicBold",
+        color: '#3BAE14',
+        marginBottom: 20,
+    },
+    modalText: {
+        fontSize: 14,
+        fontFamily: "BasicMedium",
+        color: Colors.black,
+        marginBottom: 20,
+    },
+    modalButtons: {
+        flexDirection: "row",
+        gap: 12,
+        marginTop: 12,
+    },
+    modalBtn: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+    modalBtnText: {
+        fontSize: 14,
+        fontFamily: "BasicMedium",
+        color: Colors.white,
     },
 });
