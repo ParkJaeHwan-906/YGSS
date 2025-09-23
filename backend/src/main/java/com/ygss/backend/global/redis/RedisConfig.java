@@ -10,12 +10,18 @@ public class RedisConfig {
 
     @Value("${spring.redis.host}")
     private String host;
-
     @Value("${spring.redis.port}")
     private int port;
+    @Value("${spring.redis.password}")
+    private String password;
+
 
     @Bean
     public Jedis jedis() {
-        return new Jedis(host, port);
+        Jedis jedis = new Jedis(host, port);
+        if (password != null && !password.isEmpty()) {
+            jedis.auth(password);
+        }
+        return jedis;
     }
 }
