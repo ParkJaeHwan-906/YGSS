@@ -17,10 +17,10 @@ public class ChatBotController {
     private final ChatBotServiceImpl chatBotService;
     private final TermDic termDic;
 
-    @PostMapping("/send")
-    public ResponseEntity<?> sendToChatBot(@RequestBody SendChatRequestDto request) {
+    @PostMapping({"/send/", "/send/{sid}"})
+    public ResponseEntity<?> sendToChatBot(@RequestBody SendChatRequestDto request, @PathVariable(required = false) String sid) {
         try {
-            return ResponseEntity.ok(chatBotService.requestAnswer(request));
+            return ResponseEntity.ok(chatBotService.requestAnswer(request, sid));
         } catch (Exception e) {
             log.error("Send To ChatBot Failed : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);

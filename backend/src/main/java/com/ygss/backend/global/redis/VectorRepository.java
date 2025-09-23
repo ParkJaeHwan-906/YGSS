@@ -91,7 +91,6 @@ public class VectorRepository {
                 } catch (NumberFormatException e) {
                     continue;
                 }
-
                 // 모든 embedding 조회 (Q/A 구분 없이)
                 List<byte[]> allEmbeddings = jedis.lrange(key.getBytes(), 0, -1);
                 for (byte[] value : allEmbeddings) {
