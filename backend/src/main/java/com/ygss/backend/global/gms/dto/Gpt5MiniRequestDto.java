@@ -1,5 +1,6 @@
 package com.ygss.backend.global.gms.dto;
 
+import com.ygss.backend.chatbot.dto.ChatLogDto;
 import com.ygss.backend.chatbot.dto.TermDictionaryResponseDto;
 import lombok.Builder;
 import lombok.Data;
@@ -12,7 +13,7 @@ public class Gpt5MiniRequestDto {
     private String role;
     private String content;
 
-    public Gpt5MiniRequestDto(String question, Map<Long, TermDictionaryResponseDto> termMap, List<String> answerList) {
+    public Gpt5MiniRequestDto(String question, Map<Long, TermDictionaryResponseDto> termMap, List<String> answerList, List<ChatLogDto> chatLogs) {
         this.role = "user";
 
         // 단어 및 정의 문자열 생성
@@ -30,16 +31,31 @@ public class Gpt5MiniRequestDto {
             answerText.append(ans).append("\n");
         }
 
+        // 이전 채팅 기록 생성
+        StringBuilder chatLogText = new StringBuilder();
+        for(ChatLogDto chatLog : chatLogs) {
+            chatLogText.append("Q. ").append(chatLog.getQuestion())
+                    .append("\nA. ").append(chatLog.getAnswer()).append("\n\n");
+        }
+
         // 최종 content 생성
         this.content = """
-            The related words are as follows
-            %s
-            My question is as below
-            %s
-            The answers that are most similar to my questions are as follows
-            %s
-            Please refer to the above materials and give me an answer
-            """.formatted(termText.toString(), question, answerText.toString());
+                My question is as below:
+                    %s
+                
+                    The related words are as follows:
+                    %s
+                
+                    The answers that are most similar to my question are as follows:
+                    %s
+                
+                    If there are no similar answers, please analyze the previous conversation flow and generate a response based on the context.
+                
+                    The previous conversation flow is as follows:
+                    %s
+                
+                    Please refer to the above materials, analyze the similar answers and the previous conversation flow, and generate a response that fits naturally and appropriately to the user’s question.
+            """.formatted(termText.toString(), question, answerText.toString(), chatLogText.toString());
     }
 
     public Gpt5MiniRequestDto(String role, String content) {
