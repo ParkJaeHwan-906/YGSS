@@ -201,11 +201,14 @@ export default function InvestChar({ slices }: InvestCharProps) {
         <Image source={require("@/assets/char/sadAlchi.png")} style={styles.sadAlchi} />
         <Text style={styles.nolikeText}>찜한 상품이 없습니다</Text>
 
-
         {investType === "?????" ? (
-          <Text style={styles.emptyText}>당신의 투자 성향을 테스트 해보세요!</Text>
+          <Pressable onPress={() => setShowBias((prev) => !prev)}>
+            <Text style={styles.emptyText}>투자 성향 테스트를 해보세요!</Text>
+          </Pressable>
         ) : (
-          <Text style={styles.emptyText}>다시 투자 성향 테스트를 해보세요!</Text>
+          <Pressable onPress={() => setShowBias((prev) => !prev)}>
+            <Text style={styles.emptyText}>다시 투자 성향 테스트를 해보세요!</Text>
+          </Pressable>
         )}
 
         <RNAnimated.View
@@ -308,11 +311,14 @@ export default function InvestChar({ slices }: InvestCharProps) {
       </View>
 
       {investType === "?????" ? (
-        <Text style={styles.emptyText}>투자 성향 테스트를 해보세요!</Text>
+        <Pressable onPress={() => setShowBias((prev) => !prev)}>
+          <Text style={styles.emptyText}>투자 성향 테스트를 해보세요!</Text>
+        </Pressable>
       ) : (
-        <Text style={styles.emptyText}>다시 투자 성향 테스트를 해보세요!</Text>
+        <Pressable onPress={() => setShowBias((prev) => !prev)}>
+          <Text style={styles.emptyText}>다시 투자 성향 테스트를 해보세요!</Text>
+        </Pressable>
       )}
-
       <RNAnimated.View
         style={[{ transform: [{ translateY: translateY }] }, styles.arrowStyle]}
       >
@@ -391,10 +397,9 @@ const styles = StyleSheet.create({
   legendText: { fontSize: 13, color: Colors?.black ?? "#111", fontFamily: "BasicMedium" },
   emptyText: {
     textAlign: "center",
-    marginTop: 16,
+    marginTop: 20,
     fontSize: 14,
     color: Colors.primary,
-    padding: 16,
     borderRadius: 8,
     fontFamily: "BasicMedium",
   },

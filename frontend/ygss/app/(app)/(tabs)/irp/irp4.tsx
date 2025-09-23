@@ -1,4 +1,6 @@
 // app/(app)/(tabs)/irp/irp4.tsx
+import { ImageListData } from "@/components/organisms/ImageList";
+import ItemCarousel from "@/components/organisms/ItemCarousel";
 import { Colors } from "@/src/theme/colors";
 import { Picker } from "@react-native-picker/picker";
 import axios from "axios";
@@ -29,9 +31,9 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 // ===== 타입 (landing4에서 사용한 응답 타입)
 type CompareResp = {
-    irpCalculate: number;          // 최종 금액(원)
-    irpCalculateRate: number;
-    irpCalculateGraph: number[];   // [3y,5y,7y,10y] (원)
+    dcCalculate: number;          // 최종 금액(원)
+    dcCalculateRate: number;
+    dcCalculateGraph: number[];   // [3y,5y,7y,10y] (원)
     recommendProductList: any[] | null;
 };
 
@@ -84,6 +86,17 @@ const getYearIndex = (y: number) => Math.max(0, YEAR_ORDER.indexOf(y as any));
 const pickByYear = (arr: number[] | undefined, y: number) =>
     Array.isArray(arr) ? (arr[getYearIndex(y)] ?? 0) : 0;
 
+// itemlistdata mapping
+const mapRecommendToImageList = (list: any[]): ImageListData[] => {
+    return list.map((p) => ({
+        id: p.id,
+        type: p.productType as "ETF" | "펀드" | "BOND",
+        title: p.product,
+        subTitle: p.company,
+        rate: p.profitPrediction,
+        logo: undefined, // 필요 시 로고 매핑
+    }));
+};
 
 export default function Irp4() {
     const router = useRouter();
@@ -154,8 +167,8 @@ export default function Irp4() {
 
     // 연도별 금액
     const irpValue = React.useMemo(
-        () => pickByYear(cmp?.irpCalculateGraph, appliedYear ?? selectedYear),
-        [cmp?.irpCalculateGraph, appliedYear, selectedYear]
+        () => pickByYear(cmp?.dcCalculateGraph, appliedYear ?? selectedYear),
+        [cmp?.dcCalculateGraph, appliedYear, selectedYear]
     );
 
     // 로그인 가드
@@ -186,7 +199,10 @@ export default function Irp4() {
         >
             <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"}>
                 <StatusBar barStyle="dark-content" backgroundColor={Colors?.back ?? "#F4F6FF"} />
-                <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
+                <ScrollView
+                    ref={scrollRef}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.container}>
                     {/* ===== 헤더 영역 ===== */}
                     <View style={styles.headerRow}>
                         {/* 로고: 컨테이너 좌우 패딩(20)을 상쇄해 왼쪽에 딱 붙임 */}
@@ -336,8 +352,8 @@ export default function Irp4() {
                                         endFillColor={Colors.red}
                                         startOpacity={0.4}
                                         endOpacity={0.05}
-                                        data={toLineSeries(cmp?.irpCalculateGraph)}
-                                        maxValue={niceMax(Math.max(...(cmp?.irpCalculateGraph ?? [0])) * 1.1)}
+                                        data={toLineSeries(cmp?.dcCalculateGraph)}
+                                        maxValue={niceMax(Math.max(...(cmp?.dcCalculateGraph ?? [0])) * 1.1)}
                                         noOfSections={4}
                                         hideDataPoints
                                         spacing={80}
@@ -356,34 +372,23 @@ export default function Irp4() {
                         )}
                     </View>
 
-                    {/* ===== IRP 깨우기 CTA =====
-                <View style={styles.irpCard}>
-                    <MotiView
-                        from={{ translateY: 0 }}
-                        animate={{ translateY: -15 }}
-                        transition={{
-                            type: "timing",
-                            duration: 800,
-                            loop: true,
-                            repeatReverse: true,
-                        }}
-                    >
-                        <Image source={require("@/assets/char/dreamAlchi.png")} style={styles.irpImg} resizeMode="contain" />
-                    </MotiView>
-                    <Text style={styles.irpTextLine1}>잠 자고 있는 IRP 계좌도</Text>
-                    <Text style={styles.irpTextLine2}>깨우러 가볼까요?</Text>
-
-                    <TouchableOpacity
-                        activeOpacity={0.9}
-                        style={styles.secondaryBtn}
-                        onPress={() => router.push("/irp/irp4")}
-                    >
-                        <Text style={styles.secondaryBtnText}>깨우러 가기</Text>
-                    </TouchableOpacity>
-                </View> */}
-
-                    {/* 탭바 여백 */}
-                    <View style={{ height: Platform.select({ ios: 28, android: 20 }) }} />
+                    {/* ===== 추천 상품 캐러셀 ===== */}
+                    {cmp?.recommendProductList && cmp.recommendProductList.length > 0 && (
+                        <View style={{ backgroundColor: Colors.white, paddingVertical: 20 }}>
+                            <Text
+                                style={{
+                                    fontSize: 18,
+                                    fontFamily: "BasicBold",
+                                    marginTop: 10,
+                                    marginLeft: 20,
+                                    color: "#2E2E3A",
+                                }}
+                            >
+                                이런 상품은 어떠세요?
+                            </Text>
+                            <ItemCarousel items={mapRecommendToImageList(cmp.recommendProductList)} />
+                        </View>
+                    )}
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -392,10 +397,10 @@ export default function Irp4() {
 
 const styles = StyleSheet.create({
     safeArea: { flex: 1 },
-    container: { paddingHorizontal: 20, paddingBottom: 40 },
-
+    container: { paddingBottom: 40 },
     // 헤더
     headerRow: {
+        marginHorizontal: 20,
         marginTop: 30,
         marginBottom: 50,
         position: "relative",
@@ -410,7 +415,6 @@ const styles = StyleSheet.create({
         height: 60,
         aspectRatio: 4,
     },
-
     // 타이틀 블록
     titleBlock: {
         alignSelf: "flex-start",
@@ -487,7 +491,6 @@ const styles = StyleSheet.create({
     moneyRow: { marginTop: 8, alignItems: "center" },
     moneyImg: { width: 300, height: 250 },
     inputRow: {
-        marginTop: 40,
         marginBottom: 10,
         width: 300,
         alignSelf: "center",
