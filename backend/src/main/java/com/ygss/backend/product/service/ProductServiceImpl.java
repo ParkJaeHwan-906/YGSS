@@ -83,7 +83,6 @@ public class ProductServiceImpl implements ProductService {
         // 1. 투자 성향이 있는지 조회
         Long riskGradeId = userEmail == null ? 5L : userAccountsRepository.selectRiskGradeIdByUserEmail(userEmail)
                 .orElse(5L);
-
         return new PersonalRecommendProductResopnseDto(retirePensionProductRepository.selectAllProductByPersonal(riskGradeId));
     }
 }

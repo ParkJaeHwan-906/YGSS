@@ -13,4 +13,9 @@ public class RecommendPortfolioRequest {
     private Long totalRetirePension;
     @JsonProperty("risk_grade_id")
     private Long riskGradeId;
+
+    public void limitFieldRange() {
+        if(this.riskGradeId < 1L) this.riskGradeId = 1L;
+        else if(this.riskGradeId > 5L) this.riskGradeId = 5L;
+    }
 }
