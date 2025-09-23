@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 @Builder
 @Data
 public class RecommendPortfolioRequest {
@@ -13,6 +15,8 @@ public class RecommendPortfolioRequest {
     private Long totalRetirePension;
     @JsonProperty("risk_grade_id")
     private Long riskGradeId;
+    @JsonProperty("asset_list")
+    private List<ProductRequestDto> productList;
 
     public void limitFieldRange() {
         if(this.riskGradeId < 1L) this.riskGradeId = 1L;
