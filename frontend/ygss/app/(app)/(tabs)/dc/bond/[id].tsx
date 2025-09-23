@@ -152,7 +152,7 @@ export default function DcDetail() {
                                 style={styles.pointAlchi}
                                 resizeMode="contain"
                             />
-                            <Text style={styles.pointText}>자세한 수익률을 아래와 같아요!</Text>
+                            <Text style={styles.pointText}>수익률을 자세히 알아보아요</Text>
                             <Animated.View style={{ transform: [{ translateY }] }}>
                                 <Ionicons name="chevron-down-outline" size={24} color="black" />
                             </Animated.View>

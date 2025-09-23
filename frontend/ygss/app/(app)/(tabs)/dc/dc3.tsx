@@ -69,7 +69,7 @@ export default function Dc3() {
             <Text style={styles.headerTitleLine2}>알키의 상품 추천</Text>
           </View>
           <Image
-            source={require("@/assets/icon/search.png")}
+            source={require("@/assets/icon/star.png")}
             style={styles.headerIcon}
           />
         </View>

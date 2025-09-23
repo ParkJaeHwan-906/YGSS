@@ -28,8 +28,10 @@ export default function ItemCard({ id, title, rate, type, icon }: ItemCardProps)
             <Text style={[styles.cardRate, isPositive ? styles.up : styles.down]}>
                 {isPositive ? `+${rate.toFixed(2)}%` : `${rate.toFixed(2)}%`}
             </Text>
+            {/* 타입에 따라 이미지 변경 */}
+
             <Image
-                source={icon || require("@/assets/icon/star.png")}
+                source={type === "ETF" ? require("@/assets/icon/etf.png") : type === "펀드" ? require("@/assets/icon/fund.png") : require("@/assets/icon/bond.png")}
                 style={styles.cardBadge}
             />
         </Pressable>
