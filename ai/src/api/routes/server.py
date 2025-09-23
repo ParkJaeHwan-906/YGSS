@@ -20,6 +20,9 @@ class CompareRequest(BaseModel):
 def compare(req: CompareRequest):
     question = req.question
     candidates = req.candidateList
+
+    if not candidates:  # 후보가 없으면 바로 반환
+        return {"results": []}
     
     # 각 candidate.answer와 question 점수 계산
     scores = model.predict([(question, c.answer) for c in candidates])
@@ -27,7 +30,7 @@ def compare(req: CompareRequest):
     # score와 candidate 객체를 튜플로 묶고 내림차순 정렬
     ranked = sorted(zip(candidates, scores), key=lambda x: x[1], reverse=True)
     # 유사도가 5 이상인 것만 필터링
-    filtered = [(c, s) for c, s in ranked if s >= 5]
+    filtered = [(c, s) for c, s in ranked if s >= 6]
 
     # 상위 3개만 추출
     top3 = filtered[:3]

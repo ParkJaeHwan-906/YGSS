@@ -19,9 +19,9 @@ public class RedisConfig {
     @Bean
     public Jedis jedis() {
         Jedis jedis = new Jedis(host, port);
-        if (password != null && !password.isEmpty()) {
-            jedis.auth(password);
-        }
+//        if (password != null && !password.isEmpty()) {
+//            jedis.auth(password);
+//        }
         return jedis;
     }
 }
