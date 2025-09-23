@@ -15,7 +15,7 @@ public class RestTemplateConfig {
         // 기본 SimpleClientHttpRequestFactory 사용
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(60000);  // 연결 타임아웃 60초
-        factory.setReadTimeout(60000);     // 읽기 타임아웃 60초
+        factory.setReadTimeout(120_000);     // 읽기 타임아웃 60초
 
         restTemplate.setRequestFactory(factory);
         return restTemplate;
