@@ -1,4 +1,5 @@
 // app/(app)/(tabs)/home.tsx
+import { Easing } from "react-native-reanimated";
 import MyMoney from "@/components/molecules/MyMoney";
 import CustomAlert from "@/components/organisms/CustomAlert";
 import ImageList, { ImageListData } from "@/components/organisms/ImageList";
@@ -21,11 +22,34 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MotiImage, MotiView } from "moti";
+
+// 알키 이미지 매핑
+const ALCHI_IMAGES = [
+  require("@/assets/char/safeAlchi.png"),
+  require("@/assets/char/verysafeAlchi.png"),
+  require("@/assets/char/nuetralAlchi.png"),
+  require("@/assets/char/dangerAlchi.png"),
+  require("@/assets/char/verydangerAlchi.png"),
+];
+
+// 변경 속도
+const PULSE_MS = 2000;
 
 export default function Home() {
   const router = useRouter();
   const user = useAppSelector((s) => s.auth.user);
   const [isChatVisible, setIsChatVisible] = useState(false);
+  const [index, setIndex] = useState(0);
+  const [tick, setTick] = useState(0);
+
+  // 말풍선 멘트
+  const INVEST_LINES = [
+    "내 투자 MBTI 는 뭘까?",
+    "30초 테스트로, 추천 정확도 UP!",
+    "나에게 맞는 상품, 성향부터!",
+  ];
+  const [lineIdx, setLineIdx] = useState(0);
 
   const accessToken = useAppSelector((s) => s.auth.accessToken);
   const [planItems, setPlanItems] = useState<ImageListData[]>([]);
@@ -54,6 +78,21 @@ export default function Home() {
       }
     })();
   }, [accessToken]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setIndex((p) => (p + 1) % ALCHI_IMAGES.length);
+      setTick((t) => t + 1); // 펄스 재시작을 위해 key 변경
+    }, PULSE_MS);
+    return () => clearInterval(id);
+  }, []);
+  
+  useEffect(() => {
+    const t = setInterval(() => {
+      setLineIdx((p) => (p + 1) % INVEST_LINES.length);
+    }, 2200);
+    return () => clearInterval(t);
+  }, []);
 
 
   return (
@@ -92,9 +131,68 @@ export default function Home() {
               <Ionicons name="log-in-outline" size={30} color={Colors.primary} />
             </Pressable>
           )}
+          
+          {/* 알키 이미지 매핑 */}
+          <View style={styles.mainContainer}>
+            {/* 배경 */}
+            <MotiView
+              key={`pulse-${tick}`}
+              from={{ scale: 0.9, opacity: 0.45 }}
+              animate={{ scale: 1.25, opacity: 0.12 }}
+              transition={{
+                type: "timing",
+                duration: PULSE_MS,
+                easing: Easing.inOut(Easing.ease),
+              }}
+              style={styles.bouncyCircle}
+            />
 
-          {/* === 큰 비교 카드 (bigCard) === */}
+            {/* 캐릭터 */}
+            <MotiImage
+              key={`alchi-${index}`}
+              from={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: "timing", duration: 700 }}
+              source={ALCHI_IMAGES[index]}
+              style={styles.mainAlchi}
+              resizeMode="contain"
+            />
+
+            {/* 말풍선 (멘트 순환) */}
+            <MotiView
+              key={`line-${lineIdx}`}
+              from={{ opacity: 0, translateY: 6 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ type: "timing", duration: 400 }}
+              style={styles.bubbleWrap}
+            >
+              <Text style={styles.bubbleText}>{INVEST_LINES[lineIdx]}</Text>
+              <View style={styles.bubbleTailOutline} />
+              <View style={styles.bubbleTail} />
+            </MotiView>
+
+            {/* CTA 버튼 (펄스 + 프레스 스케일) */}
+            <Pressable
+              onPress={() => router.push("/(app)/invest")}
+              style={({ pressed }) => [
+                styles.ctaBtn,
+                pressed && { transform: [{ scale: 0.96 }] },
+              ]}
+              android_ripple={{ color: Colors.back }}
+            >
+              <MotiView
+                from={{ opacity: 0.4, scale: 1 }}
+                animate={{ opacity: 0, scale: 1.2 }}
+                transition={{ type: "timing", duration: 1400, loop: true }}
+                style={styles.ctaPulse}
+              />
+              <Text style={styles.ctaText}>투자 성향 테스트 시작하기</Text>
+              <Ionicons name="arrow-forward-circle" size={20} color="#fff" />
+            </Pressable>
+          </View>
+
           <View style={styles.cardContainer}>
+            {/* === 큰 비교 카드 (bigCard) === */}
             <TouchableOpacity
               onPress={() => {
                 if (user) {
@@ -113,6 +211,8 @@ export default function Home() {
                 style={styles.boxIcon}
               />
             </TouchableOpacity>
+
+            <View style={styles.divider} />
 
             {/* === 두 개 추천 카드 === */}
             <View style={styles.row}>
@@ -182,6 +282,9 @@ export default function Home() {
                 <MyMoney
                   amount={user.totalRetirePension}
                   from="home"
+                  wrapHeight={135}
+                  fontSize={16}
+                  gap={-8}
                 // rate={0} // TODO: 실제 수익률 값으로 교체 필요
                 />
               )}
@@ -227,7 +330,8 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   cardContainer: {
-    marginTop: 16,
+    gap: 40,
+    marginTop: 40,
     marginBottom: 20,
   },
 
@@ -245,23 +349,145 @@ const styles = StyleSheet.create({
   logo: {
     height: 100,
     aspectRatio: 4,
-    marginBottom: 6,
+    marginBottom: -6,
     alignSelf: "center",
   },
   heroTitle: {
     fontFamily: "BasicBold",
-    fontSize: 24,
+    fontSize: 18,
     color: "#111",
-    lineHeight: 32,
+    lineHeight: 22,
     alignSelf: "flex-start",
     textAlign: "left",
     flexWrap: "nowrap",
-    marginLeft: 8,
+    marginLeft: 14,
     ...(Platform.OS === "android" ? { includeFontPadding: false } : {}),
   },
+  mainContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 40,
+    position: "relative",
+    overflow: "visible",
+  },
+  bouncyCircle: {
+    position: "absolute",
+    top: 16,
+    width: 260,
+    height: 260,
+    borderRadius: 140,
+    zIndex: 0,
+    backgroundColor: Colors.primary,
+  },
+  mainAlchi: {
+    width: 220,
+    height: 220,
+    marginTop: 8,
+    marginBottom: 8,
+    resizeMode: "contain",
+    alignSelf: "center",
+    zIndex: 1,
+  },
+  bubbleWrap: {
+    marginTop: 4,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+    ...Platform.select({
+      ios: { shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 8 },
+      android: { elevation: 3 },
+    }),
+    maxWidth: 280,
+    position: "relative",
+  },
+  bubbleText: {
+    fontFamily: "BasicMedium",
+    fontSize: 14,
+    color: "#222",
+    lineHeight: 20,
+    textAlign: "center",
+  },
+  
+  /* ▼ 회전사각형(기존 bubbleTail) 삭제하고 아래 두 개로 대체 */
+  bubbleTailOutline: {
+    position: "absolute",
+    bottom: -7,
+    left: "50%",
+    transform: [{ translateX: -8 }],
+    width: 0,
+    height: 0,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderTopWidth: 8,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: "rgba(0,0,0,0.06)",
+  },
+  bubbleTailFill: {
+    position: "absolute",
+    bottom: -6,
+    left: "50%",
+    transform: [{ translateX: -7 }],
+    width: 0,
+    height: 0,
+    borderLeftWidth: 7,
+    borderRightWidth: 7,
+    borderTopWidth: 7,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: "#fff",
+  },
+  bubbleTail: {
+    position: "absolute",
+    bottom: -6,                 // 채움이 1px 위
+    left: "50%",
+    transform: [{ translateX: -7 }],  // 좌우폭 14px 삼각형의 중앙(-7)
+    width: 0,
+    height: 0,
+    borderLeftWidth: 7,
+    borderRightWidth: 7,
+    borderTopWidth: 7,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: "#fff",     // 말풍선 배경색과 동일
+  },
+
+  // CTA 버튼
+  ctaBtn: {
+    marginTop: 10,
+    borderRadius: 999,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    backgroundColor: Colors.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    overflow: "hidden",
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  ctaText: {
+    color: "#fff",
+    fontFamily: "BasicBold",
+    fontSize: 14,
+  },
+  // 펄스 레이어 (버튼 아래 깔리는 잔광)
+  ctaPulse: {
+    position: "absolute",
+    inset: 0,
+    borderRadius: 999,
+    backgroundColor: "#fff",
+  },
+
   alchie: {
     width: 150,
     height: 150,
+    marginTop: 8,
     marginLeft: 8,
   },
 
@@ -290,7 +516,7 @@ const styles = StyleSheet.create({
   /* bigCard */
   bigCard: {
     minHeight: 130,
-    marginTop: 14,
+    marginTop: -6,
     marginBottom: 14,
   },
 
@@ -301,9 +527,10 @@ const styles = StyleSheet.create({
   },
   squareCard: {
     flex: 1,
-    height: 140,
+    height: 130,
     justifyContent: "space-between",
     backgroundColor: Colors?.primary,
+    marginBottom: -20,
   },
   cardRight: {
     marginLeft: 12,
@@ -311,11 +538,11 @@ const styles = StyleSheet.create({
   },
 
   divider: {
-    height: 4,
+    height: 8,
     marginHorizontal: -20,
     backgroundColor: Colors?.white,
-    marginTop: 8,
-    marginBottom: 12,
+    marginTop: -10,
+    marginBottom: -10,
   },
 
   sectionTitle: {
@@ -387,10 +614,10 @@ const styles = StyleSheet.create({
     marginHorizontal: -20,
     backgroundColor: Colors?.white,
     paddingVertical: 12,
-    marginBottom: 10,
+    marginBottom: 6,
   },
   moneyContainer: {
-    marginBottom: 10,
+    marginBottom: 0,
     // paddingHorizontal: -10,
   },
 });
