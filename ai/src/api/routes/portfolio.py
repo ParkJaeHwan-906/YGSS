@@ -2,11 +2,7 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Optional
 from pydantic import BaseModel
 from services.portfolio_analyzer import portfolio_analyzer
-# from services.model_loader import get_metadata, get_asset_profit_rate
-# from prediction import predict_best
-import json
 import logging
-import numpy as np
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -47,6 +43,7 @@ class SavePortfolioRequest(BaseModel):
 @router.post("/analyze", response_model=PortfolioAnalysisResponse)
 async def analyze_portfolio(request: PortfolioAnalysisRequest):
     try:
+        logger.info("analyze_portfolio 호출 시작")
         if not request.asset_list:
             raise HTTPException(status_code=400, detail="분석할 상품 리스트가 없습니다.")
 
