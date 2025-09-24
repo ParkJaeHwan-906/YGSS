@@ -65,6 +65,7 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
         RecommendPortfolioRequest fastApiRequest = RecommendPortfolioRequest.builder()
                 .riskGradeId(investorPersonalityId + (dc ? 1 : -1))     // DC 형은 조금 더 공격적인 투자, IRP 는 조금 소극적인 투자
                 .salary(userSalary)
+                .totalRetirePension(user == null ? null : user.getTotalRetirePension())
                 .build();
         fastApiRequest.limitFieldRange();
         fastApiRequest.setProductList(productDetailRepository.selectProductForRecommend(fastApiRequest.getRiskGradeId()));
