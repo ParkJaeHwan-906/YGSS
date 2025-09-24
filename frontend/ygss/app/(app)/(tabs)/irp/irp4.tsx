@@ -6,7 +6,7 @@ import { Picker } from "@react-native-picker/picker";
 import axios from "axios";
 import { useRouter } from "expo-router";
 import { MotiView } from "moti";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
     ActionSheetIOS,
     ActivityIndicator,
@@ -19,9 +19,9 @@ import {
     StatusBar,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
+    TextInput as RNTextInput,
 } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -105,8 +105,7 @@ export default function Irp4() {
 
     const [inputSalaryMan, setInputSalaryMan] = useState<string>(""); // 입력할 납입금액
     const [selectedYear, setSelectedYear] = useState<number>(3); // 피커에서 보여줄 값
-    const [appliedYear, setAppliedYear] = useState<number | null>(null); // '비교하기'를 눌렀을 때 확정되는 값
-
+    
     // ===== 상태 추가 (Dc4 컴포넌트 내부)
     const [loading, setLoading] = useState(false);
     const [errMsg, setErrMsg] = useState<string | null>(null);
@@ -119,57 +118,93 @@ export default function Irp4() {
     const scrollRef = React.useRef<ScrollView>(null);
     const [irpY, setIrpY] = useState(0);
 
+    // 재호출 방지
+    const inputRef = useRef<RNTextInput>(null);
+    const inFlightRef = useRef(false);
+    const lastQueryRef = useRef<{ risk: number; salary: number } | null>(null);
+    const [isInputDirty, setIsInputDirty] = useState(true); // 입력 변경 시 true → 버튼 활성화
+
+    const irpAmount = useMemo(
+        () => pickByYear(cmp?.dcCalculateGraph, selectedYear),
+        [cmp?.dcCalculateGraph, selectedYear]
+      );
+
     // 비교하기 버튼 클릭 시, 동작
     const handleCompare = async () => {
         try {
-            Keyboard.dismiss();
-            setLoading(true);
-            setErrMsg(null);
-
-            // '투자성향'이 없는 회원은 다시 가서, 검사하고 오세요
-            if (!riskGradeId) {
-                Alert.alert("투자성향 필요",
-                    "서비스 이용을 위해 투자성향을 먼저 검사한 후에 이용해 주세요 :)",
-                    [
-                        { text: "취소", style: "cancel" },
-                        { text: "검사하러 가기", onPress: () => router.push("/(app)/invest") }]
-                );
-                return;
-            }
-
-            const inputSalary = toWon(inputSalaryMan);
-
-            let url = "";
-            let params: any | undefined;
-            let headers: any | undefined;
-
-            url = `${API_URL}/recommend/compare/irp`;
-            params = { investorPersonalityId: riskGradeId, salary: inputSalary };
-            headers = { Authorization: `A103 ${accessToken}` };
-
-            const { data } = await axios.get<CompareResp>(url, { params, headers });
-            console.log("[irp4] API 응답", data);
-            setCmp(data);
-
-            //스크롤 이동
+          if (inFlightRef.current) return;
+          inFlightRef.current = true;
+      
+          // 커서/키보드 제거
+          inputRef.current?.blur();
+          Keyboard.dismiss();
+      
+          setLoading(true);
+          setErrMsg(null);
+      
+          if (!riskGradeId) {
+            Alert.alert("투자성향 필요",
+              "서비스 이용을 위해 투자성향을 먼저 검사한 후에 이용해 주세요 :)",
+              [
+                { text: "취소", style: "cancel" },
+                { text: "검사하러 가기", onPress: () => router.push("/(app)/invest") }
+              ]
+            );
+            return;
+          }
+      
+          const salaryWon = toWon(inputSalaryMan);
+          const risk = Number(riskGradeId);
+          const prev = lastQueryRef.current;
+      
+          // ① 같은 급여+같은 투자성향이면 네트워크 스킵 (연도는 인덱싱으로 이미 반영)
+          if (prev && prev.risk === risk && prev.salary === salaryWon && cmp) {
+            console.log("[irp4] skip fetch: same query, use cached cmp");
+            setIsInputDirty(false); // 버튼 비활성화
+            // 스크롤만 수행 (UX 유지)
             setTimeout(() => {
-                scrollRef.current?.scrollTo({ y: irpY, animated: true });
+              scrollRef.current?.scrollTo({ y: irpY, animated: true });
             }, 300);
-
-            setAppliedYear(selectedYear);
+            return;
+          }
+      
+          // ② 새 입력이면 실제 호출
+          const url = `${API_URL}/recommend/compare/irp`;
+          const params = { investorPersonalityId: risk, salary: salaryWon };
+          const headers = { Authorization: `A103 ${accessToken}` };
+      
+          console.log("[irp4] >>> REQUEST", { url, params });
+          const resp = await axios.get<CompareResp>(url, { params, headers, validateStatus: () => true });
+          console.log("[irp4] <<< RESPONSE", resp.status);
+      
+          if (resp.status >= 400) {
+            setErrMsg(
+              `[${resp.status}] ${(resp.data as any)?.message || (resp.data as any)?.error || "요청 실패"}`
+            );
+            return;
+          }
+      
+          setCmp(resp.data);
+          lastQueryRef.current = { risk, salary: salaryWon };
+          setIsInputDirty(false); // 새 비교 완료 → 버튼 비활성화
+      
+          // 스크롤 UX
+          setTimeout(() => {
+            scrollRef.current?.scrollTo({ y: irpY, animated: true });
+          }, 300);
         } catch (e: any) {
-            console.error("비교하기 실패:", e);
-            setErrMsg("예상 수익 데이터를 불러오지 못했어요.");
+          console.error("[irp4] AXIOS ERROR", {
+            message: e?.message,
+            code: e?.code,
+            status: e?.response?.status,
+            data: e?.response?.data,
+          });
+          setErrMsg("예상 수익 데이터를 불러오지 못했어요.");
         } finally {
-            setLoading(false);
+          inFlightRef.current = false;
+          setLoading(false);
         }
-    };
-
-    // 연도별 금액
-    const irpValue = React.useMemo(
-        () => pickByYear(cmp?.dcCalculateGraph, appliedYear ?? selectedYear),
-        [cmp?.dcCalculateGraph, appliedYear, selectedYear]
-    );
+      };      
 
     // 로그인 가드
     useEffect(() => {
@@ -290,27 +325,42 @@ export default function Irp4() {
                     </View>
 
                     <View style={styles.inputRow}>
-                        <View style={styles.inputWrap}>
-                            <TextInput
-                                style={styles.input}
-                                keyboardType="numeric"
-                                placeholder="IRP 계좌 월 납입금"
-                                value={inputSalaryMan}
-                                onChangeText={(v) => {
-                                    const onlyDigits = v.replace(/\D/g, "");
-                                    setInputSalaryMan(onlyDigits.replace(/^0+(?=\d)/, ""));
-                                }}
-                            />
-                            <Text style={styles.inputSuffix}>만원</Text>
-                        </View>
+                    <View style={styles.inputWrap} pointerEvents={loading ? "none" : "auto"}>
+                        <RNTextInput
+                            ref={inputRef}
+                            style={styles.input}
+                            keyboardType="numeric"
+                            placeholder="IRP 계좌 월 납입금"
+                            value={inputSalaryMan}
+                            onChangeText={(v) => {
+                            const onlyDigits = v.replace(/\D/g, "");
+                            setInputSalaryMan(onlyDigits.replace(/^0+(?=\d)/, ""));
+                            setIsInputDirty(true); // ← 입력 바꾸면 다시 비교 가능
+                            }}
+                            // Android 포커스/커서 제어
+                            editable={!loading}
+                            focusable={!loading}
+                            showSoftInputOnFocus={!loading}
+                            caretHidden={loading}
+                        />
+                        <Text style={styles.inputSuffix}>만원</Text>
+                    </View>
+
                     </View>
 
                     <TouchableOpacity
-                        activeOpacity={inputSalaryMan ? 0.8 : 1}
-                        style={[styles.primaryBtn, { opacity: inputSalaryMan ? 1 : 0.5 }]}
-                        onPress={handleCompare}>
-                        <Text style={styles.primaryBtnText}>확인하기</Text>
-                    </TouchableOpacity>
+                        activeOpacity={(!loading && isInputDirty && !!inputSalaryMan) ? 0.8 : 1}
+                        style={[
+                            styles.primaryBtn,
+                            { opacity: (!loading && isInputDirty && !!inputSalaryMan) ? 1 : 0.5 }
+                        ]}
+                        onPress={handleCompare}
+                        disabled={loading || !isInputDirty || !inputSalaryMan}
+                        >
+                        <Text style={styles.primaryBtnText}>
+                            확인하기
+                        </Text>
+                        </TouchableOpacity>
 
                     {/* ↓ 스크롤 힌트 */}
                     <Text style={styles.scrollHint}>⌄</Text>
@@ -319,9 +369,10 @@ export default function Irp4() {
                     <View style={[styles.section]} onLayout={(e) => setIrpY(e.nativeEvent.layout.y)}>
                         <View style={styles.sectionHeader}>
                             <View style={styles.pill}>
-                                <Text style={styles.pillText}>IRP</Text>
+                                <Text style={styles.pillText}>{inputSalaryMan}</Text>
                             </View>
-                            <Text style={styles.sectionTitle}>를 선택했을 때,</Text>
+                                <Text style={styles.sectionTitle}>만원을</Text>
+                                <Text style={styles.sectionTitle}> {selectedYear}년 동안 넣으면?</Text>
                             <Image source={require("@/assets/icon/chart2.png")} style={styles.sectionIcon} resizeMode="contain" />
                         </View>
 
@@ -336,7 +387,7 @@ export default function Irp4() {
                             </>
                         ) : (
                             <>
-                                <Text style={styles.bigNumber}>{toManWonLabel(irpValue)}</Text>
+                                <Text style={styles.bigNumber}>{toManWonLabel(irpAmount)}</Text>
                                 <Text style={styles.smallCaption}>근속년수 '{selectedYear}년' 기준 퇴직연금이에요.</Text>
 
                                 <View style={[styles.chartBox, { overflow: "hidden", alignSelf: "center" }]}>
