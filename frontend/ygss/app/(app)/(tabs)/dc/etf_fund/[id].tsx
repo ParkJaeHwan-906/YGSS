@@ -12,16 +12,11 @@ import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Animated, BackHandler, Easing, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Animated, BackHandler, Dimensions, Easing, Image, Modal, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const fireIcon = require("@/assets/icon/fire.png");
-const etfIcon = require("@/assets/icon/etf.png");
-const bondIcon = require("@/assets/icon/bond.png");
-const fundIcon = require("@/assets/icon/fund.png");
-const interestIcon = require("@/assets/icon/interest.png");
-
 const API_URL = process.env.EXPO_PUBLIC_API_URL as string;
+const { width, height } = Dimensions.get("window");
 
 export default function DcDetail() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -33,7 +28,70 @@ export default function DcDetail() {
     const router = useRouter();
     const { from } = useLocalSearchParams<{ from: string }>();
 
-    const [showModal, setShowModal] = useState(false);
+    //찜하기 모달
+    // const [showModal, setShowModal] = useState(false);
+
+    const [showToast, setShowToast] = useState(false);
+    const toastOpacity = useRef(new Animated.Value(0)).current;
+
+    //찜하기 하트 애니메이션
+    const [showHeart, setShowHeart] = useState(false);
+    const heartPos = useRef(new Animated.ValueXY({ x: width / 2 - 50, y: height - 200 })).current;
+    const heartScale = useRef(new Animated.Value(0)).current;
+    const heartOpacity = useRef(new Animated.Value(0)).current;
+
+    const showToastMessage = () => {
+        setShowToast(true);
+        toastOpacity.setValue(0);
+
+        Animated.timing(toastOpacity, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+        }).start();
+
+        setTimeout(() => {
+            Animated.timing(toastOpacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start(() => setShowToast(false));
+        }, 1500); // 1.5초 후 사라짐
+    };
+
+    const animateHeart = () => {
+        setShowHeart(true);
+
+        // 시작 위치: 화면 중간쯤 (버튼 위쪽)
+        heartPos.setValue({ x: width / 2 - 50, y: height - 200 });
+        heartScale.setValue(0);
+        heartOpacity.setValue(1);
+
+        Animated.parallel([
+            Animated.sequence([
+                Animated.spring(heartScale, {
+                    toValue: 1.2,
+                    useNativeDriver: true,
+                }),
+                Animated.spring(heartScale, {
+                    toValue: 1,
+                    useNativeDriver: true,
+                }),
+            ]),
+            Animated.timing(heartPos, {
+                toValue: { x: width - 100, y: height - 150 }, // 마이페이지 탭 아이콘 위치 근처
+                duration: 1200,
+                easing: Easing.inOut(Easing.quad),
+                useNativeDriver: true,
+            }),
+            Animated.timing(heartOpacity, {
+                toValue: 0,
+                duration: 1200,
+                delay: 600,
+                useNativeDriver: true,
+            }),
+        ]).start(() => setShowHeart(false));
+    };
 
     const handleLikeToggle = async () => {
         try {
@@ -53,7 +111,9 @@ export default function DcDetail() {
             setLiked(res.data === true);
 
             if (res.data === true) {
-                setShowModal(true);
+                animateHeart();
+                showToastMessage();
+                // setShowModal(true);
             }
         } catch (err: any) {
             console.log(err)
@@ -171,120 +231,162 @@ export default function DcDetail() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            {loading ? (
-                <ActivityIndicator size="large" color={Colors.primary} />
-            ) : !productDetail ? (
-                <Text>상품 정보를 불러올 수 없습니다.</Text>
-            ) : !graphData ? (
-                <Text>그래프 데이터를 불러올 수 없습니다.</Text>
-            ) : (
-                <>
-                    <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={{ flex: 1 }}>
+            <SafeAreaView style={styles.container}>
+                {loading ? (
+                    <ActivityIndicator size="large" color={Colors.primary} />
+                ) : !productDetail ? (
+                    <Text>상품 정보를 불러올 수 없습니다.</Text>
+                ) : !graphData ? (
+                    <Text>그래프 데이터를 불러올 수 없습니다.</Text>
+                ) : (
+                    <>
+                        <ScrollView contentContainerStyle={styles.scrollContent}>
 
-                        {/* 상품 기본 정보 */}
-                        <ItemInfo productDetail={productDetail} />
+                            {/* 상품 기본 정보 */}
+                            <ItemInfo productDetail={productDetail} />
 
-                        {/* 투자 전략 */}
-                        <View style={styles.stratContainer}>
-                            <ItemStrat data={graphData.investStrategy} />
-                        </View>
+                            {/* 투자 전략 */}
+                            <View style={styles.stratContainer}>
+                                <ItemStrat data={graphData.investStrategy} />
+                            </View>
 
-                        {/* 기간별 수익률 */}
-                        <View style={styles.profitContainer}>
-                            <ProfitChart data={graphData.priceChart} />
-                        </View>
+                            {/* 기간별 수익률 */}
+                            <View style={styles.profitContainer}>
+                                <ProfitChart data={graphData.priceChart} />
+                            </View>
 
-                        {/* 운용사 */}
-                        <View style={styles.corpContainer}>
-                            <ItemCorp company={productDetail.company} />
-                        </View>
+                            {/* 운용사 */}
+                            <View style={styles.corpContainer}>
+                                <ItemCorp company={productDetail.company} />
+                            </View>
 
-                        {/* 종목 구성 */}
-                        <View style={styles.pointContainer}>
-                            <Image
-                                source={require("@/assets/char/pointAlchi.png")}
-                                style={styles.pointAlchi}
-                                resizeMode="contain"
-                            />
-                            <Text style={styles.pointText}>종목 구성은 이렇게 되어 있어요 !</Text>
-                            <Animated.View style={{ transform: [{ translateY }] }}>
-                                <Ionicons
-                                    name="chevron-down-outline"
-                                    size={24}
-                                    color="black"
-                                    onPress={toggleRatio}
+                            {/* 종목 구성 */}
+                            <View style={styles.pointContainer}>
+                                <Image
+                                    source={require("@/assets/char/pointAlchi.png")}
+                                    style={styles.pointAlchi}
+                                    resizeMode="contain"
                                 />
-                            </Animated.View>
-                        </View>
+                                <Text style={styles.pointText}>종목 구성은 이렇게 되어 있어요 !</Text>
+                                <Animated.View style={{ transform: [{ translateY }] }}>
+                                    <Ionicons
+                                        name="chevron-down-outline"
+                                        size={24}
+                                        color="black"
+                                        onPress={toggleRatio}
+                                    />
+                                </Animated.View>
+                            </View>
 
-                        {showRatio && (
-                            <Animated.View
-                                style={[
-                                    styles.ratioContainer,
-                                    { opacity, transform: [{ translateY: slideY }] },
-                                ]}
-                            >
-                                <ItemRatio data={graphData.doughnutChart} />
-                            </Animated.View>
-                        )}
+                            {showRatio && (
+                                <Animated.View
+                                    style={[
+                                        styles.ratioContainer,
+                                        { opacity, transform: [{ translateY: slideY }] },
+                                    ]}
+                                >
+                                    <ItemRatio data={graphData.doughnutChart} />
+                                </Animated.View>
+                            )}
 
-                        <View>
-                            <Caution />
-                        </View>
+                            <View>
+                                <Caution />
+                            </View>
 
 
-                    </ScrollView>
+                        </ScrollView>
 
-                    {/* 상품 찜하기 버튼 fixed 고정 */}
-                    {/* 찜 해제하기 색깔 변경 */}
-                    <Button onPress={() => { handleLikeToggle() }}
-                        style={[
-                            styles.button,
-                            liked ? { backgroundColor: "#AA00FF" } : {},
-                        ]}
-                        label={liked === true ? "찜 해제하기" : liked === false ? "찜하기" : "로그인 후 이용해주세요"}
-                        disabled={loadingLike || liked === null}>
-                    </Button>
-                </>
-            )}
+                        {/* 상품 찜하기 버튼 fixed 고정 */}
+                        {/* 찜 해제하기 색깔 변경 */}
+                        <Button onPress={handleLikeToggle}
+                            style={[
+                                styles.button,
+                                liked ? { backgroundColor: "#AA00FF" } : {},
+                            ]}
+                            label={liked === true ? "찜 해제하기" : liked === false ? "찜하기" : "로그인 후 이용해주세요"}
+                            disabled={loadingLike || liked === null}>
+                        </Button>
+                    </>
+                )}
 
-            {/* 찜 완료 모달 */}
-            <Modal
-                visible={showModal}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setShowModal(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalBox}>
-                        <Text style={styles.modalTitle}>찜 완료 ✓</Text>
-                        <Text style={styles.modalText}>해당 상품을 찜 목록에 추가하였습니다</Text>
+                {/* 찜 완료 모달 */}
+                {/* <Modal
+                    visible={showModal}
+                    transparent
+                    animationType="slide"
+                    onRequestClose={() => setShowModal(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalBox}>
+                            <Text style={styles.modalTitle}>찜 완료 ✓</Text>
+                            <Text style={styles.modalText}>해당 상품을 찜 목록에 추가하였습니다</Text>
 
-                        <View style={styles.modalButtons}>
-                            <Pressable
-                                style={[styles.modalBtn, { backgroundColor: "#ccc" }]}
-                                onPress={() => setShowModal(false)}
-                            >
-                                <Text style={[styles.modalBtnText, { color: Colors.black }]}>
-                                    닫기
-                                </Text>
-                            </Pressable>
-                            <Pressable
-                                style={[styles.modalBtn, { backgroundColor: Colors.primary }]}
-                                onPress={() => {
-                                    setShowModal(false);
-                                    router.push("/(app)/(tabs)/mypage");
-                                }}
-                            >
-                                <Text style={styles.modalBtnText}>마이페이지로 이동</Text>
-                            </Pressable>
+                            <View style={styles.modalButtons}>
+                                <Pressable
+                                    style={[styles.modalBtn, { backgroundColor: "#ccc" }]}
+                                    onPress={() => setShowModal(false)}
+                                >
+                                    <Text style={[styles.modalBtnText, { color: Colors.black }]}>
+                                        닫기
+                                    </Text>
+                                </Pressable>
+                                <Pressable
+                                    style={[styles.modalBtn, { backgroundColor: Colors.primary }]}
+                                    onPress={() => {
+                                        setShowModal(false);
+                                        router.push("/(app)/(tabs)/mypage");
+                                    }}
+                                >
+                                    <Text style={styles.modalBtnText}>마이페이지로 이동</Text>
+                                </Pressable>
 
+                            </View>
                         </View>
                     </View>
-                </View>
-            </Modal>
-        </SafeAreaView>
+                </Modal> */}
+
+            </SafeAreaView>
+
+            {/* 하트 애니메이션 */}
+            {showHeart && (
+                <Modal transparent visible>
+                    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                        <Animated.Image
+                            source={require("@/assets/icon/pinkHeart.png")} // 너가 준 하트 이미지
+                            style={{
+                                position: "absolute",
+                                width: 100,
+                                height: 100,
+                                transform: [
+                                    { translateX: heartPos.x },
+                                    { translateY: heartPos.y },
+                                    { scale: heartScale },
+                                ],
+                                opacity: heartOpacity,
+                            }}
+                            resizeMode="contain"
+                        />
+                    </View>
+                </Modal>
+            )
+            }
+            {/* 찜 완료 토스트 */}
+            {showToast && (
+                <Animated.View
+                    style={[
+                        styles.toastOverlay,
+                        { opacity: toastOpacity }
+                    ]}
+                    pointerEvents="none"
+                >
+                    <View style={styles.toastBox}>
+                        <Text style={styles.toastText}>찜 완료 ✓</Text>
+                        <Text style={{ fontFamily: "BasicMedium", fontSize: 12, color: Colors.black, marginTop: 10 }}>마이페이지에서 확인하세요</Text>
+                    </View>
+                </Animated.View>
+            )}
+        </View>
     );
 }
 
@@ -362,5 +464,24 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontFamily: "BasicMedium",
         color: Colors.white,
+    },
+    toastOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: "rgba(0,0,0,0.3)",
+        justifyContent: "flex-end",
+        alignItems: "center",
+        paddingBottom: 100, // 탭 위쪽 정도
+    },
+    toastBox: {
+        backgroundColor: Colors.white,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 20,
+    },
+    toastText: {
+        fontSize: 16,
+        fontFamily: "BasicBold",
+        color: Colors.primary,
+        textAlign: "center",
     },
 });
