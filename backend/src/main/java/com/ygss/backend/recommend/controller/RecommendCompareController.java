@@ -97,20 +97,15 @@ public class RecommendCompareController {
     }
 
     /**
-     *  포트폴리오 추천
+     *  로그인하지 않은 사용자의 DB 예측
      */
-    @GetMapping("/product")
-    public ResponseEntity<?> getRecommendDcPortfolio(@AuthenticationPrincipal String email){
-        try{
-            EditUserInfoResponseDto user = userService.getUserInfoByUserEmail(email);
-            return ResponseEntity.ok(recommendCompareService.getRecommendPortfolio(
-                    RecommendPortfolioRequest.builder()
-                            .riskGradeId(user.getRiskGradeId())
-                            .salary(user.getSalary())
-                            .build()
-            ));
-        }catch (RuntimeException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
+    @GetMapping("/public/compare/db")
+    public ResponseEntity<?> publicCompareRetirePensionDbProduct(RecommendCompareRequestDto request) {
+        try {
+            return ResponseEntity.ok(recommendCompareService.predictionDb(request));
+        } catch (Exception e) {
+            log.error("Recommend Retire Pension DB Failed : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
         }
     }
 }

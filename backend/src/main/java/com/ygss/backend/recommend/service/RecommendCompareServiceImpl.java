@@ -1,6 +1,7 @@
 package com.ygss.backend.recommend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ygss.backend.chatbot.service.FastApiServiceImpl;
 import com.ygss.backend.pensionProduct.dto.entity.PensionProduct;
 import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
@@ -38,6 +39,7 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
     private final UserAccountsRepository userAccountsRepository;
     private final PensionProductRepository pensionProductRepository;
     private final ProductDetailRepository productDetailRepository;
+    private final FastApiServiceImpl fastApiService;
     private RestClient client;
     /**
      * 상품을 비교하여 추천
@@ -60,13 +62,14 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
         // DB
         Long[] dbCalculateGraph = calculatePredictionRetirePension(userSalary, 0.041);       // 임시로 24년도 기준 복리 적용
         Long dbCalculate = dbCalculateGraph[3];         // 최종 예상 퇴직연금
+        RecommendPortfolioRequest fastApiRequest = RecommendPortfolioRequest.builder()
+                .riskGradeId(investorPersonalityId + (dc ? 1 : -1))     // DC 형은 조금 더 공격적인 투자, IRP 는 조금 소극적인 투자
+                .salary(userSalary)
+                .build();
+        fastApiRequest.limitFieldRange();
+        fastApiRequest.setProductList(productDetailRepository.selectProductForRecommend(fastApiRequest.getRiskGradeId()));
         // DC
-        RecommendPortfolioResponse recommendPortfolioResponse = getRecommendPortfolio(
-                RecommendPortfolioRequest.builder()
-                        .riskGradeId(investorPersonalityId + (dc ? 1 : -1))     // DC 형은 조금 더 공격적인 투자, IRP 는 조금 소극적인 투자
-                        .salary(userSalary)
-                        .build()
-        );
+        RecommendPortfolioResponse recommendPortfolioResponse = fastApiService.getRecommendPortfolio(fastApiRequest);
         Long[] dcCalculateGraph = calculatePredictionRetirePension(userSalary, recommendPortfolioResponse.getTotalExpectedReturn());
         Long dcCalculate = dcCalculateGraph[3];
         List<RecommendProductDto> recommendProductList = new ArrayList<>();
@@ -82,6 +85,17 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
                 .dcCalculateRate(recommendPortfolioResponse.getTotalExpectedReturn())
                 .dcCalculateGraph(dcCalculateGraph)
                 .recommendProductList(recommendProductList)
+                .build();
+    }
+
+    @Override
+    public RecommendCompareResponseDto predictionDb(RecommendCompareRequestDto request) {
+        Long[] dbCalculateGraph = calculatePredictionRetirePension(request.getSalary(), 0.041);       // 임시로 24년도 기준 복리 적용
+        Long dbCalculate = dbCalculateGraph[3];         // 최종 예상 퇴직연금
+        return RecommendCompareResponseDto.builder()
+                .dbCalculate(dbCalculate)
+                .dbCalculateGraph(dbCalculateGraph)
+                .dbCalculateRate(0.041)
                 .build();
     }
 
@@ -132,64 +146,5 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
         List<PensionProduct> products = pensionProductRepository.selectSearch(productCondition);
         List<BondDto> bonds = pensionProductRepository.selectBonds(bondCondition);
         return RecommendCandidateDto.builder().products(products).bonds(bonds).build();
-    }
-
-    @Override
-    public RecommendPortfolioResponse getRecommendPortfolio(RecommendPortfolioRequest request) {
-        try{
-            makeConnection();
-
-            request.limitFieldRange();      // riskGradeId 값 보정
-            request.setProductList(productDetailRepository.selectProductForRecommend(request.getRiskGradeId()));
-
-            return client.post()
-                    .uri(FAST_API_URL+"/portfolio/analyze")
-                    .header("Content-Type", "application/json")
-                    .body(request)
-                    .retrieve()
-                    .body(RecommendPortfolioResponse.class);
-        } catch (Exception e) {
-//            throw new RuntimeException("포트폴리오 추천 중 오류 발생: " + e.getMessage(), e);
-            log.error("fail : {}", e.getMessage());
-            // AI 완성 전 목업 코드
-            return RecommendPortfolioResponse.builder()
-                    .allocations(List.of(
-                            AllocationDto.builder()
-                                    .assetCode(103L)
-                                    .allocationPercentage(31.1)
-                                    .expectedReturn(-0.36585926472562286)
-                                    .riskScore(-0.37613885716265677)
-                                    .build(),
-                            AllocationDto.builder()
-                                    .assetCode(101L)
-                                    .allocationPercentage(33.75)
-                                    .expectedReturn(-0.39700005171418296)
-                                    .riskScore(-0.33670027807346875)
-                                    .build(),
-                            AllocationDto.builder()
-                                    .assetCode(102L)
-                                    .allocationPercentage(35.15)
-                                    .expectedReturn(-0.41341633823007573)
-                                    .riskScore(-0.3190644130574681)
-                                    .build()
-                    ))
-                    .totalExpectedReturn(-1.1762756546698816)
-                    .totalRiskScore(-1.0319035482935937)
-                    .sharpeRatio(-3.6585926472562282)
-                    .riskGradeId(1)
-                    .analysisDate("2025-09-19T13:36:46.166218")
-                    .build();
-        }
-    }
-
-    @Override
-    public void makeConnection() {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofSeconds(60));
-        factory.setReadTimeout(Duration.ofMinutes(10));
-
-        this.client = RestClient.builder()
-                .requestFactory(factory)
-                .build();
     }
 }

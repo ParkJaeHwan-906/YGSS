@@ -6,21 +6,13 @@ from typing import Dict, List, Optional, Tuple, Any
 from .predictor import prediction_service
 from config.settings import settings
 import logging
-import requests
 from requests.exceptions import RequestException
-from .model_manager import ModelManager
-from .model_loader import ModelLoader
-from utils.data_utils import clean_etf_data, aggregate_monthly_data
-import json
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 class PortfolioAnalyzer:
     """포트폴리오 분석 서비스"""
-    def __init__(self, model_manager: ModelManager, model_loader : ModelLoader, prediction_service: Any = None):
-        self.model_manager = model_manager
-        self.model_loader = model_loader
+    def __init__(self, prediction_service: Any = None):
         self.prediction_service = prediction_service # 필요하다면 사용
         self.risk_profiles = {
             '1': {'max_risk': 0.15, 'target_return': 0.05},
@@ -162,6 +154,4 @@ class PortfolioAnalyzer:
             "num_assets": len(allocations)
         }
 
-model_manager = ModelManager(base_path=settings.MODEL_BASE_PATH)
-model_loader = ModelLoader()
-portfolio_analyzer = PortfolioAnalyzer(model_manager=model_manager, model_loader=model_loader, prediction_service=prediction_service)
+portfolio_analyzer = PortfolioAnalyzer(prediction_service=prediction_service)
