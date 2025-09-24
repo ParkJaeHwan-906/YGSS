@@ -97,24 +97,6 @@ public class RecommendCompareController {
     }
 
     /**
-     *  포트폴리오 추천
-     */
-    @GetMapping("/product")
-    public ResponseEntity<?> getRecommendDcPortfolio(@AuthenticationPrincipal String email){
-        try{
-            EditUserInfoResponseDto user = userService.getUserInfoByUserEmail(email);
-            return ResponseEntity.ok(recommendCompareService.getRecommendPortfolio(
-                    RecommendPortfolioRequest.builder()
-                            .riskGradeId(user.getRiskGradeId())
-                            .salary(user.getSalary())
-                            .build()
-            ));
-        }catch (RuntimeException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    /**
      *  로그인하지 않은 사용자의 DB 예측
      */
     @GetMapping("/public/compare/db")
