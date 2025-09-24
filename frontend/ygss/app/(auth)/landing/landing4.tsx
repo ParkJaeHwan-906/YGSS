@@ -147,7 +147,6 @@ export default function Landing4() {
           validateStatus: s => s >= 200 && s < 300,
           headers: {
             Accept: "application/json",
-            "User-Agent": "ygss-app/preview",
           },
         }
       );
