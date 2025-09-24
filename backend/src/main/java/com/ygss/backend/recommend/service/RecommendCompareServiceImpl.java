@@ -90,6 +90,7 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
 
     @Override
     public RecommendCompareResponseDto predictionDb(RecommendCompareRequestDto request) {
+        request.divYear();
         Long[] dbCalculateGraph = calculatePredictionRetirePension(request.getSalary(), 0.041);       // 임시로 24년도 기준 복리 적용
         Long dbCalculate = dbCalculateGraph[3];         // 최종 예상 퇴직연금
         return RecommendCompareResponseDto.builder()
