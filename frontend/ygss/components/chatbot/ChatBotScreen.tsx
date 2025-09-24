@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppSelector, useAppDispatch } from '@/src/store/hooks';
 import { clearMessages, setSearchQuery, setSearchMode } from '@/src/store/slices/chatSlice';
-import { sendSmartChat } from '@/src/api/chatbotAPI';
+import { sendBranchMessage } from '@/src/api/chatbotAPI';
 import TabButton from '@/components/molecules/TabButton';
 
 import ChatHeader from './ChatHeader';
@@ -23,6 +23,7 @@ import ChatInput from './ChatInput';
 import MessageBubble from './MessageBubble';
 import SearchBar from './SearchBar';
 import { useTypingEffect } from '../../hooks/useTypingEffect';
+import { resetSessionId } from '@/src/lib/session';
 
 interface ChatBotScreenProps {
   onClose: () => void;
@@ -39,44 +40,25 @@ const ChatBotScreen: React.FC<ChatBotScreenProps> = ({ onClose }) => {
 
   const { addTypingMessage, cleanup } = useTypingEffect();
 
-  // ✅ 탭 라벨을 그대로 메시지로 보내는 함수
-  const handleQuickTap = (label: string) => {
-    // 검색 모드였다면 닫기
-    if (isSearchMode) dispatch(setSearchMode(false));
-
-    // 타이핑 이펙트 + 서버 응답 로직 재사용
-    addTypingMessage(label, getBotResponse);
-
-    // 입력창은 비우기(혹시 남아있을 수 있으니)
-    setInputText('');
-    
-    // 살짝 늦춰서 하단으로 스크롤
+  // 공통 전송ㄴ 함수수
+  const sendText = (text: string) => {
+    const msg = text.trim();
+    if (!msg) return;
+  
+    const lower = msg.toLowerCase();
+    if (['reset', '리셋', '초기화'].includes(lower)) {
+      dispatch(clearMessages());
+      resetSessionId();
+      setInputText('');
+      return;
+    }
+  
+    addTypingMessage(msg, getBotResponse);
     requestAnimationFrame(() => {
       flatListRef.current?.scrollToEnd({ animated: true });
     });
   };
 
-//   const getBotResponse = async (userText: string): Promise<string> => {
-//     const lower = userText.toLowerCase().trim();
-  
-//     // reset 명령어는 로컬 처리
-//     if (lower === 'reset' || lower === '리셋' || lower === '초기화') {
-//       return '대화가 초기화되었습니다. 다시 시작해보세요!';
-//     }
-//     // if (lower.includes('dc') || lower.includes('확정기여')) {
-//     //   return 'DC형(확정기여형)은 회사가 일정 금액을 적립하고, 근로자가 운용하는 방식입니다.';
-//     // }
-//     // if (lower.includes('irp') || lower.includes('개인형')) {
-//     //   return 'IRP(개인형퇴직연금)는 개인이 직접 가입해 운용할 수 있는 연금계좌입니다.';
-//     // }
-  
-//   try {
-//     const response = await sendChatbotMessage(userText, accessToken);
-//     return response;
-//   } catch (error: any) {
-//     return error.message;
-//   }
-// };
 
   const getBotResponse = async (userText: string): Promise<string> => {
     const lower = userText.toLowerCase().trim();
@@ -85,26 +67,22 @@ const ChatBotScreen: React.FC<ChatBotScreenProps> = ({ onClose }) => {
     }
 
     try {
-      return await sendSmartChat(userText, accessToken);
+      return await sendBranchMessage(userText, accessToken);
     } catch (e: any) {
       return e?.message ?? '죄송해요, 지금 응답할 수 없어요. 다시 시도해주세요.';
     }
   };
 
   const handleSend = () => {
-    if (!inputText.trim()) return;
-
-    const userInput = inputText.trim();
-    
-    // reset 명령어는 바로 처리하고 타이핑 효과 없이 응답
-    if (userInput.toLowerCase() === 'reset' || userInput.toLowerCase() === '리셋' || userInput.toLowerCase() === '초기화') {
-      dispatch(clearMessages());
-      setInputText('');
-      return;
-    }
-
-    addTypingMessage(inputText, getBotResponse);
+    sendText(inputText);
     setInputText('');
+  };
+  
+  // ✅ 탭 클릭도 동일하게 공통 함수로 처리
+  const handleQuickTap = (label: string) => {
+    if (isSearchMode) dispatch(setSearchMode(false));
+    setInputText('');
+    sendText(label);
   };
 
   const handleSearchPress = () => {
@@ -221,13 +199,20 @@ const ChatBotScreen: React.FC<ChatBotScreenProps> = ({ onClose }) => {
             {QUICK_LABELS.map((label) => (
               <Pressable
                 key={label}
-                onPress={() => handleQuickTap(label)} // ← 여기서 전송!
+                onPressIn={() => console.log('[outer] pressIn', label)}
                 style={({ pressed }) => [styles.tabWrap, pressed && styles.tabWrapPressed]}
                 android_ripple={{ color: Colors.back }}
                 accessibilityRole="button"
                 accessibilityLabel={`빠른질문 ${label}`}
               >
-                <TabButton label={label} style={{ backgroundColor: Colors.base }} />
+                <TabButton
+                  label={label}
+                  onPress={() => {
+                    console.log('[inner] onPress', label);
+                    handleQuickTap(label);
+                  }}
+                  style={{ backgroundColor: Colors.base }}
+                />
               </Pressable>
             ))}
           </ScrollView>
