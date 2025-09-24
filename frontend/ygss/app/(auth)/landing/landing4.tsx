@@ -118,63 +118,198 @@ export default function Landing4() {
   const controllerRef = React.useRef<AbortController | null>(null);
 
   // ====== API 호출 (비회원 전용) ======
+  // const fetchPublicCompare = async () => {
+  //   // ── 1) 쿼리 파라미터 (만원 → 원 보정)
+  //   const params = {
+  //     investorPersonalityId,
+  //     salary: yearlySalary * 10000, // ★ 중요: 단위 보정
+  //   };
+ 
+  //   controllerRef.current?.abort();
+  //   controllerRef.current = new AbortController();
+  //   setLoading(true);
+  //   setErrMsg(null);
+
+  //   console.log("[L4] >>> REQUEST", {
+  //     url: `${API_URL}/recommend/public/compare/dc`,
+  //     params,
+  //     headers: { Accept: "application/json" },
+  //   });
+  //   console.time("[L4] fetchPublicCompare");             
+
+  //   const hardTimeout = new Promise<never>((_, rej) =>
+  //     setTimeout(() => {
+  //       controllerRef.current?.abort();
+  //       rej(new Error("HARD_TIMEOUT"));
+  //     }, 10000)
+  //   );
+  
+  //   try {
+  //     const axiosPromise = axios.get<CompareResp>(
+  //       `${API_URL}/recommend/public/compare/dc`,
+  //       {
+  //         params,
+  //         timeout: 8000,
+  //         validateStatus: s => s >= 200 && s < 300,
+  //         headers: {
+  //           Accept: "application/json",
+  //         },
+  //       }
+  //     );
+    
+  //       const resp = await Promise.race([axiosPromise, hardTimeout]);
+    
+  //       console.log("[L4] <<< RESPONSE", {
+  //         status: resp.status,
+  //         headers: resp.headers,
+  //         data: resp.data,
+  //       });
+    
+  //       if (resp.status >= 400) {
+  //         // 서버가 에러 메시지를 내려주면 보여주기
+  //         const body: any = resp.data;
+  //         setErrMsg(
+  //           `[${resp.status}] ${body?.message || body?.error || "요청 실패"}`
+  //         );
+  //         return;
+  //       }
+    
+  //       setData(resp.data);
+  //     } catch (e: any) {
+  //       // Axios 에러/기타 에러 모두 상세 출력
+  //       if (axios.isAxiosError(e)) {
+  //         console.log("[L4] !!! AXIOS ERROR", {
+  //           code: e.code,
+  //           message: e.message,
+  //           status: e.response?.status,
+  //           data: e.response?.data,
+  //           headers: e.response?.headers,
+  //         });
+  //         if (e.code === "ECONNABORTED") {
+  //           setErrMsg("서버 응답이 지연되고 있어요. 잠시 후 다시 시도해주세요.");
+  //         } else {
+  //           setErrMsg("예상 수익 데이터를 불러오지 못했어요.");
+  //         }
+  //       } else {
+  //         console.log("[L4] !!! UNKNOWN ERROR", e);
+  //         setErrMsg("네트워크 오류가 발생했어요.");
+  //       }
+  //     } finally {
+  //       console.timeEnd("[L4] fetchPublicCompare");
+  //       setLoading(false);
+  //     }
+  //   };
   const fetchPublicCompare = async () => {
-    // ── 1) 쿼리 파라미터 (만원 → 원 보정)
     const params = {
       investorPersonalityId,
-      salary: yearlySalary * 10000, // ★ 중요: 단위 보정
+      salary: yearlySalary * 10000,
     };
- 
-    controllerRef.current?.abort();
-    controllerRef.current = new AbortController();
+  
+    // 환경 진단 로그
+    console.log("[L4] ENV", {
+      API_URL,
+      Platform: Platform.OS,
+      // appOwnership: Constants?.appOwnership, // 'expo'|'standalone'|'guest' (선택)
+      isWeb: Platform.OS === "web",
+      params,
+    });
+  
+    // 이전 요청 취소 로직은 잠깐 비활성화 (abort 오작동 배제)
+    // controllerRef.current?.abort();
+    // controllerRef.current = new AbortController();
+  
     setLoading(true);
     setErrMsg(null);
-    console.time("[L4] fetchPublicCompare");
-
-    const hardTimeout = new Promise<never>((_, rej) =>
-      setTimeout(() => {
-        controllerRef.current?.abort();
-        rej(new Error("HARD_TIMEOUT"));
-      }, 10000)
-    );
   
+    // 1) 기본 시도 (validateStatus로 4xx/5xx도 log에 보이게)
     try {
-      const axiosPromise = axios.get<CompareResp>(
+      console.log("[L4] >>> REQUEST(try#1)", {
+        url: `${API_URL}/recommend/public/compare/dc`,
+        params,
+        headers: { Accept: "application/json" },
+      });
+  
+      const resp = await axios.get<CompareResp>(
         `${API_URL}/recommend/public/compare/dc`,
         {
           params,
           timeout: 8000,
-          validateStatus: s => s >= 200 && s < 300,
+          validateStatus: () => true,
           headers: {
             Accept: "application/json",
+            // UA 이슈 의심 시 명시적으로 제거/무력화
+            "User-Agent": undefined as any,
+            "user-agent": undefined as any,
           },
+          // signal: controllerRef.current?.signal, // 일단 주석
         }
       );
-      const { data, status } = await Promise.race([
-        axiosPromise,
-        hardTimeout,
-      ]);
   
-      setData(data);
+      console.log("[L4] <<< RESPONSE(try#1)", {
+        status: resp.status,
+        headers: resp.headers,
+        data: resp.data,
+      });
+  
+      if (resp.status >= 400) {
+        const body: any = resp.data;
+        setErrMsg(`[${resp.status}] ${body?.message || body?.error || "요청 실패"}`);
+        return;
+      }
+  
+      setData(resp.data);
+      return;
     } catch (e: any) {
-      console.timeEnd("[L4] fetchPublicCompare");
+      console.log("[L4] !!! AXIOS ERROR(try#1)", {
+        code: e?.code,
+        message: e?.message,
+        status: e?.response?.status,
+        data: e?.response?.data,
+      });
+    }
   
-      // ── 3) 에러 상세 로그
-      if (axios.isAxiosError(e)) {
-        console.log("[L4] AXIOS ERROR", {
-          code: e.code,
-          message: e.message,
-          status: e.response?.status,
-          data: e.response?.data,
-        });
-        if (e.code === "ECONNABORTED") {
-          setErrMsg("서버 응답이 지연되고 있어요. 잠시 후 다시 시도해주세요.");
-        } else {
-          setErrMsg("예상 수익 데이터를 불러오지 못했어요.");
-        }
+    // 2) 재시도: abort/timeout 완전 제거 + fetch로 CORS 여부 구분 (특히 웹일 때)
+    try {
+      console.log("[L4] >>> RETRY as fetch(try#2)");
+      const u = new URL(`${API_URL}/recommend/public/compare/dc`);
+      u.searchParams.set("investorPersonalityId", String(params.investorPersonalityId));
+      u.searchParams.set("salary", String(params.salary));
+  
+      const res = await fetch(u.toString(), {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+        // 웹에서만 의미 있음. 네이티브는 CORS 안탐
+        // mode: "cors",
+      });
+  
+      console.log("[L4] <<< FETCH RESPONSE(try#2)", {
+        ok: res.ok,
+        status: res.status,
+        headers: Array.from(res.headers.entries()),
+      });
+  
+      const body = await res.json().catch(() => null);
+      console.log("[L4] <<< FETCH BODY(try#2)", body);
+  
+      if (!res.ok) {
+        setErrMsg(`[${res.status}] ${(body as any)?.message || (body as any)?.error || "요청 실패"}`);
+        return;
+      }
+  
+      setData(body as CompareResp);
+    } catch (e: any) {
+      console.log("[L4] !!! FETCH ERROR(try#2)", {
+        name: e?.name,
+        message: e?.message,
+      });
+  
+      // 플랫폼별 가이드 메시지
+      if (Platform.OS === "web") {
+        setErrMsg("웹 환경에서 CORS로 차단된 것 같아요. 네이티브 앱/에뮬레이터에서 시도하거나, 서버 CORS 허용이 필요합니다.");
       } else {
-        console.log("[L4] UNKNOWN ERROR", e);
-        setErrMsg("네트워크 오류가 발생했어요.");
+        setErrMsg("네트워크 오류가 발생했어요. 연결 상태 또는 SSL 설정을 확인해 주세요.");
       }
     } finally {
       setLoading(false);

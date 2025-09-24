@@ -123,29 +123,55 @@ export default function Dc4() {
       }
 
       const inputSalary = toWon(inputSalaryMan);
-      const isWhatIf = inputSalary > 0 && inputSalary !== profileSalary;
+      const profileSalaryWon = Number(profileSalary) || 0;
+      const isWhatIf = inputSalary > 0 && inputSalary !== profileSalaryWon;
 
-      let url = "";
-      let params: any | undefined;
-      let headers: any | undefined;
+      const url = isWhatIf
+      ? `${API_URL}/recommend/public/compare/dc`
+      : `${API_URL}/recommend/compare/dc`;
 
-      if (isWhatIf) {
-        url = `${API_URL}/recommend/public/compare/dc`;
-        params = { investorPersonalityId: riskGradeId, salary: inputSalary };
-      } else {
-        // 프로필 기준
-        url = `${API_URL}/recommend/compare/dc`;
-        headers = { Authorization: `A103 ${accessToken}` };
-      }
+    // 분기 처리
+    const params = {
+      investorPersonalityId: Number(riskGradeId),
+      salary: Number(isWhatIf ? inputSalary : profileSalaryWon),
+    };
 
-      const { data } = await axios.get<CompareResp>(url, { headers, params });
-      setCmp(data);
-      setAppliedYear(selectedYear);
-    } catch (e:any) {
-      console.error("비교하기 실패:", e);
-      setErrMsg("예상 수익 데이터를 불러오지 못했어요.");
-    } finally {
-      setLoading(false);
+    const headers: any = !isWhatIf ? { Authorization: `A103 ${accessToken}` } : undefined;
+
+    // 요청 파라미터
+    console.log("[DC4] >>> REQUEST", { url, params, headers });
+
+    // 400이라도 응답 바디 보려고 validateStatus
+    const resp = await axios.get<CompareResp>(url, {
+      headers,
+      params,
+      validateStatus: () => true,
+    });
+
+    console.log("[DC4] <<< RESPONSE", {
+      status: resp.status,
+      data: resp.data,
+    });
+
+    if (resp.status >= 400) {
+      setErrMsg(
+        `[${resp.status}] ${ (resp.data as any)?.message || (resp.data as any)?.error || "요청 실패" }`
+      );
+      return;
+    }
+
+    setCmp(resp.data);
+    setAppliedYear(selectedYear);
+  } catch (e: any) {
+    console.log("[DC4] !!! AXIOS ERROR", {
+      message: e?.message,
+      code: e?.code,
+      status: e?.response?.status,
+      data: e?.response?.data,
+    });
+    setErrMsg("예상 수익 데이터를 불러오지 못했어요.");
+  } finally {
+    setLoading(false);
     }
   };
 
