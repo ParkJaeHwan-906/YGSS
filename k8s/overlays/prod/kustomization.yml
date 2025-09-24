@@ -12,9 +12,9 @@ patchesStrategicMerge:
 
 images:
   - name: ygss-backend
-    newTag: v${BUILD_NUMBER}
+    newTag: prod-latest
   - name: ygss-ai
-    newTag: v${BUILD_NUMBER}
+    newTag: prod-latest
 
 commonLabels:
   env: production
