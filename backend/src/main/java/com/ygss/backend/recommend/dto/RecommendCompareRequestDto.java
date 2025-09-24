@@ -12,4 +12,7 @@ public class RecommendCompareRequestDto {
     public void accYear() {
         this.salary *= 12;
     }
+    public void divYear() {
+        this.salary /= 12;
+    }
 }

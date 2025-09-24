@@ -7,4 +7,5 @@ public interface RecommendCompareService {
     Long[] calculatePredictionRetirePension(Long salary, Double profixRate);
     RecommendCandidateDto searchProductsByInvestPersonality(Integer InvestPersonality);
     RecommendPortfolioResponse getRecommendPortfolio(RecommendPortfolioRequest request);
+    void makeConnection();
 }

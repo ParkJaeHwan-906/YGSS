@@ -19,9 +19,12 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,12 +33,12 @@ import java.util.List;
 @Slf4j
 public class RecommendCompareServiceImpl implements RecommendCompareService {
     @Value("${fastapi.base.url}")
-    private String fastApiBaseUrl;
+    private String FAST_API_URL;
 
     private final UserAccountsRepository userAccountsRepository;
     private final PensionProductRepository pensionProductRepository;
     private final ProductDetailRepository productDetailRepository;
-    private final RestTemplate restTemplate;
+    private RestClient client;
     /**
      * 상품을 비교하여 추천
      * 로그인한 회원
@@ -51,7 +54,8 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
         Long investorPersonalityId = (user == null || user.getRiskGradeId() == null) ? request.getInvestorPersonalityId() : user.getRiskGradeId();
         if(investorPersonalityId == null) throw new IllegalArgumentException("Bad Request");
         if(!dc) request.accYear();
-        Long userSalary = user == null ? request.getSalary() : dc ? user.getSalary() : request.getSalary();
+        else request.divYear();
+        Long userSalary = request.getSalary();
         if(userSalary == null) throw new IllegalArgumentException("Bad Request");
         // DB
         Long[] dbCalculateGraph = calculatePredictionRetirePension(userSalary, 0.041);       // 임시로 24년도 기준 복리 적용
@@ -133,19 +137,17 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
     @Override
     public RecommendPortfolioResponse getRecommendPortfolio(RecommendPortfolioRequest request) {
         try{
-            String url = fastApiBaseUrl + "/portfolio/analyze";     // 추후 /dc 추가
+            makeConnection();
 
             request.limitFieldRange();      // riskGradeId 값 보정
             request.setProductList(productDetailRepository.selectProductForRecommend(request.getRiskGradeId()));
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<RecommendPortfolioRequest> entity = new HttpEntity<>(request, headers);
-
-            ResponseEntity<RecommendPortfolioResponse> response = restTemplate.postForEntity(
-                    url, entity, RecommendPortfolioResponse.class
-            );
-            return response.getBody();
+            return client.post()
+                    .uri(FAST_API_URL+"/portfolio/analyze")
+                    .header("Content-Type", "application/json")
+                    .body(request)
+                    .retrieve()
+                    .body(RecommendPortfolioResponse.class);
         } catch (Exception e) {
 //            throw new RuntimeException("포트폴리오 추천 중 오류 발생: " + e.getMessage(), e);
             log.error("fail : {}", e.getMessage());
@@ -178,5 +180,16 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
                     .analysisDate("2025-09-19T13:36:46.166218")
                     .build();
         }
+    }
+
+    @Override
+    public void makeConnection() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(60));
+        factory.setReadTimeout(Duration.ofMinutes(10));
+
+        this.client = RestClient.builder()
+                .requestFactory(factory)
+                .build();
     }
 }
