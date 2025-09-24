@@ -84,6 +84,7 @@ export default function ItemInfo({ productDetail }: { productDetail: ProductDeta
                     valueColor="#FF0000"
                 />
             </View>
+            <Text style={{ fontFamily: "BasicMedium", fontSize: 10, color: Colors.gray, textAlign: "center", marginBottom: 10 }}>* 예상 수익률은 3개월 기준입니다</Text>
         </>
     );
 }
