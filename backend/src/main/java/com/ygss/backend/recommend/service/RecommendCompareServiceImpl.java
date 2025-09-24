@@ -1,6 +1,7 @@
 package com.ygss.backend.recommend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ygss.backend.chatbot.service.FastApiServiceImpl;
 import com.ygss.backend.pensionProduct.dto.entity.PensionProduct;
 import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
 import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
@@ -38,6 +39,7 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
     private final UserAccountsRepository userAccountsRepository;
     private final PensionProductRepository pensionProductRepository;
     private final ProductDetailRepository productDetailRepository;
+    private final FastApiServiceImpl fastApiService;
     private RestClient client;
     /**
      * 상품을 비교하여 추천
@@ -60,13 +62,14 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
         // DB
         Long[] dbCalculateGraph = calculatePredictionRetirePension(userSalary, 0.041);       // 임시로 24년도 기준 복리 적용
         Long dbCalculate = dbCalculateGraph[3];         // 최종 예상 퇴직연금
+        RecommendPortfolioRequest fastApiRequest = RecommendPortfolioRequest.builder()
+                .riskGradeId(investorPersonalityId + (dc ? 1 : -1))     // DC 형은 조금 더 공격적인 투자, IRP 는 조금 소극적인 투자
+                .salary(userSalary)
+                .build();
+        fastApiRequest.limitFieldRange();
+        fastApiRequest.setProductList(productDetailRepository.selectProductForRecommend(fastApiRequest.getRiskGradeId()));
         // DC
-        RecommendPortfolioResponse recommendPortfolioResponse = getRecommendPortfolio(
-                RecommendPortfolioRequest.builder()
-                        .riskGradeId(investorPersonalityId + (dc ? 1 : -1))     // DC 형은 조금 더 공격적인 투자, IRP 는 조금 소극적인 투자
-                        .salary(userSalary)
-                        .build()
-        );
+        RecommendPortfolioResponse recommendPortfolioResponse = fastApiService.getRecommendPortfolio(fastApiRequest);
         Long[] dcCalculateGraph = calculatePredictionRetirePension(userSalary, recommendPortfolioResponse.getTotalExpectedReturn());
         Long dcCalculate = dcCalculateGraph[3];
         List<RecommendProductDto> recommendProductList = new ArrayList<>();
@@ -82,6 +85,17 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
                 .dcCalculateRate(recommendPortfolioResponse.getTotalExpectedReturn())
                 .dcCalculateGraph(dcCalculateGraph)
                 .recommendProductList(recommendProductList)
+                .build();
+    }
+
+    @Override
+    public RecommendCompareResponseDto predictionDb(RecommendCompareRequestDto request) {
+        Long[] dbCalculateGraph = calculatePredictionRetirePension(request.getSalary(), 0.041);       // 임시로 24년도 기준 복리 적용
+        Long dbCalculate = dbCalculateGraph[3];         // 최종 예상 퇴직연금
+        return RecommendCompareResponseDto.builder()
+                .dbCalculate(dbCalculate)
+                .dbCalculateGraph(dbCalculateGraph)
+                .dbCalculateRate(0.041)
                 .build();
     }
 

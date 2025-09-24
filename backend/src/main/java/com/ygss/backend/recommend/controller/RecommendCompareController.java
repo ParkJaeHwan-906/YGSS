@@ -113,5 +113,18 @@ public class RecommendCompareController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    /**
+     *  로그인하지 않은 사용자의 DB 예측
+     */
+    @GetMapping("/public/compare/db")
+    public ResponseEntity<?> publicCompareRetirePensionDbProduct(RecommendCompareRequestDto request) {
+        try {
+            return ResponseEntity.ok(recommendCompareService.predictionDb(request));
+        } catch (Exception e) {
+            log.error("Recommend Retire Pension DB Failed : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+    }
 }
 
