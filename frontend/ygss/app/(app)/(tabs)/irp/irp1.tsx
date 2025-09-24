@@ -2,6 +2,7 @@
 
 import Dict from "@/components/molecules/Dict";
 import ListItem from "@/components/molecules/ListItem";
+import CustomAlert from "@/components/organisms/CustomAlert";
 import Tab, { AssetGroup, CurrentTab } from "@/components/organisms/Tab";
 import {
   fetchBond,
@@ -13,6 +14,7 @@ import {
   type ListRow,
   type SortOrder,
 } from "@/src/api/dc";
+import { useAppSelector } from "@/src/store/hooks";
 import { Colors } from "@/src/theme/colors";
 import { getIrpBubbleText } from "@/src/utils/getIrpBubble";
 import { useRouter } from "expo-router";
@@ -37,6 +39,7 @@ const PAGE_SIZE = 10;
 
 export default function Irp1() {
   const router = useRouter();
+  const user = useAppSelector((s) => s.auth.user);
 
   // 탭 상태
   const [group, setGroup] = useState<AssetGroup>("위험자산");
@@ -50,6 +53,9 @@ export default function Irp1() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+
+  // alert
+  const [alertVisible, setAlertVisible] = useState(false);
 
   const bufferRef = useRef<ListRow[]>([]);
 
@@ -194,7 +200,13 @@ export default function Irp1() {
             {/* --- 잠시 막아두기 */}
             <TouchableOpacity
               style={[styles.box, styles.boxLeft]}
-              onPress={() => router.push("/irp/irp2")}
+              onPress={() => {
+                if (user) {
+                  router.push("/irp/irp2")
+                } else {
+                  setAlertVisible(true)
+                }
+              }}
               activeOpacity={0.9}
             >
               <Text style={[styles.boxTitle, styles.boxTitleLight]}>IRP 상품 추천</Text>
@@ -211,7 +223,13 @@ export default function Irp1() {
           <View style={styles.colRight}>
             <TouchableOpacity
               style={[styles.box, styles.boxRight]}
-              onPress={() => router.push("/irp/irp4")}
+              onPress={() => {
+                if (user) {
+                  router.push("/irp/irp4")
+                } else {
+                  setAlertVisible(true)
+                }
+              }}
               activeOpacity={0.9}
             >
               <Text style={[styles.boxTitle, { color: Colors?.white ?? "#111" }]}>IRP 예측 수익률</Text>
@@ -322,6 +340,15 @@ export default function Irp1() {
           <Text style={styles.fabText}>↑</Text>
         </TouchableOpacity>
       )}
+
+      {/* 로그인 필요 alert */}
+      <CustomAlert
+        visible={alertVisible}
+        title="로그인이 필요합니다"
+        message="로그인 후 이용해주세요"
+        onClose={() => setAlertVisible(false)}
+      />
+
     </SafeAreaView >
   );
 }

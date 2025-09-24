@@ -1,42 +1,45 @@
 // app/(app)/(tabs)/dc/dc1.tsx
 
-import { Colors } from "@/src/theme/colors";
-import { useRouter } from "expo-router";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ScrollView, NativeSyntheticEvent, NativeScrollEvent, InteractionManager } from "react-native";
+import Dict from "@/components/molecules/Dict";
 import ListItem from "@/components/molecules/ListItem";
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import CustomAlert from "@/components/organisms/CustomAlert";
 import Tab, { AssetGroup, CurrentTab } from "@/components/organisms/Tab";
 import {
+  fetchBond,
   fetchDcAll,
   fetchDcEtfs,
   fetchPensionFunds,
-  fetchBond,
-  normalizeDcToList,
   normalizeBondToList,
+  normalizeDcToList,
   type ListRow,
   type SortOrder,
 } from "@/src/api/dc";
-import { MotiView } from "moti";
-import Dict from "@/components/molecules/Dict";
+import { useAppSelector } from "@/src/store/hooks";
+import { Colors } from "@/src/theme/colors";
 import { getDcBubbleText } from "@/src/utils/getDcBubble";
-
+import { useRouter } from "expo-router";
+import { MotiView } from "moti";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Image,
+  InteractionManager,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const PAGE_SIZE = 10;
 
 
 export default function Dc1() {
   const router = useRouter();
+  const user = useAppSelector((s) => s.auth.user);
 
   // 탭 상태
   const [group, setGroup] = useState<AssetGroup>("위험자산");
@@ -50,6 +53,8 @@ export default function Dc1() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+
+  const [alertVisible, setAlertVisible] = useState(false);
 
   const bufferRef = useRef<ListRow[]>([]);
 
@@ -74,7 +79,7 @@ export default function Dc1() {
     setGroup(g);
     setHasInteracted(true);
   };
-  
+
   const handleTabChange = (t: CurrentTab) => {
     setTab(t);
     setHasInteracted(true);
@@ -88,7 +93,7 @@ export default function Dc1() {
   // 스크롤 핸들러
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const y = e.nativeEvent.contentOffset.y;
-  
+
     // 일정 이상 내려가면 표시 (예: 400px)
     if (y > 400 && !showTop) setShowTop(true);
     // 충분히 위로 올라오면 숨김 (단, '더보기'를 누른 적이 없을 때만 자동 숨김)
@@ -163,7 +168,7 @@ export default function Dc1() {
   const handlePressToTop = () => {
     // 스크롤 맨 위로
     scrollRef.current?.scrollTo({ x: 0, y: 0, animated: true });
-  
+
     // 리스트를 "처음 상태(10개)"로 복귀
     InteractionManager.runAfterInteractions(() => {
       const buf = bufferRef.current ?? [];
@@ -177,7 +182,7 @@ export default function Dc1() {
 
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top','left','right']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <ScrollView
         ref={scrollRef}
         onScroll={handleScroll}
@@ -191,7 +196,13 @@ export default function Dc1() {
           <View style={styles.colLeft}>
             <TouchableOpacity
               style={[styles.box, styles.boxLeft]}
-              onPress={() => router.push("/dc/dc2")}
+              onPress={() => {
+                if (user) {
+                  router.push("/dc/dc2");
+                } else {
+                  setAlertVisible(true);
+                }
+              }}
               activeOpacity={0.9}
             >
               <Text style={[styles.boxTitle, styles.boxTitleLight]}>맞춤형 DC 상품</Text>
@@ -208,7 +219,13 @@ export default function Dc1() {
           <View style={styles.colRight}>
             <TouchableOpacity
               style={[styles.box, styles.boxRight]}
-              onPress={() => router.push("/dc/dc4")}
+              onPress={() => {
+                if (user) {
+                  router.push("/dc/dc4")
+                } else {
+                  setAlertVisible(true)
+                }
+              }}
               activeOpacity={0.9}
             >
               <Text style={[styles.boxTitle, { color: Colors?.black ?? "#111" }]}>DB / DC</Text>
@@ -288,15 +305,15 @@ export default function Dc1() {
                     rate={it.rate}
                     risk={it.risk}
                     onPress={() =>
-                    router.push({
-                      pathname: destPath,
-                      params: { id: String(it.id) },
-                    })
-                  }
-                />
-              )
-            })
-          )}
+                      router.push({
+                        pathname: destPath,
+                        params: { id: String(it.id) },
+                      })
+                    }
+                  />
+                )
+              })
+            )}
 
             {/* 🔹 스크롤 힌트(더 보기) */}
             {hasMore && (
@@ -319,6 +336,14 @@ export default function Dc1() {
           <Text style={styles.fabText}>↑</Text>
         </TouchableOpacity>
       )}
+
+      {/* 로그인 필요 alert */}
+      <CustomAlert
+        visible={alertVisible}
+        title="로그인이 필요합니다"
+        message="로그인 후 이용해주세요"
+        onClose={() => setAlertVisible(false)}
+      />
     </SafeAreaView >
   );
 }
@@ -340,7 +365,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   // ← 비율은 래퍼에게
-  colLeft:  { flexGrow: 6, flexShrink: 1, flexBasis: 0, minWidth: 0 },
+  colLeft: { flexGrow: 6, flexShrink: 1, flexBasis: 0, minWidth: 0 },
   colRight: { flexGrow: 4, flexShrink: 1, flexBasis: 0, minWidth: 0 },
 
   box: {
