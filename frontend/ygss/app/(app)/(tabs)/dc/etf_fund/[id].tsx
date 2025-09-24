@@ -351,9 +351,9 @@ export default function DcDetail() {
             {/* 하트 애니메이션 */}
             {showHeart && (
                 <Modal transparent visible>
-                    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                    <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
                         <Animated.Image
-                            source={require("@/assets/icon/pinkHeart.png")} // 너가 준 하트 이미지
+                            source={require("@/assets/icon/pinkHeart.png")}
                             style={{
                                 position: "absolute",
                                 width: 100,
