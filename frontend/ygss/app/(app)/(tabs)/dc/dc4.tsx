@@ -484,7 +484,7 @@ export default function Dc4() {
             <TouchableOpacity
                 activeOpacity={0.9}
                 style={styles.secondaryBtn}
-                onPress={() => router.push("/irp/irp4")}
+                onPress={() => router.push("/irp/irp1")}
             >
                 <Text style={styles.secondaryBtnText}>깨우러 가기</Text>
             </TouchableOpacity>
