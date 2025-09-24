@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     },
   
     primaryBtn: {
-      marginTop: 14,
+      marginTop: 4,
       backgroundColor: Colors.primary,
       paddingVertical: 16,
       borderRadius: 16,

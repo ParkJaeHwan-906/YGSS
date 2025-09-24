@@ -1,6 +1,6 @@
 // app/(app)/(tabs)/dc/dc4.tsx
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -93,7 +93,9 @@ export default function Dc4() {
   const salary = useSelector((state: any) => state.auth.user?.salary);
   const [inputSalaryMan, setInputSalaryMan] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState<number>(3); // 피커에서 보여줄 값
-  const [appliedYear, setAppliedYear] = useState<number | null>(null); // '비교하기'를 눌렀을 때 확정되는 값
+  const lastQueryRef = useRef<{ risk: number; salary: number; mode: "public" | "auth" } | null>(null);
+  const inFlightRef = useRef(false);
+  const [isInputDirty, setIsInputDirty] = useState(true); // 입력을 건드리면 true, 비교 성공/반영 시 false
 
   // ===== 상태 추가 (Dc4 컴포넌트 내부)
   const [loading, setLoading] = useState(false);
@@ -107,77 +109,87 @@ export default function Dc4() {
   // 비교하기 버튼 클릭 시, 동작
   const handleCompare = async () => {
     try {
+      if (inFlightRef.current) return;
+      inFlightRef.current = true;
+  
       setLoading(true);
       setErrMsg(null);
-
-      // '투자성향'이 없는 회원은 다시 가서, 검사하고 오세요
+  
       if (!riskGradeId) {
-        console.log("[dc4] GUARD TRIGGER (no personality)", { riskGradeId });
-        Alert.alert("투자성향 필요",
-          "서비스 이용을 위해 투자성향을 먼저 검사한 후에 이용해 주세요 :)",
-          [
-            { text: "취소", style: "cancel" },
-            { text: "검사하러 가기", onPress: () => router.push("/(app)/invest") }]
-        );
+        Alert.alert("투자성향 필요", "서비스 이용을 위해 투자성향을 먼저 검사한 후에 이용해 주세요 :)", [
+          { text: "취소", style: "cancel" },
+          { text: "검사하러 가기", onPress: () => router.push("/(app)/invest") },
+        ]);
         return;
       }
-
+  
       const inputSalary = toWon(inputSalaryMan);
       const profileSalaryWon = Number(profileSalary) || 0;
       const isWhatIf = inputSalary > 0 && inputSalary !== profileSalaryWon;
-
+  
       const url = isWhatIf
-      ? `${API_URL}/recommend/public/compare/dc`
-      : `${API_URL}/recommend/compare/dc`;
-
-    // 분기 처리
-    const params = {
-      investorPersonalityId: Number(riskGradeId),
-      salary: Number(isWhatIf ? inputSalary : profileSalaryWon),
-    };
-
-    const headers: any = !isWhatIf ? { Authorization: `A103 ${accessToken}` } : undefined;
-
-    // 요청 파라미터
-    console.log("[DC4] >>> REQUEST", { url, params, headers });
-
-    // 400이라도 응답 바디 보려고 validateStatus
-    const resp = await axios.get<CompareResp>(url, {
-      headers,
-      params,
-      validateStatus: () => true,
-    });
-
-    console.log("[DC4] <<< RESPONSE", {
-      status: resp.status,
-      data: resp.data,
-    });
-
-    if (resp.status >= 400) {
-      setErrMsg(
-        `[${resp.status}] ${ (resp.data as any)?.message || (resp.data as any)?.error || "요청 실패" }`
-      );
-      return;
+        ? `${API_URL}/recommend/public/compare/dc`
+        : `${API_URL}/recommend/compare/dc`;
+  
+      const salaryWon = Number(isWhatIf ? inputSalary : profileSalaryWon);
+      const mode: "public" | "auth" = isWhatIf ? "public" : "auth";
+  
+      // 이전 성공 요청과 동일하면 재호출 금지 (연도 변경은 로컬 인덱싱으로 이미 반영됨)
+      const prev = lastQueryRef.current;
+      if (prev && prev.risk === Number(riskGradeId) && prev.salary === salaryWon && prev.mode === mode && cmp) {
+        console.log("[DC4] skip fetch: same query; use cached cmp & selectedYear");
+        setIsInputDirty(false); // 입력 그대로면 버튼 비활성화 유지
+        return;
+      }
+  
+      const headers: any = mode === "auth" ? { Authorization: `A103 ${accessToken}` } : undefined;
+      const params = { investorPersonalityId: Number(riskGradeId), salary: salaryWon };
+  
+      console.log("[DC4] >>> REQUEST", { url, params, headers });
+  
+      const resp = await axios.get<CompareResp>(url, {
+        headers,
+        params,
+        validateStatus: () => true,
+      });
+  
+      console.log("[DC4] <<< RESPONSE", { status: resp.status, data: resp.data });
+  
+      if (resp.status >= 400) {
+        setErrMsg(
+          `[${resp.status}] ${(resp.data as any)?.message || (resp.data as any)?.error || "요청 실패"}`
+        );
+        return;
+      }
+  
+      // 성공: 결과 저장 + 쿼리 스냅샷 갱신 + 버튼 비활성화
+      setCmp(resp.data);
+      lastQueryRef.current = { risk: Number(riskGradeId), salary: salaryWon, mode };
+      setIsInputDirty(false);
+    } catch (e: any) {
+      console.log("[DC4] !!! AXIOS ERROR", {
+        message: e?.message,
+        code: e?.code,
+        status: e?.response?.status,
+        data: e?.response?.data,
+      });
+      setErrMsg("예상 수익 데이터를 불러오지 못했어요.");
+    } finally {
+      inFlightRef.current = false;
+      setLoading(false);
     }
-
-    setCmp(resp.data);
-    setAppliedYear(selectedYear);
-  } catch (e: any) {
-    console.log("[DC4] !!! AXIOS ERROR", {
-      message: e?.message,
-      code: e?.code,
-      status: e?.response?.status,
-      data: e?.response?.data,
-    });
-    setErrMsg("예상 수익 데이터를 불러오지 못했어요.");
-  } finally {
-    setLoading(false);
-    }
-  };
+  };  
 
   // 연도별 금액
-  const dcValue = React.useMemo(() => pickByYear(cmp?.dcCalculateGraph, appliedYear ?? selectedYear), [cmp?.dcCalculateGraph, appliedYear, selectedYear]);
-  const dbValue = React.useMemo(() => pickByYear(cmp?.dbCalculateGraph, appliedYear ?? selectedYear), [cmp?.dbCalculateGraph, appliedYear, selectedYear]);
+  const dcValue = React.useMemo(
+    () => pickByYear(cmp?.dcCalculateGraph, selectedYear),
+    [cmp?.dcCalculateGraph, selectedYear]
+  );
+  const dbValue = React.useMemo(
+    () => pickByYear(cmp?.dbCalculateGraph, selectedYear),
+    [cmp?.dbCalculateGraph, selectedYear]
+  );
+
 
   // 로그인 가드
   useEffect(() => {
@@ -317,14 +329,22 @@ export default function Dc4() {
               onChangeText={(v) => {
                 const onlyDigits = v.replace(/\D/g, "");
                 setInputSalaryMan(onlyDigits.replace(/^0+(?=\d)/, ""));
+                setIsInputDirty(true);
               }}
             />
             <Text style={styles.inputSuffix}>만원</Text>
           </View>
         </View>
 
-        <TouchableOpacity activeOpacity={0.8} style={styles.primaryBtn} onPress={handleCompare}>
-          <Text style={styles.primaryBtnText}>비교하기</Text>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={[styles.primaryBtn, (loading || (!isInputDirty && !!cmp)) && { opacity: 0.7 }]}
+          onPress={handleCompare}
+          disabled={loading || (!isInputDirty && !!cmp)} // ← 비교 완료 상태에선 비활성화, 입력 변경 시 활성화
+        >
+          <Text style={styles.primaryBtnText}>
+            비교하기
+          </Text>
         </TouchableOpacity>
 
         {/* ↓ 스크롤 힌트 */}
@@ -464,7 +484,7 @@ export default function Dc4() {
             <TouchableOpacity
                 activeOpacity={0.9}
                 style={styles.secondaryBtn}
-                onPress={() => router.push("/irp/irp4")}
+                onPress={() => router.push("/irp/irp1")}
             >
                 <Text style={styles.secondaryBtnText}>깨우러 가기</Text>
             </TouchableOpacity>

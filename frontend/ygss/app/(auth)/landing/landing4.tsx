@@ -1,7 +1,7 @@
 // app/(auth)/landing/landing4.tsx
-
+import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   SafeAreaView,
   StatusBar,
@@ -14,6 +14,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Pressable,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MotiView } from "moti";
@@ -21,6 +22,7 @@ import axios from "axios";
 import { Colors } from "@/src/theme/colors";
 import { LineChart } from "react-native-gifted-charts";
 import { Dimensions } from "react-native";
+import { BlurView } from "expo-blur";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const screenW = Dimensions.get("window").width;
@@ -57,6 +59,33 @@ const lcomp = (txt: string) => (
   <Text style={{ color: "lightgray", fontSize: 11, fontFamily: "BasicMedium" }}>{txt}</Text>
 );
 
+// DC용 가짜 차트
+const DC_BASE_MAN = [35, 42, 58, 76];
+
+// 주기적으로 값에 미세 파동을 넣어주는 훅
+function useWobble(base: number[], amp = 3, fps = 12) {
+  const [series, setSeries] = useState(base);
+  const tRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (timerRef.current) return;
+    const interval = 1000 / fps;
+    timerRef.current = setInterval(() => {
+      tRef.current += 1;
+      const t = tRef.current;
+      setSeries(base.map((v, i) => v + Math.sin((t + i * 0.8) * 0.9) * amp));
+    }, interval);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
+    };
+  }, [base, amp, fps]);
+
+  return series;
+}
+
 // 데이터 포인트(원)
 const dPoint = () => (
   <View
@@ -91,6 +120,44 @@ const toLineSeries = (arr?: number[]) => {
   }));
 };
 
+// 블러 배경
+// Jelly 형태로 꿀렁거리는 배경
+const JellyBlob = () => {
+  return (
+    <MotiView
+      from={{ scale: 0.95, rotate: "0deg" }}
+      animate={{ scale: 1.05, rotate: "3deg" }}
+      transition={{ type: "timing", duration: 1200, loop: true, repeatReverse: true }}
+      style={{
+        position: "absolute",
+        width: 260,
+        height: 260,
+        borderRadius: 130,
+        backgroundColor: "#F5A9B8",
+        opacity: 0.35,
+      }}
+    />
+  );
+};
+
+const JellyBlob2 = () => {
+  return (
+    <MotiView
+      from={{ scale: 1.05, rotate: "-2deg" }}
+      animate={{ scale: 0.95, rotate: "1deg" }}
+      transition={{ type: "timing", duration: 1400, loop: true, repeatReverse: true }}
+      style={{
+        position: "absolute",
+        width: 220,
+        height: 220,
+        borderRadius: 110,
+        backgroundColor: "#C8D6FA",
+        opacity: 0.35,
+      }}
+    />
+  );
+};
+
 
 export default function Landing4() {
   const router = useRouter();
@@ -117,200 +184,177 @@ export default function Landing4() {
   // 릴리스 행잉 회피(preview 버전)
   const controllerRef = React.useRef<AbortController | null>(null);
 
-  // ====== API 호출 (비회원 전용) ======
   // const fetchPublicCompare = async () => {
-  //   // ── 1) 쿼리 파라미터 (만원 → 원 보정)
   //   const params = {
   //     investorPersonalityId,
-  //     salary: yearlySalary * 10000, // ★ 중요: 단위 보정
+  //     salary: yearlySalary * 10000,
   //   };
- 
-  //   controllerRef.current?.abort();
-  //   controllerRef.current = new AbortController();
+  
+  //   // 환경 진단 로그
+  //   console.log("[L4] ENV", {
+  //     API_URL,
+  //     Platform: Platform.OS,
+  //     // appOwnership: Constants?.appOwnership, // 'expo'|'standalone'|'guest' (선택)
+  //     isWeb: Platform.OS === "web",
+  //     params,
+  //   });
+  
+  //   // 이전 요청 취소 로직은 잠깐 비활성화 (abort 오작동 배제)
+  //   // controllerRef.current?.abort();
+  //   // controllerRef.current = new AbortController();
+  
   //   setLoading(true);
   //   setErrMsg(null);
-
-  //   console.log("[L4] >>> REQUEST", {
-  //     url: `${API_URL}/recommend/public/compare/dc`,
-  //     params,
-  //     headers: { Accept: "application/json" },
-  //   });
-  //   console.time("[L4] fetchPublicCompare");             
-
-  //   const hardTimeout = new Promise<never>((_, rej) =>
-  //     setTimeout(() => {
-  //       controllerRef.current?.abort();
-  //       rej(new Error("HARD_TIMEOUT"));
-  //     }, 10000)
-  //   );
   
+  //   // 1) 기본 시도 (validateStatus로 4xx/5xx도 log에 보이게)
   //   try {
-  //     const axiosPromise = axios.get<CompareResp>(
+  //     console.log("[L4] >>> REQUEST(try#1)", {
+  //       url: `${API_URL}/recommend/public/compare/dc`,
+  //       params,
+  //       headers: { Accept: "application/json" },
+  //     });
+  
+  //     const resp = await axios.get<CompareResp>(
   //       `${API_URL}/recommend/public/compare/dc`,
   //       {
   //         params,
   //         timeout: 8000,
-  //         validateStatus: s => s >= 200 && s < 300,
+  //         validateStatus: () => true,
   //         headers: {
   //           Accept: "application/json",
+  //           // UA 이슈 의심 시 명시적으로 제거/무력화
+  //           "User-Agent": undefined as any,
+  //           "user-agent": undefined as any,
   //         },
+  //         // signal: controllerRef.current?.signal, // 일단 주석
   //       }
   //     );
-    
-  //       const resp = await Promise.race([axiosPromise, hardTimeout]);
-    
-  //       console.log("[L4] <<< RESPONSE", {
-  //         status: resp.status,
-  //         headers: resp.headers,
-  //         data: resp.data,
-  //       });
-    
-  //       if (resp.status >= 400) {
-  //         // 서버가 에러 메시지를 내려주면 보여주기
-  //         const body: any = resp.data;
-  //         setErrMsg(
-  //           `[${resp.status}] ${body?.message || body?.error || "요청 실패"}`
-  //         );
-  //         return;
-  //       }
-    
-  //       setData(resp.data);
-  //     } catch (e: any) {
-  //       // Axios 에러/기타 에러 모두 상세 출력
-  //       if (axios.isAxiosError(e)) {
-  //         console.log("[L4] !!! AXIOS ERROR", {
-  //           code: e.code,
-  //           message: e.message,
-  //           status: e.response?.status,
-  //           data: e.response?.data,
-  //           headers: e.response?.headers,
-  //         });
-  //         if (e.code === "ECONNABORTED") {
-  //           setErrMsg("서버 응답이 지연되고 있어요. 잠시 후 다시 시도해주세요.");
-  //         } else {
-  //           setErrMsg("예상 수익 데이터를 불러오지 못했어요.");
-  //         }
-  //       } else {
-  //         console.log("[L4] !!! UNKNOWN ERROR", e);
-  //         setErrMsg("네트워크 오류가 발생했어요.");
-  //       }
-  //     } finally {
-  //       console.timeEnd("[L4] fetchPublicCompare");
-  //       setLoading(false);
+  
+  //     console.log("[L4] <<< RESPONSE(try#1)", {
+  //       status: resp.status,
+  //       headers: resp.headers,
+  //       data: resp.data,
+  //     });
+  
+  //     if (resp.status >= 400) {
+  //       const body: any = resp.data;
+  //       setErrMsg(`[${resp.status}] ${body?.message || body?.error || "요청 실패"}`);
+  //       return;
   //     }
-  //   };
-  const fetchPublicCompare = async () => {
+  
+  //     setData(resp.data);
+  //     return;
+  //   } catch (e: any) {
+  //     console.log("[L4] !!! AXIOS ERROR(try#1)", {
+  //       code: e?.code,
+  //       message: e?.message,
+  //       status: e?.response?.status,
+  //       data: e?.response?.data,
+  //     });
+  //   }
+  
+  //   // 2) 재시도: abort/timeout 완전 제거 + fetch로 CORS 여부 구분 (특히 웹일 때)
+  //   try {
+  //     console.log("[L4] >>> RETRY as fetch(try#2)");
+  //     const u = new URL(`${API_URL}/recommend/public/compare/dc`);
+  //     u.searchParams.set("investorPersonalityId", String(params.investorPersonalityId));
+  //     u.searchParams.set("salary", String(params.salary));
+  
+  //     const res = await fetch(u.toString(), {
+  //       method: "GET",
+  //       headers: {
+  //         Accept: "application/json",
+  //       },
+  //       // 웹에서만 의미 있음. 네이티브는 CORS 안탐
+  //       // mode: "cors",
+  //     });
+  
+  //     console.log("[L4] <<< FETCH RESPONSE(try#2)", {
+  //       ok: res.ok,
+  //       status: res.status,
+  //       headers: Array.from(res.headers.entries()),
+  //     });
+  
+  //     const body = await res.json().catch(() => null);
+  //     console.log("[L4] <<< FETCH BODY(try#2)", body);
+  
+  //     if (!res.ok) {
+  //       setErrMsg(`[${res.status}] ${(body as any)?.message || (body as any)?.error || "요청 실패"}`);
+  //       return;
+  //     }
+  
+  //     setData(body as CompareResp);
+  //   } catch (e: any) {
+  //     console.log("[L4] !!! FETCH ERROR(try#2)", {
+  //       name: e?.name,
+  //       message: e?.message,
+  //     });
+  
+  //     // 플랫폼별 가이드 메시지
+  //     if (Platform.OS === "web") {
+  //       setErrMsg("웹 환경에서 CORS로 차단된 것 같아요. 네이티브 앱/에뮬레이터에서 시도하거나, 서버 CORS 허용이 필요합니다.");
+  //     } else {
+  //       setErrMsg("네트워크 오류가 발생했어요. 연결 상태 또는 SSL 설정을 확인해 주세요.");
+  //     }
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const fetchDbCompare = async () => {
     const params = {
-      investorPersonalityId,
       salary: yearlySalary * 10000,
     };
-  
-    // 환경 진단 로그
-    console.log("[L4] ENV", {
-      API_URL,
-      Platform: Platform.OS,
-      // appOwnership: Constants?.appOwnership, // 'expo'|'standalone'|'guest' (선택)
-      isWeb: Platform.OS === "web",
-      params,
-    });
-  
-    // 이전 요청 취소 로직은 잠깐 비활성화 (abort 오작동 배제)
-    // controllerRef.current?.abort();
-    // controllerRef.current = new AbortController();
-  
+
+    console.log("[L4] ENV", { API_URL, Platform: Platform.OS, isWeb: Platform.OS === "web", params });
+
     setLoading(true);
     setErrMsg(null);
-  
-    // 1) 기본 시도 (validateStatus로 4xx/5xx도 log에 보이게)
+
     try {
-      console.log("[L4] >>> REQUEST(try#1)", {
-        url: `${API_URL}/recommend/public/compare/dc`,
+      console.log("[L4] >>> REQUEST(DB)", {
+        url: `${API_URL}/recommend/public/compare/db`,
         params,
         headers: { Accept: "application/json" },
       });
-  
+
       const resp = await axios.get<CompareResp>(
-        `${API_URL}/recommend/public/compare/dc`,
+        `${API_URL}/recommend/public/compare/db`,
         {
           params,
           timeout: 8000,
           validateStatus: () => true,
           headers: {
             Accept: "application/json",
-            // UA 이슈 의심 시 명시적으로 제거/무력화
+            // (이슈 있었으니) UA 제거 유지
             "User-Agent": undefined as any,
             "user-agent": undefined as any,
           },
-          // signal: controllerRef.current?.signal, // 일단 주석
         }
       );
-  
-      console.log("[L4] <<< RESPONSE(try#1)", {
+
+      console.log("[L4] <<< RESPONSE(DB)", {
         status: resp.status,
         headers: resp.headers,
         data: resp.data,
       });
-  
+
       if (resp.status >= 400) {
         const body: any = resp.data;
         setErrMsg(`[${resp.status}] ${body?.message || body?.error || "요청 실패"}`);
         return;
       }
-  
+
       setData(resp.data);
-      return;
     } catch (e: any) {
-      console.log("[L4] !!! AXIOS ERROR(try#1)", {
+      console.log("[L4] !!! AXIOS ERROR(DB)", {
         code: e?.code,
         message: e?.message,
         status: e?.response?.status,
         data: e?.response?.data,
       });
-    }
-  
-    // 2) 재시도: abort/timeout 완전 제거 + fetch로 CORS 여부 구분 (특히 웹일 때)
-    try {
-      console.log("[L4] >>> RETRY as fetch(try#2)");
-      const u = new URL(`${API_URL}/recommend/public/compare/dc`);
-      u.searchParams.set("investorPersonalityId", String(params.investorPersonalityId));
-      u.searchParams.set("salary", String(params.salary));
-  
-      const res = await fetch(u.toString(), {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
-        // 웹에서만 의미 있음. 네이티브는 CORS 안탐
-        // mode: "cors",
-      });
-  
-      console.log("[L4] <<< FETCH RESPONSE(try#2)", {
-        ok: res.ok,
-        status: res.status,
-        headers: Array.from(res.headers.entries()),
-      });
-  
-      const body = await res.json().catch(() => null);
-      console.log("[L4] <<< FETCH BODY(try#2)", body);
-  
-      if (!res.ok) {
-        setErrMsg(`[${res.status}] ${(body as any)?.message || (body as any)?.error || "요청 실패"}`);
-        return;
-      }
-  
-      setData(body as CompareResp);
-    } catch (e: any) {
-      console.log("[L4] !!! FETCH ERROR(try#2)", {
-        name: e?.name,
-        message: e?.message,
-      });
-  
-      // 플랫폼별 가이드 메시지
-      if (Platform.OS === "web") {
-        setErrMsg("웹 환경에서 CORS로 차단된 것 같아요. 네이티브 앱/에뮬레이터에서 시도하거나, 서버 CORS 허용이 필요합니다.");
-      } else {
-        setErrMsg("네트워크 오류가 발생했어요. 연결 상태 또는 SSL 설정을 확인해 주세요.");
-      }
+
+      setErrMsg("네트워크 오류가 발생했어요. 연결 상태 또는 SSL 설정을 확인해 주세요.");
     } finally {
       setLoading(false);
     }
@@ -332,19 +376,20 @@ export default function Landing4() {
       setLoading(false);
       return;
     }
-    fetchPublicCompare();
+    fetchDbCompare();
     return () => controllerRef.current?.abort();
   }, [investorPersonalityId, yearlySalary]);
 
   // 원 → 만원으로 변환해서 차트/축에 사용
-  const dcGraphMan = (data?.dcCalculateGraph ?? []).map(v => Math.round(v / 10000));
   const dbGraphMan = (data?.dbCalculateGraph ?? []).map(v => Math.round(v / 10000));
-  const dcFinal = pickByYear(data?.dcCalculateGraph, 10);
   const dbFinal = pickByYear(data?.dbCalculateGraph, 10);
-  const dcChartData = toLineSeries(dcGraphMan);
   const dbChartData = toLineSeries(dbGraphMan);
-  const dcMaxVal = Math.max(1, niceMax(Math.max(...dcGraphMan, 0) * 1.1));
   const dbMaxVal = Math.max(1, niceMax(Math.max(...dbGraphMan, 0) * 1.1));
+
+  // dc용 가짜 라인
+  const dcWobbleMan = useWobble(DC_BASE_MAN, 1.8, 8);
+  const dcChartData = useMemo(() => toLineSeries(dcWobbleMan), [dcWobbleMan]);
+  const dcMaxVal = useMemo(() => niceMax(Math.max(...DC_BASE_MAN) * 1.2), []);
 
   // 컴포넌트 내부 (return 위)
   const horizontalPad = 24;
@@ -368,74 +413,6 @@ export default function Landing4() {
             { paddingBottom: insets.bottom + 60 },
           ]}
         >
-          {/* ===== DC 섹션 ===== */}
-          <View style={[styles.section, styles.dcSection, bleedStyle]}>
-            <View style={styles.sectionHeader}>
-              {/* 왼쪽 배치 */}
-              <View style={styles.headerLeft}>
-                <View style={styles.pill}>
-                  <Text style={styles.pillText}>DC</Text>
-                </View>
-                <Text style={styles.sectionTitle}>를 선택했을 때,</Text>
-              </View>
-
-              {/* 오른쪽 아이콘 */}
-              <Image
-                source={require("@/assets/icon/chart2.png")}
-                style={styles.sectionIcon}
-                resizeMode="contain"
-              />
-            </View>
-
-            {loading ? (
-              <ActivityIndicator size="small" color={Colors.primary} />
-            ) : errMsg ? (
-              <>
-                <Text style={{ color: "#CC3B3B", fontFamily: "BasicMedium" }}>{errMsg}</Text>
-                <TouchableOpacity onPress={fetchPublicCompare} style={{ paddingVertical: 6 }}>
-                  <Text style={{ color: Colors.primary, fontFamily: "BasicMedium" }}>다시 시도</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <Text style={styles.bigNumber}>{toManWon(dcFinal)}</Text>
-                <Text style={styles.smallCaption}>근속년수 '10년' 기준 퇴직연금 입니다.</Text>
-                <View style={[styles.chartBox, { overflow: "hidden" }]}>
-                  <LineChart
-                    isAnimated
-                    animateOnDataChange
-                    animationDuration={800}
-                    onDataChangeAnimationDuration={600}
-                    color={Colors.red}
-                    thickness={2}
-                    areaChart
-                    startFillColor={Colors.red}
-                    endFillColor={Colors.red}
-                    startOpacity={0.4}
-                    endOpacity={0.05}
-                    data={dcChartData}
-                    maxValue={dcMaxVal}
-                    noOfSections={4}
-                    hideDataPoints // 기본 점 숨기고 customDataPoint만 노출
-                    spacing={80}
-                    initialSpacing={40}
-                    endSpacing={40}
-                    width={300}
-                    yAxisTextStyle={{
-                      color: Colors.gray,
-                      fontSize: 10,
-                      fontFamily: "BasicMedium",
-                    }}
-                    yAxisColor={Colors.gray}
-                    xAxisColor={Colors.gray}
-                    rulesColor={Colors.gray}
-                    rulesType="solid"
-                    backgroundColor={Colors.white} // 차트 캔버스 배경
-                  />
-                </View>
-              </>
-            )}
-          </View>
 
           {/* ===== DB 섹션 ===== */}
           <View style={[styles.section, styles.dbSection, bleedStyle]}>
@@ -505,32 +482,73 @@ export default function Landing4() {
             )}
           </View>
 
-          {/* 알키 이미지: 위아래 둥둥 */}
-          <MotiView
-            from={{ translateY: 0 }}
-            animate={{ translateY: -18 }}
-            transition={{ type: "timing", duration: 600, loop: true, repeatReverse: true }}
-            style={styles.alkiWrap}
-          >
-            <Image
-              source={require("@/assets/char/pointAlchi.png")}
-              style={styles.alki}
-              resizeMode="contain"
-            />
-          </MotiView>
+          {/* ===== DC 섹션 ===== */}
+          <View style={[styles.section, styles.dcSection, bleedStyle]}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.headerLeft}>
+                <View style={styles.pill}><Text style={styles.pillText}>DC</Text></View>
+                <Text style={styles.sectionTitle}>를 선택했을 때,</Text>
+              </View>
+              <Image source={require("@/assets/icon/chart2.png")} style={styles.sectionIcon} resizeMode="contain" />
+            </View>
 
-          <Text style={styles.caption}>
-            어떤 상품을 선택하면 좋은지 {"\n"} 알키가 더 자세히 알려드릴게요!
-          </Text>
+            {/* 숫자는 감춤(스샷처럼 ?? 느낌을 원하면 '—' 또는 '??만원') */}
+            <Text style={[styles.bigNumber, { color: "#B1B1C7" }]}>????만원</Text>
+            <Text style={[styles.smallCaption, { color: "#B1B1C7" }]}>근속년수 '10년' 기준 퇴직연금 입니다.</Text>
 
-          {/* CTA 버튼 */}
-          <TouchableOpacity
-            style={styles.ctaBtn}
-            activeOpacity={0.8}
-            onPress={() => router.push("/(auth)/login")}
-          >
-            <Text style={styles.ctaText}>더 많은 정보 확인하기</Text>
-          </TouchableOpacity>
+            <View style={[styles.chartBox, { overflow: "hidden" }]}>
+              <LineChart
+                isAnimated
+                animateOnDataChange
+                animationDuration={500}
+                onDataChangeAnimationDuration={500}
+                curved
+                areaChart
+                color={Colors.red}
+                startFillColor={Colors.red}
+                endFillColor={Colors.red}
+                startOpacity={0.35}
+                endOpacity={0.06}
+                thickness={2}
+                data={dcChartData}       // ← wobble 값 주입
+                maxValue={dcMaxVal}
+                noOfSections={4}
+                hideDataPoints
+                spacing={80}
+                initialSpacing={40}
+                endSpacing={40}
+                width={300}
+                yAxisTextStyle={{ color: Colors.gray, fontSize: 10, fontFamily: "BasicMedium" }}
+                yAxisColor={Colors.gray}
+                xAxisColor={Colors.gray}
+                rulesColor={Colors.gray}
+                rulesType="solid"
+                backgroundColor={Colors.white}
+              />
+
+              {/* 살짝 흐림 처리 (그래프는 보이되 디테일은 가림) */}
+              <BlurView intensity={28} tint="light" style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+
+              {/* 중앙 배지: 로그인 유도 (스샷 느낌) */}
+              <Pressable
+                onPress={() => router.push("/(auth)/login")}
+                android_ripple={{ color: "rgba(0,0,0,0.08)", borderless: false }}
+                style={({ pressed }) => [
+                  styles.loginChip,
+                  { transform: [{ scale: pressed ? 0.96 : 1 }] },  // ✅ 눌릴 때 scale 다운
+                ]}
+              >
+                <Image
+                  source={require("@/assets/char/pointAlchi.png")}
+                  style={styles.alki}
+                  resizeMode="contain"
+                />
+                <Text style={styles.loginChipText}>DC 예상 금액이 궁금하다면? </Text>
+                <Text style={[styles.loginChipText, { color: Colors.primary, fontFamily: "BasicBold" }]}>로그인</Text>
+              </Pressable>
+ 
+            </View>
+          </View>
 
           {/* ✅ footer를 스크롤 영역 마지막에 배치 */}
           <View style={styles.footer}>
@@ -569,7 +587,12 @@ caption: {
 alkiWrap: { 
   marginTop: 30,
   alignSelf: "center" },
-alki: { width: 260, height: 260 },
+alki: {
+  width: 50,
+  height: 50,
+  resizeMode: "contain",
+  marginBottom: 10,
+},
 
 ctaBtn: {
   width: 300,
@@ -719,4 +742,39 @@ chartPlaceholder: { fontSize: 14, color: "#B1B1C7" },
     backgroundColor: "#FFE1E1",
   },
   retryText: { fontSize: 12, color: "#B22B2B", fontFamily: "BasicMedium" },
+  lockBadge: {
+    position: "absolute",
+    bottom: 14,
+    right: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.9)",
+  },
+  lockText: {
+    fontSize: 12,
+    fontFamily: "BasicMedium",
+    color: "#6B7280",
+  },
+  loginChip: {
+    position: "absolute",
+    alignSelf: "center",
+    top: "30%",
+    transform: [{ translateY: -12 }],
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    width: 240,
+    height: 120,
+  },
+  loginChipText: {
+    fontSize: 12,
+    fontFamily: "BasicMedium",
+    color: "#6B7280",
+    marginBottom: 3,
+  },  
 });
