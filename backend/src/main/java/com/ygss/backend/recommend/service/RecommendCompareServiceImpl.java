@@ -53,7 +53,6 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
         if(!dc) request.accYear();
         else request.divYear();
         Long userSalary = request.getSalary();
-        System.out.println(userSalary);
         if(userSalary == null) throw new IllegalArgumentException("Bad Request");
         // DB
         Long[] dbCalculateGraph = calculatePredictionRetirePension(userSalary, 0.041);       // 임시로 24년도 기준 복리 적용
