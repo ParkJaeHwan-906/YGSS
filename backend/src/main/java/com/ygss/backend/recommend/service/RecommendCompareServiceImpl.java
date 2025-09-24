@@ -1,6 +1,5 @@
 package com.ygss.backend.recommend.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ygss.backend.chatbot.service.FastApiServiceImpl;
 import com.ygss.backend.pensionProduct.dto.entity.PensionProduct;
 import com.ygss.backend.pensionProduct.dto.request.BondSearchRequest;
@@ -8,24 +7,16 @@ import com.ygss.backend.pensionProduct.dto.request.SearchCondition;
 import com.ygss.backend.pensionProduct.dto.response.BondDto;
 import com.ygss.backend.pensionProduct.repository.PensionProductRepository;
 import com.ygss.backend.product.repository.ProductDetailRepository;
-import com.ygss.backend.product.repository.RetirePensionProductRepository;
+import com.ygss.backend.recommend.component.PortfolioOptimizer;
 import com.ygss.backend.recommend.dto.*;
-import com.ygss.backend.recommend.repository.RecommendCacheRepository;
 import com.ygss.backend.user.dto.UserAccountsDto;
 import com.ygss.backend.user.repository.UserAccountsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestTemplate;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +31,8 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
     private final PensionProductRepository pensionProductRepository;
     private final ProductDetailRepository productDetailRepository;
     private final FastApiServiceImpl fastApiService;
-    private RestClient client;
+    private final PortfolioOptimizer portfolioOptimizer;
+
     /**
      * 상품을 비교하여 추천
      * 로그인한 회원
@@ -60,7 +52,7 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
         Long userSalary = request.getSalary();
         if(userSalary == null) throw new IllegalArgumentException("Bad Request");
         // DB
-        Long[] dbCalculateGraph = calculatePredictionRetirePension(userSalary, 0.041);       // 임시로 24년도 기준 복리 적용
+        Long[] dbCalculateGraph = calculatePredictionRetirePension(userSalary, 0.041, user == null ? 0 : user.getTotalRetirePension());       // 임시로 24년도 기준 복리 적용
         Long dbCalculate = dbCalculateGraph[3];         // 최종 예상 퇴직연금
         RecommendPortfolioRequest fastApiRequest = RecommendPortfolioRequest.builder()
                 .riskGradeId(investorPersonalityId + (dc ? 1 : -1))     // DC 형은 조금 더 공격적인 투자, IRP 는 조금 소극적인 투자
@@ -70,8 +62,9 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
         fastApiRequest.limitFieldRange();
         fastApiRequest.setProductList(productDetailRepository.selectProductForRecommend(fastApiRequest.getRiskGradeId()));
         // DC
-        RecommendPortfolioResponse recommendPortfolioResponse = fastApiService.getRecommendPortfolio(fastApiRequest);
-        Long[] dcCalculateGraph = calculatePredictionRetirePension(userSalary, recommendPortfolioResponse.getTotalExpectedReturn());
+//        RecommendPortfolioResponse recommendPortfolioResponse = fastApiService.getRecommendPortfolio(fastApiRequest);
+        RecommendPortfolioResponse recommendPortfolioResponse = portfolioOptimizer.optimize(fastApiRequest.getProductList());
+        Long[] dcCalculateGraph = calculatePredictionRetirePension(userSalary, recommendPortfolioResponse.getTotalExpectedReturn(), user == null ? 0 : user.getTotalRetirePension());
         Long dcCalculate = dcCalculateGraph[3];
         List<RecommendProductDto> recommendProductList = new ArrayList<>();
         recommendPortfolioResponse.getAllocations().forEach((product) -> {
@@ -92,7 +85,7 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
     @Override
     public RecommendCompareResponseDto predictionDb(RecommendCompareRequestDto request) {
         request.divYear();
-        Long[] dbCalculateGraph = calculatePredictionRetirePension(request.getSalary(), 0.041);       // 임시로 24년도 기준 복리 적용
+        Long[] dbCalculateGraph = calculatePredictionRetirePension(request.getSalary(), 0.041, 0L);       // 임시로 24년도 기준 복리 적용
         Long dbCalculate = dbCalculateGraph[3];         // 최종 예상 퇴직연금
         return RecommendCompareResponseDto.builder()
                 .dbCalculate(dbCalculate)
@@ -106,9 +99,9 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
      * salary : 연봉 정보
      */
     @Override
-    public Long[] calculatePredictionRetirePension(Long salary, Double profixRate) {
+    public Long[] calculatePredictionRetirePension(Long salary, Double profitRate, Long totalRetirePension) {
         double annualContribution = salary; // 1년 동안 납입되는 금액
-        double annualRate = profixRate / 100.0;   // 연 이율 (예: 5% → 0.05)
+        double annualRate = profitRate / 100.0;   // 연 이율 (예: 5% → 0.05)
         int[] years = {3, 5, 7, 10};
 
         Long[] result = new Long[years.length];
@@ -117,12 +110,14 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
             int y = years[i];
 
             if (Math.abs(annualRate) < 1e-10) {
-                // 이율이 0에 가까우면 그냥 원금만
-                result[i] = Math.round(annualContribution * y);
+                // 이율이 0에 가까우면 그냥 원금 + 누적
+                result[i] = Math.round(totalRetirePension + annualContribution * y);
             } else {
-                // 복리 공식
-                double total = annualContribution * (Math.pow(1 + annualRate, y) - 1) / annualRate;
-                result[i] = Math.round(total);
+                // 기존 누적금에 대한 복리 성장 + 매년 납입하는 금액의 복리 합
+                double futureValue = totalRetirePension * Math.pow(1 + annualRate, y)
+                        + annualContribution * (Math.pow(1 + annualRate, y) - 1) / annualRate;
+
+                result[i] = Math.round(futureValue);
             }
         }
         return result;
