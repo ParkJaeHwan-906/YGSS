@@ -1,23 +1,83 @@
-// app/(app)/(tabs)/irp/irp2.tsx
+// app/(app)/(tabs)/dc/dc2.tsx
 
+import { useAppSelector } from "@/src/store/hooks";
 import { Colors } from "@/src/theme/colors";
-import { useRouter } from "expo-router";
-import { useEffect } from "react";
-import { Image, Text, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import axios from "axios";
+import { Stack, useRouter } from "expo-router";
 import { MotiView } from "moti";
-import { Stack } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-export default function IrpLoading() {
-    const router = useRouter();
+export default function Irp2() {
+  const router = useRouter();
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
 
-    useEffect(() => {
+  const API_URL = process.env.EXPO_PUBLIC_API_URL as string;
+
+  // 미리 호출해놓기
+  useEffect(() => {
+    const fetchAndGo = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/product/personal`, {
+          headers: { Authorization: `A103 ${accessToken}` },
+        });
+        const productList = res.data.productList ?? [];
+        const top3 = res.data.top3 ?? [];
+
         setTimeout(() => {
-            router.push("/irp/irp3");
+          router.replace({
+            pathname: "/(app)/(tabs)/irp/irp3",
+            params: {
+              data: JSON.stringify({ productList, top3 })
+            },
+          });
         }, 2500);
-    }, []);
+      } catch (err) {
+        console.error("추천상품 미리 불러오기 실패:", err);
+      }
+    };
 
-    return (
+    fetchAndGo();
+  }, []);
+
+  useEffect(() => {
+    // 2.5초 후 다음 화면으로 자동 이동
+    const timer = setTimeout(() => {
+      router.replace("/(app)/(tabs)/irp/irp3");
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [router]);
+
+  // ==== caption 애니메이션 ====
+  const fullText = "알키가 당신에게 딱 맞는 \n 상품을 고르는 중이에요 ... !";
+  const letters = fullText.split("");   // 문자열을 배열로 쪼갬
+  const [displayText, setDisplayText] = useState("");
+
+  useEffect(() => {
+    let i = 0;
+    const interval = setInterval(() => {
+      i++;
+      if (i <= fullText.length) {
+        setDisplayText(fullText.substring(0, i));
+      } else {
+        clearInterval(interval);
+      }
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="dark-content" />
@@ -39,12 +99,12 @@ export default function IrpLoading() {
               }}
             >
               <Image
-                source={require("@/assets/char/nuetralAlchi.png")}
+                source={require("@/assets/char/winkAlchi.png")}
                 style={styles.image}
                 resizeMode="contain"
               />
             </MotiView>
-            <Text style={styles.caption}>알키가 당신에게 딱 맞는 상품을{"\n"}고르는 중이에요 ...</Text>
+            <Text style={styles.caption}>{displayText}</Text>
           </View>
         </SafeAreaView>
       </KeyboardAvoidingView>
@@ -66,7 +126,7 @@ const styles = StyleSheet.create({
   },
   caption: {
     fontFamily: "BasicBold",
-    fontSize: 12,
+    fontSize: 14,
     color: Colors.black,
     textAlign: "center",
   },

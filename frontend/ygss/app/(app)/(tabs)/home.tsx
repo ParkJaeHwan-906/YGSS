@@ -1,9 +1,11 @@
 // app/(app)/(tabs)/home.tsx
 import MyMoney from "@/components/molecules/MyMoney";
+import CustomAlert from "@/components/organisms/CustomAlert";
 import ImageList, { ImageListData } from "@/components/organisms/ImageList";
 import { fetchPlanDc } from "@/src/api/plan";
 import { useAppSelector } from "@/src/store/hooks";
 import { Colors } from "@/src/theme/colors";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -29,6 +31,7 @@ export default function Home() {
   const [planItems, setPlanItems] = useState<ImageListData[]>([]);
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [planError, setPlanError] = useState<string | null>(null);
+  const [alertVisible, setAlertVisible] = useState(false);
 
   const screenW = Dimensions.get("window").width;
 
@@ -82,10 +85,24 @@ export default function Home() {
             />
           </View>
 
+          {/* === 로그인 상태가 아니라면 로그인 버튼 표시 === */}
+          {user ? null : (
+            <Pressable onPress={() => router.push("/login")} style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>
+              <Text style={{ fontSize: 16, fontFamily: "BasicMedium", marginRight: 8, color: Colors.primary }}>로그인</Text>
+              <Ionicons name="log-in-outline" size={30} color={Colors.primary} />
+            </Pressable>
+          )}
+
           {/* === 큰 비교 카드 (bigCard) === */}
           <View style={styles.cardContainer}>
             <TouchableOpacity
-              onPress={() => router.push("/dc/dc4")}
+              onPress={() => {
+                if (user) {
+                  router.push("/dc/dc4");
+                } else {
+                  setAlertVisible(true);
+                }
+              }}
               style={[styles.card, styles.bigCard]}
               activeOpacity={0.9}
             >
@@ -100,8 +117,15 @@ export default function Home() {
             {/* === 두 개 추천 카드 === */}
             <View style={styles.row}>
               {/* DC 카드 */}
+              {/* 사용자가 있으면 push 없으면 alert */}
               <TouchableOpacity
-                onPress={() => router.push("/dc/dc1")}
+                onPress={() => {
+                  if (user) {
+                    router.push("/dc/dc2");
+                  } else {
+                    setAlertVisible(true);
+                  }
+                }}
                 style={[styles.card, styles.squareCard]}
                 activeOpacity={0.9}
               >
@@ -119,11 +143,17 @@ export default function Home() {
 
               {/* IRP 카드 */}
               <TouchableOpacity
-                onPress={() => router.push("/irp/irp4")}
+                onPress={() => {
+                  if (user) {
+                    router.push("/irp/irp4");
+                  } else {
+                    setAlertVisible(true);
+                  }
+                }}
                 style={[styles.card, styles.squareCard, styles.cardRight]}
                 activeOpacity={0.9}
               >
-                <Text style={styles.boxTitle}>IRP 계좌 추천</Text>
+                <Text style={styles.boxTitle}>IRP 예상 수익률</Text>
                 <Text style={styles.boxDesc}>노후자금을{"\n"}더 든든하게!</Text>
                 <Image
                   source={require("@/assets/icon/pig.png")}
@@ -157,6 +187,14 @@ export default function Home() {
               )}
             </View>
           </Pressable>
+
+          {/* 로그인 필요 alert */}
+          <CustomAlert
+            visible={alertVisible}
+            title="로그인이 필요합니다"
+            message="로그인 후 이용해주세요"
+            onClose={() => setAlertVisible(false)}
+          />
           {/* 포트폴리오 구성 */}
         </ScrollView>
       </SafeAreaView>

@@ -28,7 +28,8 @@ type Props = {
 export default function ImageList({
   items,
   header = "목록",
-  emptyText = "데이터가 없습니다.",
+  // 로그인을 하지 않았을때 로그인을 하라는 emptyText
+  emptyText = "로그인을 하시면\n많은 정보를 얻을 수 있어요 :)",
   from,
   initialCount = 3,
   step = 5,
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
     color: Colors.black,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: "BasicMedium",
     color: Colors.gray,
     textAlign: "center",

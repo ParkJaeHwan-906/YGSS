@@ -11,9 +11,8 @@ type PriceData = {
     dailyRate: number;
 };
 
-type RangeType = "1M" | "3M" | "6M" | "1Y" | "YTD";
+type RangeType = "3M" | "6M" | "1Y" | "YTD";
 const RANGE_LABELS: Record<RangeType, string> = {
-    "1M": "1개월",
     "3M": "3개월",
     "6M": "6개월",
     "1Y": "1년",
@@ -41,9 +40,9 @@ export default function ProfitChart({ data }: { data: PriceData[] }) {
         const start = new Date(end);
 
         switch (month) {
-            case "1M":
-                start.setMonth(end.getMonth() - 1);
-                break;
+            // case "1M":
+            //     start.setMonth(end.getMonth() - 1);
+            //     break;
             case "3M":
                 start.setMonth(end.getMonth() - 3);
                 break;

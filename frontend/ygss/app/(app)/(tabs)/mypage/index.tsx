@@ -9,8 +9,8 @@ import { Colors } from "@/src/theme/colors";
 import { deleteRefreshToken } from "@/src/utils/secureStore";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
-import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -36,64 +36,67 @@ export default function Mypage() {
         dispatch(signOut());            // 전역 상태 초기화
     };
 
-    //  찜한 상품 불러오기
-    useEffect(() => {
-        const fetchLiked = async () => {
-            try {
-                const res = await axios.get(`${API_URL}/pension/liked-product`, {
-                    headers: { Authorization: `A103 ${accessToken}` },
-                });
+    //  찜한 상품 불러오기 함수
+    const fetchLiked = useCallback(async () => {
+        try {
+            const res = await axios.get(`${API_URL}/pension/liked-product`, {
+                headers: { Authorization: `A103 ${accessToken}` },
+            });
 
-                const { likedProduct = [], likedBond = [] } = res.data;
-                console.log(res.data)
-                // ETF 개수
-                const etfCount = likedProduct.filter((it: any) => it.productTypeName === "ETF").length;
+            const { likedProduct = [], likedBond = [] } = res.data;
+            console.log(res.data)
 
-                // 펀드 개수
-                const fundCount = likedProduct.filter((it: any) => it.productTypeName === "펀드").length;
+            // ETF, 펀드, 채권 개수
+            const etfCount = likedProduct.filter((it: any) => it.productTypeName === "ETF").length;
+            const fundCount = likedProduct.filter((it: any) => it.productTypeName === "펀드").length;
+            const bondCount = likedBond.length;
 
-                // 채권 개수
-                const bondCount = likedBond.length;
+            // slices 세팅 (개수 기준)
+            const mappedSlices: Slice[] = [];
+            if (etfCount > 0) mappedSlices.push({ label: "ETF", amount: etfCount });
+            if (fundCount > 0) mappedSlices.push({ label: "펀드", amount: fundCount });
+            if (bondCount > 0) mappedSlices.push({ label: "채권", amount: bondCount });
+            setSlices(mappedSlices);
 
-                // slices 세팅 (개수 기준)
-                const mappedSlices: Slice[] = [];
+            // 상품 리스트 매핑
+            const mapped: ImageListData[] = [
+                ...likedProduct.map((it: any) => ({
+                    id: it.id,
+                    type: it.productTypeName,
+                    logo: it.productTypeName === "ETF"
+                        ? require("@/assets/icon/etf.png")
+                        : require("@/assets/icon/fund.png"),
+                    title: it.product,
+                    subTitle: it.companyName,
+                    rate: it.nextYearProfitRate ?? 0,
+                })),
+                ...likedBond.map((it: any) => ({
+                    id: it.id,
+                    type: "BOND",
+                    logo: require("@/assets/icon/bond.png"),
+                    title: it.productName,
+                    subTitle: it.publisher,
+                    rate: it.finalProfitRate ?? 0,
+                })),
+            ];
+            setLikedItems(mapped);
 
-                if (etfCount > 0) mappedSlices.push({ label: "ETF", amount: etfCount });
-                if (fundCount > 0) mappedSlices.push({ label: "펀드", amount: fundCount });
-                if (bondCount > 0) mappedSlices.push({ label: "채권", amount: bondCount });
-
-                setSlices(mappedSlices);
-
-                const mapped: ImageListData[] = [
-                    ...likedProduct.map((it: any) => ({
-                        id: it.id,
-                        type: it.productTypeName, // "ETF" or "펀드"
-                        logo:
-                            it.productTypeName === "ETF"
-                                ? require("@/assets/icon/etf.png")
-                                : require("@/assets/icon/fund.png"),
-                        title: it.product,
-                        subTitle: it.companyName,
-                        rate: it.nextYearProfitRate ?? 0,
-                    })),
-                    ...likedBond.map((it: any) => ({
-                        id: it.id,
-                        type: "BOND",
-                        logo: require("@/assets/icon/bond.png"), // 채권 아이콘 예시
-                        title: it.productName,
-                        subTitle: it.publisher,
-                        rate: it.finalProfitRate ?? 0,
-                    })),
-                ];
-
-                setLikedItems(mapped);
-            } catch (err: any) {
-                console.error("찜한 상품 조회 실패:", err.response?.status, err.message);
-            }
-        };
-
-        fetchLiked();
+        } catch (err: any) {
+            console.error("찜한 상품 조회 실패:", err.response?.status, err.message);
+        }
     }, [accessToken]);
+
+    // 최초 마운트 시 1번
+    useEffect(() => {
+        fetchLiked();
+    }, [fetchLiked]);
+
+    // 마이페이지로 들어올 때마다 실행
+    useFocusEffect(
+        useCallback(() => {
+            fetchLiked();
+        }, [fetchLiked])
+    );
 
     // 최상단 이동 핸들러
     const handlePressToTop = () => {

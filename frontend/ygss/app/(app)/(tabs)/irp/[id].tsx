@@ -88,10 +88,10 @@ export default function IrpDetail({ id = 1 }: { id?: number }) {
 
             {/* 세부 정보 */}
             <View style={styles.stratContainer}>
-                <ItemStrat />
+                <ItemStrat data={product.investStrategy} />
             </View>
             <View style={styles.corpContainer}>
-                <ItemCorp />
+                <ItemCorp company={product.company} />
             </View>
             <View style={styles.dueContainer}>
                 <ItemDue />

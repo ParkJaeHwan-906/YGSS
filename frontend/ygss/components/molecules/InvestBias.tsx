@@ -28,7 +28,7 @@ export default function InvestBias() {
           styles.textLightSub,
         ]}
       >
-        투자 성향을 검사하고, {"\n"} 나만의 투자 전략을 추천해드려요!
+        투자 성향을 검사하고, {"\n"}나만의 투자 전략을 추천해드려요!
       </Text>
       <Image source={require("@/assets/icon/paper.png")} style={styles.boxIcon} />
     </TouchableOpacity>
