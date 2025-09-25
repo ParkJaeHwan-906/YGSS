@@ -1,28 +1,30 @@
 // app/(app)/(tabs)/dc/dc4.tsx
 
-import React, { useEffect, useState, useRef } from "react";
+import { ImageListData } from "@/components/organisms/ImageList";
+import ItemCarousel from "@/components/organisms/ItemCarousel";
+import { Colors } from "@/src/theme/colors";
+import { Picker } from "@react-native-picker/picker";
+import axios from "axios";
+import { useRouter } from "expo-router";
+import { MotiView } from "moti";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
+  ActionSheetIOS,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Platform,
   ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
-  Image,
-  StatusBar,
-  Alert,
-  } from "react-native";
-import { MotiView } from "moti";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Colors } from "@/src/theme/colors";
-import { useRouter } from "expo-router";
-import { useSelector } from "react-redux";
-import { Picker } from "@react-native-picker/picker";
-import { ActionSheetIOS, Platform } from "react-native";
+  View,
+} from "react-native";
 import { LineChart } from "react-native-gifted-charts";
-import { Dimensions } from "react-native";
-import axios from "axios";
-import { ActivityIndicator } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useSelector } from "react-redux";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -86,6 +88,18 @@ const getYearIndex = (y: number) => Math.max(0, YEAR_ORDER.indexOf(y as any));
 const pickByYear = (arr: number[] | undefined, y: number) =>
   Array.isArray(arr) ? (arr[getYearIndex(y)] ?? 0) : 0;
 
+// itemlistdata mapping
+const mapRecommendToImageList = (list: any[]): ImageListData[] => {
+  return list.map((p) => ({
+    id: p.id,
+    type: p.productType as "ETF" | "펀드" | "BOND",
+    title: p.product,
+    subTitle: p.company,
+    rate: p.profitPrediction,
+    logo: undefined, // 필요 시 로고 매핑
+  }));
+};
+
 export default function Dc4() {
   const router = useRouter();
   const accessToken = useSelector((state: any) => state.auth.accessToken);
@@ -111,10 +125,10 @@ export default function Dc4() {
     try {
       if (inFlightRef.current) return;
       inFlightRef.current = true;
-  
+
       setLoading(true);
       setErrMsg(null);
-  
+
       if (!riskGradeId) {
         Alert.alert("투자성향 필요", "서비스 이용을 위해 투자성향을 먼저 검사한 후에 이용해 주세요 :)", [
           { text: "취소", style: "cancel" },
@@ -122,18 +136,18 @@ export default function Dc4() {
         ]);
         return;
       }
-  
+
       const inputSalary = toWon(inputSalaryMan);
       const profileSalaryWon = Number(profileSalary) || 0;
       const isWhatIf = inputSalary > 0 && inputSalary !== profileSalaryWon;
-  
+
       const url = isWhatIf
         ? `${API_URL}/recommend/public/compare/dc`
         : `${API_URL}/recommend/compare/dc`;
-  
+
       const salaryWon = Number(isWhatIf ? inputSalary : profileSalaryWon);
       const mode: "public" | "auth" = isWhatIf ? "public" : "auth";
-  
+
       // 이전 성공 요청과 동일하면 재호출 금지 (연도 변경은 로컬 인덱싱으로 이미 반영됨)
       const prev = lastQueryRef.current;
       if (prev && prev.risk === Number(riskGradeId) && prev.salary === salaryWon && prev.mode === mode && cmp) {
@@ -141,27 +155,27 @@ export default function Dc4() {
         setIsInputDirty(false); // 입력 그대로면 버튼 비활성화 유지
         return;
       }
-  
+
       const headers: any = mode === "auth" ? { Authorization: `A103 ${accessToken}` } : undefined;
       const params = { investorPersonalityId: Number(riskGradeId), salary: salaryWon };
-  
+
       console.log("[DC4] >>> REQUEST", { url, params, headers });
-  
+
       const resp = await axios.get<CompareResp>(url, {
         headers,
         params,
         validateStatus: () => true,
       });
-  
+
       console.log("[DC4] <<< RESPONSE", { status: resp.status, data: resp.data });
-  
+
       if (resp.status >= 400) {
         setErrMsg(
           `[${resp.status}] ${(resp.data as any)?.message || (resp.data as any)?.error || "요청 실패"}`
         );
         return;
       }
-  
+
       // 성공: 결과 저장 + 쿼리 스냅샷 갱신 + 버튼 비활성화
       setCmp(resp.data);
       lastQueryRef.current = { risk: Number(riskGradeId), salary: salaryWon, mode };
@@ -178,7 +192,7 @@ export default function Dc4() {
       inFlightRef.current = false;
       setLoading(false);
     }
-  };  
+  };
 
   // 연도별 금액
   const dcValue = React.useMemo(
@@ -205,7 +219,7 @@ export default function Dc4() {
       typeofRiskGradeId: typeof riskGradeId,
       user,
     });
-  }, [riskGradeId]);  
+  }, [riskGradeId]);
 
   // 리다이렉트 직전 표시
   if (!accessToken) {
@@ -287,7 +301,7 @@ export default function Dc4() {
                     }
                   >
                     <Text style={styles.displayedYear}>{selectedYear}</Text>
-                </TouchableOpacity>
+                  </TouchableOpacity>
                 )}
               </View>
               <Text style={styles.headerTitle1}>년 후,</Text>
@@ -306,18 +320,18 @@ export default function Dc4() {
 
         {/* ===== 금액 입력 + 비교하기 버튼 ===== */}
         <View style={styles.moneyRow}>
-             <MotiView
-                from={{ translateY: 0 }}
-                animate={{ translateY: -15 }}
-                transition={{
-                type: "timing",
-                duration: 800,
-                loop: true,
-                repeatReverse: true,
-                }}
-            >
-                <Image source={require("@/assets/icon/bills.png")} style={styles.moneyImg} resizeMode="contain" />
-            </MotiView>
+          <MotiView
+            from={{ translateY: 0 }}
+            animate={{ translateY: -15 }}
+            transition={{
+              type: "timing",
+              duration: 800,
+              loop: true,
+              repeatReverse: true,
+            }}
+          >
+            <Image source={require("@/assets/icon/bills.png")} style={styles.moneyImg} resizeMode="contain" />
+          </MotiView>
         </View>
 
         <View style={styles.inputRow}>
@@ -466,31 +480,49 @@ export default function Dc4() {
 
         {/* ===== IRP 깨우기 CTA ===== */}
         <View style={styles.irpCard}>
-            <MotiView
-                from={{ translateY: 0 }}
-                animate={{ translateY: -15 }}
-                transition={{
-                type: "timing",
-                duration: 800,
-                loop: true,
-                repeatReverse: true,
-                }}
-            >
-                <Image source={require("@/assets/char/dreamAlchi.png")} style={styles.irpImg} resizeMode="contain" />
-            </MotiView>
-            <Text style={styles.irpTextLine1}>잠 자고 있는 IRP 계좌도</Text>
-            <Text style={styles.irpTextLine2}>깨우러 가볼까요?</Text>
+          <MotiView
+            from={{ translateY: 0 }}
+            animate={{ translateY: -15 }}
+            transition={{
+              type: "timing",
+              duration: 800,
+              loop: true,
+              repeatReverse: true,
+            }}
+          >
+            <Image source={require("@/assets/char/dreamAlchi.png")} style={styles.irpImg} resizeMode="contain" />
+          </MotiView>
+          <Text style={styles.irpTextLine1}>잠 자고 있는 IRP 계좌도</Text>
+          <Text style={styles.irpTextLine2}>깨우러 가볼까요?</Text>
 
-            <TouchableOpacity
-                activeOpacity={0.9}
-                style={styles.secondaryBtn}
-                onPress={() => router.push("/irp/irp1")}
-            >
-                <Text style={styles.secondaryBtnText}>깨우러 가기</Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.secondaryBtn}
+            onPress={() => router.push("/irp/irp1")}
+          >
+            <Text style={styles.secondaryBtnText}>깨우러 가기</Text>
+          </TouchableOpacity>
         </View>
 
+        {/* ===== 추천 상품 캐러셀 ===== */}
+
         {/* 탭바 여백 */}
+        {cmp?.recommendProductList && cmp.recommendProductList.length > 0 && (
+          <View style={{ backgroundColor: Colors.white, paddingVertical: 20 }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontFamily: "BasicBold",
+                marginTop: 10,
+                marginLeft: 20,
+                color: "#2E2E3A",
+              }}
+            >
+              이런 상품은 어떠세요?
+            </Text>
+            <ItemCarousel items={mapRecommendToImageList(cmp.recommendProductList)} />
+          </View>
+        )}
         <View style={{ height: Platform.select({ ios: 28, android: 20 }) }} />
       </ScrollView>
     </SafeAreaView>
@@ -499,10 +531,11 @@ export default function Dc4() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  container: { paddingHorizontal: 20, paddingBottom: 40 },
+  container: { paddingBottom: 40 },
 
   // 헤더
   headerRow: {
+    marginHorizontal: 20,
     marginTop: 30,
     marginBottom: 50,
     position: "relative",
@@ -634,20 +667,20 @@ const styles = StyleSheet.create({
   scrollHint: { alignSelf: "center", marginVertical: 12, fontSize: 18, color: "#8A8AA3" },
 
   // 차트 박스(placeholder)
-chartBox: {
-  width: 360,
-  height: 280,
-  borderRadius: 12,
-  backgroundColor: Colors.white,
-  alignItems: "center",
-  justifyContent: "center",
-  alignSelf: "stretch",
-  shadowColor: Colors.primary,
-  shadowOpacity: 0.08,
-  shadowRadius: 8,
-  elevation: 10,
-},
-chartPlaceholder: { fontSize: 14, color: "#B1B1C7" },
+  chartBox: {
+    width: 360,
+    height: 280,
+    borderRadius: 12,
+    backgroundColor: Colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "stretch",
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  chartPlaceholder: { fontSize: 14, color: "#B1B1C7" },
 
   // 섹션 공통
   section: {
