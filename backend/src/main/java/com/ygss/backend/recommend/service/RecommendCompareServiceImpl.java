@@ -73,7 +73,7 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
                         .orElse(null));
             });
 
-            Thread.sleep(1000*3);
+            Thread.sleep(1000*2);
 
             return RecommendCompareResponseDto.builder()
                     .dbCalculate(dbCalculate)
