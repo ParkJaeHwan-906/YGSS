@@ -53,7 +53,7 @@ export default function MyMoney({
         <View style={styles.info}>
           {amount === 0 ? (
             <Text style={[styles.comment, { fontSize: fontSize ?? styles.comment.fontSize }]}>
-              신입이신가요? {"\n"}퇴직연금을 시작해보세요!
+              신입이신가요? {"\n"}보유금액을 기입하세요!
             </Text>
           ) : (
             <Text style={[styles.amount, { fontSize: fontSize ?? styles.amount.fontSize }]}>
@@ -123,9 +123,9 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   comment: {
-    fontSize: 15,
+    fontSize: 14,
     color: Colors.gray,
-    fontFamily: "BasicBold",
+    fontFamily: "BasicMedium",
     textAlign: "center",
     marginBottom: 5,
     lineHeight: 20,

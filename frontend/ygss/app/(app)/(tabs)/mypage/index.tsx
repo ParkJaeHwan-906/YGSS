@@ -30,72 +30,91 @@ export default function Mypage() {
 
     const scrollRef = useRef<ScrollView>(null);
 
-    const handleLogout = async () => {
-        await deleteRefreshToken();     // SecureStore 비우기
-        router.replace("/(auth)/login"); // 뒤로가기 못하게 교체 이동
-        dispatch(signOut());            // 전역 상태 초기화
-    };
+    const handleLogout = useCallback(async () => {
+        try { await deleteRefreshToken().catch(() => { }); }
+        finally {
+            dispatch(signOut());       // 1) 전역 auth 먼저 끊고
+            setLikedItems([]);         // 2) 로컬 UI도 즉시 비우고
+            setSlices([]);
+            router.replace("/(auth)/login"); // 3) 마지막에 이동
+        }
+    }, [dispatch, router]);
 
     //  찜한 상품 불러오기 함수
-    const fetchLiked = useCallback(async () => {
-        try {
-            const res = await axios.get(`${API_URL}/pension/liked-product`, {
-                headers: { Authorization: `A103 ${accessToken}` },
-            });
+    const fetchLiked = useCallback(
+        async (signal: AbortSignal) => {
+            if (!accessToken) return;
 
-            const { likedProduct = [], likedBond = [] } = res.data;
-            console.log(res.data)
+            try {
+                const res = await axios.get(`${API_URL}/pension/liked-product`, {
+                    headers: { Authorization: `A103 ${accessToken}` },
+                    signal,
+                });
 
-            // ETF, 펀드, 채권 개수
-            const etfCount = likedProduct.filter((it: any) => it.productTypeName === "ETF").length;
-            const fundCount = likedProduct.filter((it: any) => it.productTypeName === "펀드").length;
-            const bondCount = likedBond.length;
+                const { likedProduct = [], likedBond = [] } = res.data;
 
-            // slices 세팅 (개수 기준)
-            const mappedSlices: Slice[] = [];
-            if (etfCount > 0) mappedSlices.push({ label: "ETF", amount: etfCount });
-            if (fundCount > 0) mappedSlices.push({ label: "펀드", amount: fundCount });
-            if (bondCount > 0) mappedSlices.push({ label: "채권", amount: bondCount });
-            setSlices(mappedSlices);
+                // ETF, 펀드, 채권 개수
+                const etfCount = likedProduct.filter((it: any) => it.productTypeName === "ETF").length;
+                const fundCount = likedProduct.filter((it: any) => it.productTypeName === "펀드").length;
+                const bondCount = likedBond.length;
 
-            // 상품 리스트 매핑
-            const mapped: ImageListData[] = [
-                ...likedProduct.map((it: any) => ({
-                    id: it.id,
-                    type: it.productTypeName,
-                    logo: it.productTypeName === "ETF"
-                        ? require("@/assets/icon/etf.png")
-                        : require("@/assets/icon/fund.png"),
-                    title: it.product,
-                    subTitle: it.companyName,
-                    rate: it.nextYearProfitRate ?? 0,
-                })),
-                ...likedBond.map((it: any) => ({
-                    id: it.id,
-                    type: "BOND",
-                    logo: require("@/assets/icon/bond.png"),
-                    title: it.productName,
-                    subTitle: it.publisher,
-                    rate: it.finalProfitRate ?? 0,
-                })),
-            ];
-            setLikedItems(mapped);
+                // slices 세팅 (개수 기준)
+                const mappedSlices: Slice[] = [];
+                if (etfCount > 0) mappedSlices.push({ label: "ETF", amount: etfCount });
+                if (fundCount > 0) mappedSlices.push({ label: "펀드", amount: fundCount });
+                if (bondCount > 0) mappedSlices.push({ label: "채권", amount: bondCount });
+                setSlices(mappedSlices);
 
-        } catch (err: any) {
-            console.error("찜한 상품 조회 실패:", err.response?.status, err.message);
-        }
-    }, [accessToken]);
+                // 상품 리스트 매핑
+                const mapped: ImageListData[] = [
+                    ...likedProduct.map((it: any) => ({
+                        id: it.id,
+                        type: it.productTypeName,
+                        logo: it.productTypeName === "ETF"
+                            ? require("@/assets/icon/etf.png")
+                            : require("@/assets/icon/fund.png"),
+                        title: it.product,
+                        subTitle: it.companyName,
+                        rate: it.nextYearProfitRate ?? 0,
+                    })),
+                    ...likedBond.map((it: any) => ({
+                        id: it.id,
+                        type: "BOND",
+                        logo: require("@/assets/icon/bond.png"),
+                        title: it.productName,
+                        subTitle: it.publisher,
+                        rate: it.finalProfitRate ?? 0,
+                    })),
+                ];
+                setLikedItems(mapped);
+
+            } catch (err: any) {
+                if (err.name === "CanceledError" || err.name === "AbortError") return;
+                console.error("찜한 상품 조회 실패:", err.response?.status, err.message);
+                setSlices([]); setLikedItems([]);
+            }
+        }, [accessToken]);
 
     // 최초 마운트 시 1번
     useEffect(() => {
-        fetchLiked();
-    }, [fetchLiked]);
+        if (!accessToken) {
+            setSlices([]);
+            setLikedItems([]);
+            return;
+        }
+        const controller = new AbortController();
+        fetchLiked(controller.signal);
+        return () => controller.abort();   // 실제 cleanup
+    }, [fetchLiked, accessToken]);
 
     // 마이페이지로 들어올 때마다 실행
     useFocusEffect(
         useCallback(() => {
-            fetchLiked();
-        }, [fetchLiked])
+            if (!accessToken) return;
+            const controller = new AbortController();
+            fetchLiked(controller.signal);
+            return () => controller.abort(); // 포커스 해제 시 취소
+        }, [fetchLiked, accessToken])
     );
 
     // 최상단 이동 핸들러
@@ -131,6 +150,9 @@ export default function Mypage() {
                         <MyMoney
                             amount={user.totalRetirePension}
                             from="mypage"
+                            wrapHeight={140}
+                            fontSize={16}
+                            gap={-8}
                         // rate={0} // TODO: 실제 수익률 값으로 교체 필요
                         />
                     )}

@@ -1,5 +1,4 @@
 // app/(app)/(tabs)/home.tsx
-import { Easing } from "react-native-reanimated";
 import MyMoney from "@/components/molecules/MyMoney";
 import CustomAlert from "@/components/organisms/CustomAlert";
 import ImageList, { ImageListData } from "@/components/organisms/ImageList";
@@ -8,6 +7,7 @@ import { useAppSelector } from "@/src/store/hooks";
 import { Colors } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { MotiImage, MotiView } from "moti";
 import { useEffect, useState } from "react";
 import {
   Dimensions,
@@ -21,8 +21,8 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import { Easing } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MotiImage, MotiView } from "moti";
 
 // 알키 이미지 매핑
 const ALCHI_IMAGES = [
@@ -86,7 +86,7 @@ export default function Home() {
     }, PULSE_MS);
     return () => clearInterval(id);
   }, []);
-  
+
   useEffect(() => {
     const t = setInterval(() => {
       setLineIdx((p) => (p + 1) % INVEST_LINES.length);
@@ -131,7 +131,7 @@ export default function Home() {
               <Ionicons name="log-in-outline" size={30} color={Colors.primary} />
             </Pressable>
           )}
-          
+
           {/* 알키 이미지 매핑 */}
           <View style={styles.mainContainer}>
             {/* 배경 */}
@@ -282,7 +282,7 @@ export default function Home() {
                 <MyMoney
                   amount={user.totalRetirePension}
                   from="home"
-                  wrapHeight={135}
+                  wrapHeight={140}
                   fontSize={16}
                   gap={-8}
                 // rate={0} // TODO: 실제 수익률 값으로 교체 필요
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: "center",
   },
-  
+
   /* ▼ 회전사각형(기존 bubbleTail) 삭제하고 아래 두 개로 대체 */
   bubbleTailOutline: {
     position: "absolute",
