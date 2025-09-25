@@ -131,6 +131,9 @@ export default function Mypage() {
                         <MyMoney
                             amount={user.totalRetirePension}
                             from="mypage"
+                            wrapHeight={140}
+                            fontSize={16}
+                            gap={-8}
                         // rate={0} // TODO: 실제 수익률 값으로 교체 필요
                         />
                     )}
