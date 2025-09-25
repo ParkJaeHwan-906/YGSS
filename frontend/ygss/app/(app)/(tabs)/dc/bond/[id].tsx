@@ -285,7 +285,6 @@ export default function DcDetail() {
                 )}
             </SafeAreaView>
 
-        // 찜하기 모달
             {/* 하트 애니메이션 */}
             {
                 showHeart && (

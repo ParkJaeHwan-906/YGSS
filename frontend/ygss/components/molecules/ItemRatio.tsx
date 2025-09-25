@@ -174,7 +174,8 @@ export default function ItemRatio({ data }: { data: DoughnutItem[] }) {
           <View key={idx} style={styles.legendItem}>
             <View style={[styles.dot, { backgroundColor: item.color }]} />
             <Text style={styles.legendText}>
-              {item.label}: {item.value.toFixed(2)}%
+              {item.label}:
+              <Text style={{ fontFamily: "BasicMedium", color: Colors.gray }}> {item.value.toFixed(2)}%</Text>
             </Text>
           </View>
         ))}
@@ -217,6 +218,6 @@ const styles = StyleSheet.create({
     width: 10, height: 10, borderRadius: 5, marginRight: 6,
   },
   legendText: {
-    fontSize: 12, color: Colors.black, fontFamily: "BasicMedium",
+    fontSize: 13, color: Colors.black, fontFamily: "BasicMedium",
   },
 });
