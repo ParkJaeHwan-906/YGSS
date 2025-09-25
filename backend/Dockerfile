@@ -1,11 +1,9 @@
-# 추천: Amazon ECR Public (로그인 불필요, 가벼움)
-FROM public.ecr.aws/amazoncorretto/amazoncorretto:17-jre
 
-# 옵션 2: Microsoft Container Registry (로그인 불필요)
-# FROM mcr.microsoft.com/openjdk/jdk:17-ubuntu
+# 추천: Amazon Corretto (JDK만 있지만 실행에는 문제없음)
+FROM public.ecr.aws/amazoncorretto/amazoncorretto:17
 
-# 옵션 3: Red Hat 레지스트리 (무겁지만 안정적)
-# FROM registry.access.redhat.com/ubi8/openjdk-17-runtime
+# 더 가벼운 JRE가 필요하면 Microsoft 사용
+# FROM mcr.microsoft.com/openjdk/jre:17-ubuntu
 
 WORKDIR /app
 COPY build/libs/backend-0.0.1-SNAPSHOT.jar app.jar
