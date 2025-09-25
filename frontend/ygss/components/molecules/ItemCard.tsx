@@ -22,9 +22,15 @@ export default function ItemCard({ id, title, rate, type, icon }: ItemCardProps)
         }
     };
 
+    // 1) 유니코드 안전 잘라내기(이모지/한글 포함)
+    const truncate = (s: string, n = 30) => {
+        const chars = Array.from(s ?? "");
+        return chars.length > n ? chars.slice(0, n).join("") + "…" : s;
+    };
+
     return (
         <Pressable onPress={handlePress} style={styles.card}>
-            <Text style={styles.cardTitle}>{title}</Text>
+            <Text style={styles.cardTitle}>{truncate(title)}</Text>
             <Text style={[styles.cardRate, isPositive ? styles.up : styles.down]}>
                 {isPositive ? `+${rate.toFixed(2)}%` : `${rate.toFixed(2)}%`}
             </Text>
