@@ -79,10 +79,13 @@ public class PortfolioOptimizer {
                             .build());
             maxReturn += w * r;
         }
-
+        allocations.sort((a, b) -> {
+            if(b.getAllocationPercentage() == a.getAllocationPercentage()) Double.compare(b.getExpectedReturn(), a.getExpectedReturn());
+            return Double.compare(b.getAllocationPercentage(), a.getAllocationPercentage());
+        });
         return RecommendPortfolioResponse.builder()
                 .totalExpectedReturn(maxReturn)
-                .allocations(allocations)
+                .allocations(allocations.subList(0,Math.min(allocations.size(), 5)))
                 .build();
     }
 }

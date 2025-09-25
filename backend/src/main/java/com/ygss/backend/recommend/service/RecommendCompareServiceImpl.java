@@ -42,44 +42,51 @@ public class RecommendCompareServiceImpl implements RecommendCompareService {
      */
     @Override
     public RecommendCompareResponseDto recommendCompare(String email, RecommendCompareRequestDto request, Boolean dc) {
-        // 투자 성향 가져오기
-        UserAccountsDto user = userAccountsRepository.selectByUserEmail(email)
-                .orElse(null);
-        Long investorPersonalityId = (user == null || user.getRiskGradeId() == null) ? request.getInvestorPersonalityId() : user.getRiskGradeId();
-        if(investorPersonalityId == null) throw new IllegalArgumentException("Bad Request");
-        if(!dc) request.accYear();
-        else request.divYear();
-        Long userSalary = request.getSalary();
-        if(userSalary == null) throw new IllegalArgumentException("Bad Request");
-        // DB
-        Long[] dbCalculateGraph = calculatePredictionRetirePension(userSalary, 0.041, user == null ? 0 : user.getTotalRetirePension());       // 임시로 24년도 기준 복리 적용
-        Long dbCalculate = dbCalculateGraph[3];         // 최종 예상 퇴직연금
-        RecommendPortfolioRequest fastApiRequest = RecommendPortfolioRequest.builder()
-                .riskGradeId(investorPersonalityId + (dc ? 1 : -1))     // DC 형은 조금 더 공격적인 투자, IRP 는 조금 소극적인 투자
-                .salary(userSalary)
-                .totalRetirePension(user == null ? null : user.getTotalRetirePension())
-                .build();
-        fastApiRequest.limitFieldRange();
-        fastApiRequest.setProductList(productDetailRepository.selectProductForRecommend(fastApiRequest.getRiskGradeId()));
-        // DC
-//        RecommendPortfolioResponse recommendPortfolioResponse = fastApiService.getRecommendPortfolio(fastApiRequest);
-        RecommendPortfolioResponse recommendPortfolioResponse = portfolioOptimizer.optimize(fastApiRequest.getProductList());
-        Long[] dcCalculateGraph = calculatePredictionRetirePension(userSalary, recommendPortfolioResponse.getTotalExpectedReturn(), user == null ? 0 : user.getTotalRetirePension());
-        Long dcCalculate = dcCalculateGraph[3];
-        List<RecommendProductDto> recommendProductList = new ArrayList<>();
-        recommendPortfolioResponse.getAllocations().forEach((product) -> {
-            recommendProductList.add(pensionProductRepository.selectProductById(product.getAssetCode())
-                    .orElse(null));
-        });
-        return RecommendCompareResponseDto.builder()
-                .dbCalculate(dbCalculate)
-                .dbCalculateRate(0.041)
-                .dbCalculateGraph(dbCalculateGraph)
-                .dcCalculate(dcCalculate)
-                .dcCalculateRate(recommendPortfolioResponse.getTotalExpectedReturn())
-                .dcCalculateGraph(dcCalculateGraph)
-                .recommendProductList(recommendProductList)
-                .build();
+        try {
+            // 투자 성향 가져오기
+            UserAccountsDto user = userAccountsRepository.selectByUserEmail(email)
+                    .orElse(null);
+            Long investorPersonalityId = (user == null || user.getRiskGradeId() == null) ? request.getInvestorPersonalityId() : user.getRiskGradeId();
+            if(investorPersonalityId == null) throw new IllegalArgumentException("Bad Request");
+            if(!dc) request.accYear();
+            else request.divYear();
+            Long userSalary = request.getSalary();
+            if(userSalary == null) throw new IllegalArgumentException("Bad Request");
+            // DB
+            Long[] dbCalculateGraph = calculatePredictionRetirePension(userSalary, 0.041, user == null ? 0 : user.getTotalRetirePension());       // 임시로 24년도 기준 복리 적용
+            Long dbCalculate = dbCalculateGraph[3];         // 최종 예상 퇴직연금
+            RecommendPortfolioRequest fastApiRequest = RecommendPortfolioRequest.builder()
+                    .riskGradeId(investorPersonalityId + (dc ? 1 : -1))     // DC 형은 조금 더 공격적인 투자, IRP 는 조금 소극적인 투자
+                    .salary(userSalary)
+                    .totalRetirePension(user == null ? null : user.getTotalRetirePension())
+                    .build();
+            fastApiRequest.limitFieldRange();
+            fastApiRequest.setProductList(productDetailRepository.selectProductForRecommend(fastApiRequest.getRiskGradeId()));
+            // DC
+//            RecommendPortfolioResponse recommendPortfolioResponse = fastApiService.getRecommendPortfolio(fastApiRequest);
+            RecommendPortfolioResponse recommendPortfolioResponse = portfolioOptimizer.optimize(fastApiRequest.getProductList());
+            Long[] dcCalculateGraph = calculatePredictionRetirePension(userSalary, recommendPortfolioResponse.getTotalExpectedReturn(), user == null ? 0 : user.getTotalRetirePension());
+            Long dcCalculate = dcCalculateGraph[3];
+            List<RecommendProductDto> recommendProductList = new ArrayList<>();
+            recommendPortfolioResponse.getAllocations().forEach((product) -> {
+                recommendProductList.add(pensionProductRepository.selectProductById(product.getAssetCode())
+                        .orElse(null));
+            });
+
+            Thread.sleep(1000*2);
+
+            return RecommendCompareResponseDto.builder()
+                    .dbCalculate(dbCalculate)
+                    .dbCalculateRate(0.041)
+                    .dbCalculateGraph(dbCalculateGraph)
+                    .dcCalculate(dcCalculate)
+                    .dcCalculateRate(recommendPortfolioResponse.getTotalExpectedReturn())
+                    .dcCalculateGraph(dcCalculateGraph)
+                    .recommendProductList(recommendProductList)
+                    .build();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

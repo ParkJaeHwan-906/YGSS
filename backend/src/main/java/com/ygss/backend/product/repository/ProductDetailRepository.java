@@ -30,6 +30,7 @@ public interface ProductDetailRepository {
             rpp.next_year_profit_rate AS 'predicted_return'
             FROM retire_pension_products rpp
             WHERE rpp.risk_grade_id <= #{riskGradeId}
+            AND rpp.next_year_profit_rate > 0
             """)
     List<ProductRequestDto> selectProductForRecommend(Long riskGradeId);
 }

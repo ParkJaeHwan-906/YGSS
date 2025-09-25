@@ -1,0 +1,17 @@
+# k8s/overlays/prod/patch-ai.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai
+spec:
+  template:
+    spec:
+      containers:
+        - name: ai
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"     # 1000m → 2000m
+              memory: "6Gi"    # 2Gi → 6Gi
