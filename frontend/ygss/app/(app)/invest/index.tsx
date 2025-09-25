@@ -1,22 +1,26 @@
 // app/(app)/invest/index.tsx
 
-import React, { useEffect, useRef } from "react";
+import CustomAlert from "@/components/organisms/CustomAlert";
+import { useAppSelector } from "@/src/store/hooks";
+import { Colors } from "@/src/theme/colors";
+import { useRouter } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  Pressable,
   Animated,
   Easing,
+  Image,
+  Pressable,
   StatusBar,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Colors } from "@/src/theme/colors";
 
 export default function InvestTestStart() {
   const router = useRouter();
+  const [alertVisible, setAlertVisible] = useState(false);
+  const user = useAppSelector((s) => s.auth.user);
 
   // 👻 둥둥 애니메이션
   const floatY = useRef(new Animated.Value(0)).current;
@@ -67,12 +71,29 @@ export default function InvestTestStart() {
           </View>
 
           <Pressable
-            onPress={() => router.push("/invest/test")}
+            onPress={() => {
+              if (user) {
+                router.push("/invest/test");
+              } else {
+                setAlertVisible(true);
+              }
+            }}
             style={({ pressed }) => [styles.cta, { opacity: pressed ? 0.9 : 1 }]}
           >
             <Text style={styles.ctaText}>나는 어떤 투자 성향일까?</Text>
           </Pressable>
         </View>
+
+        {/* 로그인 필요 alert */}
+        <CustomAlert
+          visible={alertVisible}
+          title="로그인이 필요합니다"
+          message="로그인 후 이용해주세요"
+          onClose={() => {
+            setAlertVisible(false);
+            router.replace("/(auth)/login");
+          }}
+        />
       </SafeAreaView>
     </>
   );

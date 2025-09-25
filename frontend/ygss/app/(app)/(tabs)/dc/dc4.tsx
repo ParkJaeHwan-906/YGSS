@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Keyboard,
   Platform,
   ScrollView,
   StatusBar,
@@ -116,12 +117,24 @@ export default function Dc4() {
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [cmp, setCmp] = useState<CompareResp | null>(null); // API 응답 전체 보관
 
+  // 비교하기 버튼 클릭 스크롤
+  const scrollRef = React.useRef<ScrollView>(null);
+  const [dcY, setDcY] = useState(0);
+
   // 투자성향 ID가 리덕스에 있다면 사용
   const riskGradeId = useSelector((state: any) => state.auth.user?.riskGradeId);
   const profileSalary = useSelector((state: any) => state.auth.user?.salary) ?? 0;
 
   // 비교하기 버튼 클릭 시, 동작
   const handleCompare = async () => {
+    // (A) 먼저 키보드 닫고 즉시 스크롤
+    Keyboard.dismiss();
+    requestAnimationFrame(() => {
+      if (scrollRef.current && dcY > 0) {
+        scrollRef.current.scrollTo({ y: dcY, animated: true });
+      }
+    });
+
     try {
       if (inFlightRef.current) return;
       inFlightRef.current = true;
@@ -247,7 +260,7 @@ export default function Dc4() {
       style={[styles.safeArea, { backgroundColor: Colors?.back ?? "#F4F6FF" }]}
     >
       <StatusBar barStyle="dark-content" backgroundColor={Colors?.back ?? "#F4F6FF"} />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
+      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
         {/* ===== 헤더 영역 ===== */}
         <View style={styles.headerRow}>
           {/* 로고: 컨테이너 좌우 패딩(20)을 상쇄해 왼쪽에 딱 붙임 */}
@@ -365,7 +378,7 @@ export default function Dc4() {
         <Text style={styles.scrollHint}>⌄</Text>
 
         {/* ===== DC 섹션 ===== */}
-        <View style={[styles.section]}>
+        <View style={[styles.section]} onLayout={(e) => setDcY(e.nativeEvent.layout.y)}>
           <View style={styles.sectionHeader}>
             <View style={styles.pill}>
               <Text style={styles.pillText}>DC</Text>

@@ -15,13 +15,13 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Platform,
+    TextInput as RNTextInput,
     ScrollView,
     StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
-    TextInput as RNTextInput,
 } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -105,7 +105,7 @@ export default function Irp4() {
 
     const [inputSalaryMan, setInputSalaryMan] = useState<string>(""); // 입력할 납입금액
     const [selectedYear, setSelectedYear] = useState<number>(3); // 피커에서 보여줄 값
-    
+
     // ===== 상태 추가 (Dc4 컴포넌트 내부)
     const [loading, setLoading] = useState(false);
     const [errMsg, setErrMsg] = useState<string | null>(null);
@@ -127,84 +127,82 @@ export default function Irp4() {
     const irpAmount = useMemo(
         () => pickByYear(cmp?.dcCalculateGraph, selectedYear),
         [cmp?.dcCalculateGraph, selectedYear]
-      );
+    );
 
     // 비교하기 버튼 클릭 시, 동작
     const handleCompare = async () => {
         try {
-          if (inFlightRef.current) return;
-          inFlightRef.current = true;
-      
-          // 커서/키보드 제거
-          inputRef.current?.blur();
-          Keyboard.dismiss();
-      
-          setLoading(true);
-          setErrMsg(null);
-      
-          if (!riskGradeId) {
-            Alert.alert("투자성향 필요",
-              "서비스 이용을 위해 투자성향을 먼저 검사한 후에 이용해 주세요 :)",
-              [
-                { text: "취소", style: "cancel" },
-                { text: "검사하러 가기", onPress: () => router.push("/(app)/invest") }
-              ]
-            );
-            return;
-          }
-      
-          const salaryWon = toWon(inputSalaryMan);
-          const risk = Number(riskGradeId);
-          const prev = lastQueryRef.current;
-      
-          // ① 같은 급여+같은 투자성향이면 네트워크 스킵 (연도는 인덱싱으로 이미 반영)
-          if (prev && prev.risk === risk && prev.salary === salaryWon && cmp) {
-            console.log("[irp4] skip fetch: same query, use cached cmp");
-            setIsInputDirty(false); // 버튼 비활성화
-            // 스크롤만 수행 (UX 유지)
-            setTimeout(() => {
-              scrollRef.current?.scrollTo({ y: irpY, animated: true });
-            }, 300);
-            return;
-          }
-      
-          // ② 새 입력이면 실제 호출
-          const url = `${API_URL}/recommend/compare/irp`;
-          const params = { investorPersonalityId: risk, salary: salaryWon };
-          const headers = { Authorization: `A103 ${accessToken}` };
-      
-          console.log("[irp4] >>> REQUEST", { url, params });
-          const resp = await axios.get<CompareResp>(url, { params, headers, validateStatus: () => true });
-          console.log("[irp4] <<< RESPONSE", resp.status);
-      
-          if (resp.status >= 400) {
-            setErrMsg(
-              `[${resp.status}] ${(resp.data as any)?.message || (resp.data as any)?.error || "요청 실패"}`
-            );
-            return;
-          }
-      
-          setCmp(resp.data);
-          lastQueryRef.current = { risk, salary: salaryWon };
-          setIsInputDirty(false); // 새 비교 완료 → 버튼 비활성화
-      
-          // 스크롤 UX
-          setTimeout(() => {
-            scrollRef.current?.scrollTo({ y: irpY, animated: true });
-          }, 300);
+            if (inFlightRef.current) return;
+            inFlightRef.current = true;
+
+            // 커서/키보드 제거
+            inputRef.current?.blur();
+            Keyboard.dismiss();
+
+            setLoading(true);
+            setErrMsg(null);
+
+            if (!riskGradeId) {
+                Alert.alert("투자성향 필요",
+                    "서비스 이용을 위해 투자성향을 먼저 검사한 후에 이용해 주세요 :)",
+                    [
+                        { text: "취소", style: "cancel" },
+                        { text: "검사하러 가기", onPress: () => router.push("/(app)/invest") }
+                    ]
+                );
+                return;
+            }
+
+            requestAnimationFrame(() => {
+                scrollRef.current?.scrollTo({ y: irpY, animated: true });
+            });
+
+            const salaryWon = toWon(inputSalaryMan);
+            const risk = Number(riskGradeId);
+            const prev = lastQueryRef.current;
+
+            // ① 같은 급여+같은 투자성향이면 네트워크 스킵 (연도는 인덱싱으로 이미 반영)
+            if (prev && prev.risk === risk && prev.salary === salaryWon && cmp) {
+                console.log("[irp4] skip fetch: same query, use cached cmp");
+                setIsInputDirty(false); // 버튼 비활성화
+                return;
+            }
+
+            // ② 새 입력이면 실제 호출
+            const url = `${API_URL}/recommend/compare/irp`;
+            const params = { investorPersonalityId: risk, salary: salaryWon };
+            const headers = { Authorization: `A103 ${accessToken}` };
+
+            const resp = await axios.get<CompareResp>(url, { params, headers, validateStatus: () => true });
+
+            if (resp.status >= 400) {
+                setErrMsg(
+                    `[${resp.status}] ${(resp.data as any)?.message || (resp.data as any)?.error || "요청 실패"}`
+                );
+                return;
+            }
+
+            setCmp(resp.data);
+            lastQueryRef.current = { risk, salary: salaryWon };
+            setIsInputDirty(false); // 새 비교 완료 → 버튼 비활성화
+
+            // // 스크롤 UX
+            // setTimeout(() => {
+            //     scrollRef.current?.scrollTo({ y: irpY, animated: true });
+            // }, 300);
         } catch (e: any) {
-          console.error("[irp4] AXIOS ERROR", {
-            message: e?.message,
-            code: e?.code,
-            status: e?.response?.status,
-            data: e?.response?.data,
-          });
-          setErrMsg("예상 수익 데이터를 불러오지 못했어요.");
+            console.error("[irp4] AXIOS ERROR", {
+                message: e?.message,
+                code: e?.code,
+                status: e?.response?.status,
+                data: e?.response?.data,
+            });
+            setErrMsg("예상 수익 데이터를 불러오지 못했어요.");
         } finally {
-          inFlightRef.current = false;
-          setLoading(false);
+            inFlightRef.current = false;
+            setLoading(false);
         }
-      };      
+    };
 
     // 로그인 가드
     useEffect(() => {
@@ -325,26 +323,26 @@ export default function Irp4() {
                     </View>
 
                     <View style={styles.inputRow}>
-                    <View style={styles.inputWrap} pointerEvents={loading ? "none" : "auto"}>
-                        <RNTextInput
-                            ref={inputRef}
-                            style={styles.input}
-                            keyboardType="numeric"
-                            placeholder="IRP 계좌 월 납입금"
-                            value={inputSalaryMan}
-                            onChangeText={(v) => {
-                            const onlyDigits = v.replace(/\D/g, "");
-                            setInputSalaryMan(onlyDigits.replace(/^0+(?=\d)/, ""));
-                            setIsInputDirty(true); // ← 입력 바꾸면 다시 비교 가능
-                            }}
-                            // Android 포커스/커서 제어
-                            editable={!loading}
-                            focusable={!loading}
-                            showSoftInputOnFocus={!loading}
-                            caretHidden={loading}
-                        />
-                        <Text style={styles.inputSuffix}>만원</Text>
-                    </View>
+                        <View style={styles.inputWrap} pointerEvents={loading ? "none" : "auto"}>
+                            <RNTextInput
+                                ref={inputRef}
+                                style={styles.input}
+                                keyboardType="numeric"
+                                placeholder="IRP 계좌 월 납입금"
+                                value={inputSalaryMan}
+                                onChangeText={(v) => {
+                                    const onlyDigits = v.replace(/\D/g, "");
+                                    setInputSalaryMan(onlyDigits.replace(/^0+(?=\d)/, ""));
+                                    setIsInputDirty(true); // ← 입력 바꾸면 다시 비교 가능
+                                }}
+                                // Android 포커스/커서 제어
+                                editable={!loading}
+                                focusable={!loading}
+                                showSoftInputOnFocus={!loading}
+                                caretHidden={loading}
+                            />
+                            <Text style={styles.inputSuffix}>만원</Text>
+                        </View>
 
                     </View>
 
@@ -356,11 +354,11 @@ export default function Irp4() {
                         ]}
                         onPress={handleCompare}
                         disabled={loading || !isInputDirty || !inputSalaryMan}
-                        >
+                    >
                         <Text style={styles.primaryBtnText}>
                             확인하기
                         </Text>
-                        </TouchableOpacity>
+                    </TouchableOpacity>
 
                     {/* ↓ 스크롤 힌트 */}
                     <Text style={styles.scrollHint}>⌄</Text>
@@ -371,8 +369,8 @@ export default function Irp4() {
                             <View style={styles.pill}>
                                 <Text style={styles.pillText}>{inputSalaryMan}</Text>
                             </View>
-                                <Text style={styles.sectionTitle}>만원을</Text>
-                                <Text style={styles.sectionTitle}> {selectedYear}년 동안 넣으면?</Text>
+                            <Text style={styles.sectionTitle}>만원을</Text>
+                            <Text style={styles.sectionTitle}> {selectedYear}년동안 넣으면?</Text>
                             <Image source={require("@/assets/icon/chart2.png")} style={styles.sectionIcon} resizeMode="contain" />
                         </View>
 
