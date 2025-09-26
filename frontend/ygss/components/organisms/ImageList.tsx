@@ -3,8 +3,12 @@
 import ImageListItem from "@/components/molecules/ImageListItem";
 import { Colors } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useMemo, useRef, useState } from "react";
+import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
+import HintBubble from "./HintBubble";
+
+const screenWidth = Dimensions.get("window").width;
+const bubbleWidth = screenWidth * 0.8;
 
 export type ImageListData = {
   id: number,
@@ -35,16 +39,40 @@ export default function ImageList({
   step = 5,
 }: Props) {
   const [visible, setVisible] = useState(initialCount);
+  const [showHint, setShowHint] = useState(false);
+  const [iconPos, setIconPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const iconRef = useRef<View>(null);
 
   const sliced = useMemo(() => items.slice(0, visible), [items, visible]);
   const hasMore = visible < items.length;
   const remain = items.length - visible;
+  const onIconLayout = () => {
+    if (iconRef.current) {
+      iconRef.current.measureInWindow((x, y, w, h) => {
+        // 아이콘 중앙 위쪽 좌표
+        setIconPos({ x: x + w / 2, y: y });
+      });
+    }
+  };
 
   const onMore = () => setVisible(v => Math.min(v + step, items.length));
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.header}>{header}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <Text style={styles.header}>{header}</Text>
+
+        <Pressable
+          onPress={() => {
+            onIconLayout();
+            setShowHint(true);
+          }}
+        >
+          <View ref={iconRef}>
+            <Ionicons name="information-circle-outline" size={24} color={Colors.gray} />
+          </View>
+        </Pressable>
+      </View>
 
       {items.length === 0 ? (
         <Text style={styles.emptyText}>{emptyText}</Text>
@@ -72,6 +100,12 @@ export default function ImageList({
           )}
         </>
       )}
+      <HintBubble
+        visible={showHint}
+        onClose={() => setShowHint(false)}
+        top={iconPos.y - 60}
+        left={iconPos.x - bubbleWidth / 2}
+      />
     </View>
   );
 }

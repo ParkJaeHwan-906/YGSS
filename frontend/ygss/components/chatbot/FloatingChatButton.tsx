@@ -29,7 +29,7 @@ const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
   hasNotification = false,
 }) => {
   // 초기 위치 (좌측 하단)
-  const pan = useRef(new Animated.ValueXY({ x: 20, y: screenHeight - 100 })).current;
+  const pan = useRef(new Animated.ValueXY({ x: 20, y: screenHeight - 160 })).current;
 
   // 버튼이 화면 경계를 벗어나지 않도록 제한
   const getConstrainedPosition = (x: number, y: number) => {

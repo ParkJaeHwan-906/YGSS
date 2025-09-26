@@ -198,6 +198,17 @@ export default function InvestChar({ slices }: InvestCharProps) {
         </RNAnimated.View>
 
         <Animated.View style={[{ overflow: "hidden" }, biasStyle]}>
+          {/* 높이 측정용 (한 번만 렌더링되고 보이지 않음) */}
+          {contentHeight === 0 && (
+            <View
+              onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
+              style={{ position: "absolute", opacity: 0 }}
+            >
+              <InvestBias />
+            </View>
+          )}
+
+          {/* 실제 표시용 */}
           <InvestBias />
         </Animated.View>
       </View>
@@ -292,16 +303,20 @@ export default function InvestChar({ slices }: InvestCharProps) {
       </RNAnimated.View>
 
       <Animated.View style={[{ overflow: "hidden" }, biasStyle]}>
-        <View
-          onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
-          style={{ position: "absolute", opacity: 0 }}
-        >
-          <InvestBias />
-        </View>
-        <View>
-          <InvestBias />
-        </View>
+        {/* 높이 측정용 (한 번만 렌더링되고 보이지 않음) */}
+        {contentHeight === 0 && (
+          <View
+            onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
+            style={{ position: "absolute", opacity: 0 }}
+          >
+            <InvestBias />
+          </View>
+        )}
+
+        {/* 실제 표시용 */}
+        <InvestBias />
       </Animated.View>
+
     </View>
   );
 }

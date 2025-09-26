@@ -39,7 +39,6 @@ const PULSE_MS = 2000;
 export default function Home() {
   const router = useRouter();
   const user = useAppSelector((s) => s.auth.user);
-  const [isChatVisible, setIsChatVisible] = useState(false);
   const [index, setIndex] = useState(0);
   const [tick, setTick] = useState(0);
 
