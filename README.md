@@ -50,7 +50,7 @@
 |:--------:|:--------:|
 | <img src="/uploads/8c77f185000c72f82253598ca6d427b6/dbdc.gif" height="400"/> | <img src="/uploads/2cb843036810aeec678b8ddc20d91adf/dbdc.png" height="400"/> |
 
-| 개인 성향 기반 DC 포트폴리오 추천 |  |
+| 성향 기반 DC 포트폴리오 추천 |  |
 |:--------:|:--------:|
 | <img src="/uploads/9230827812a8de71787c146a533df4c0/dc.gif" height="400"/> | <img src="/uploads/c1b48afe5d1aeedee6c4579647f09685/dc.png" height="400"/> |
 
@@ -62,10 +62,6 @@
 ---
 
 ## 🛠 기술 스택
-
-## 🛠 Tech Stack
-
-## 🛠 Tech Stack
 
 | Category | Technologies |
 |----------|-------------|
