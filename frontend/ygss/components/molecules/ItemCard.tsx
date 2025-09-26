@@ -1,3 +1,4 @@
+import { Colors } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import { Image, Pressable, StyleSheet, Text } from "react-native";
 
@@ -29,17 +30,18 @@ export default function ItemCard({ id, title, rate, type, icon }: ItemCardProps)
     };
 
     return (
-        <Pressable onPress={handlePress} style={styles.card}>
+        <Pressable onPress={handlePress} style={type === "BOND" ? styles.bondCard : type === "ETF" ? styles.etfCard : styles.fundCard}>
+            {type === "BOND" ? <Text style={styles.bondbadgeText}>채권</Text> : type === "ETF" ? <Text style={styles.etfbadgeText}>ETF</Text> : <Text style={styles.fundbadgeText}>펀드</Text>}
             <Text style={styles.cardTitle}>{truncate(title)}</Text>
             <Text style={[styles.cardRate, isPositive ? styles.up : styles.down]}>
                 {isPositive ? `+${rate.toFixed(2)}%` : `${rate.toFixed(2)}%`}
             </Text>
             {/* 타입에 따라 이미지 변경 */}
-
             <Image
                 source={type === "ETF" ? require("@/assets/icon/etf.png") : type === "펀드" ? require("@/assets/icon/fund.png") : require("@/assets/icon/bond.png")}
                 style={styles.cardBadge}
             />
+
         </Pressable>
     );
 }
@@ -53,7 +55,7 @@ export const cardConstants = {
 };
 
 const styles = StyleSheet.create({
-    card: {
+    etfCard: {
         width: CARD_W,
         height: 220,
         borderRadius: 20,
@@ -65,7 +67,31 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
         elevation: 4,
     },
-    cardTitle: { fontSize: 20, fontFamily: "BasicBold", color: "#111", textAlign: "center" },
+    bondCard: {
+        width: CARD_W,
+        height: 220,
+        borderRadius: 20,
+        padding: 18,
+        backgroundColor: "#BFD7FF",
+        justifyContent: "flex-start",
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        elevation: 4,
+    },
+    fundCard: {
+        width: CARD_W,
+        height: 220,
+        borderRadius: 20,
+        padding: 18,
+        backgroundColor: "#FFCEE6",
+        justifyContent: "flex-start",
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        elevation: 4,
+    },
+    cardTitle: { fontSize: 20, fontFamily: "BasicBold", color: Colors.black, textAlign: "center" },
     cardRate: { marginTop: 8, fontSize: 18, fontFamily: "BasicBold", textAlign: "center" },
     up: { color: "#FF2C2C" },
     down: { color: "#2F6FFF" },
@@ -77,5 +103,44 @@ const styles = StyleSheet.create({
         left: "50%",
         transform: [{ translateX: -15 }],
         bottom: 18,
+    },
+    bondbadgeText: {
+        position: "absolute",
+        bottom: 12,
+        right: 12,
+        backgroundColor: "#2F6FFF",
+        color: "white",
+        fontFamily: "BasicBold",
+        fontSize: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+        zIndex: 1,
+    },
+    etfbadgeText: {
+        position: "absolute",
+        bottom: 12,
+        right: 12,
+        backgroundColor: "#FABE34",
+        color: "white",
+        fontFamily: "BasicBold",
+        fontSize: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+        zIndex: 1,
+    },
+    fundbadgeText: {
+        position: "absolute",
+        bottom: 12,
+        right: 12,
+        backgroundColor: "#FF91B7",
+        color: "white",
+        fontFamily: "BasicBold",
+        fontSize: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+        zIndex: 1,
     },
 });
