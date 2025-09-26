@@ -63,21 +63,17 @@
 
 ## 🛠 기술 스택
 
-**Frontend (모바일)**
-- React Native / TypeScript / Redux / Tailwind CSS
+## 🛠 Tech Stack
 
-**Backend**
-- Spring Boot / Java / Spring Security / MySQL / Redis
+## 🛠 Tech Stack
 
-**AI**
-- TensorFlow / Jupyter / FastAPI
-
-**Infra & DevOps**
-- Docker / Jenkins / Kubernetes / Traefik Proxy
-
-**Project Management & Collaboration**
-- Git / GitLab / Jira / Notion
-
+| Category | Technologies |
+|----------|-------------|
+| **Frontend (Mobile)** | ![React Native](https://img.shields.io/badge/-React_Native-20232A?logo=react) ![TypeScript](https://img.shields.io/badge/-TypeScript-007ACC?logo=typescript&logoColor=white) ![Redux](https://img.shields.io/badge/-Redux-593D88?logo=redux) ![TailwindCSS](https://img.shields.io/badge/-TailwindCSS-38B2AC?logo=tailwind-css&logoColor=white) |
+| **Backend** | ![Spring Boot](https://img.shields.io/badge/-Spring_Boot-6DB33F?logo=spring-boot&logoColor=white) ![Java](https://img.shields.io/badge/-Java-ED8B00?logo=openjdk&logoColor=white) ![Spring Security](https://img.shields.io/badge/-Spring_Security-6DB33F?logo=Spring-Security&logoColor=white) ![MySQL](https://img.shields.io/badge/-MySQL-005C84?logo=mysql&logoColor=white) ![Redis](https://img.shields.io/badge/-Redis-DC382D?logo=redis&logoColor=white) |
+| **AI** | ![TensorFlow](https://img.shields.io/badge/-TensorFlow-FF6F00?logo=tensorflow&logoColor=white) ![Jupyter](https://img.shields.io/badge/-Jupyter-F37626?logo=Jupyter&logoColor=white) ![FastAPI](https://img.shields.io/badge/-FastAPI-009688?logo=FastAPI&logoColor=white) |
+| **DevOps** | ![Docker](https://img.shields.io/badge/-Docker-2496ED?logo=docker&logoColor=white) ![Jenkins](https://img.shields.io/badge/-Jenkins-D24939?logo=Jenkins&logoColor=white) ![Kubernetes](https://img.shields.io/badge/-Kubernetes-326CE5?logo=kubernetes&logoColor=white) ![Traefik](https://img.shields.io/badge/-Traefik_Proxy-24A1C1?logo=traefikproxy&logoColor=white) |
+| **Collaboration** | ![Git](https://img.shields.io/badge/-Git-F05032?logo=git&logoColor=white) ![GitLab](https://img.shields.io/badge/-GitLab-FCA121?logo=gitlab&logoColor=white) ![Jira](https://img.shields.io/badge/-Jira-0052CC?logo=jira&logoColor=white) ![Notion](https://img.shields.io/badge/-Notion-000000?logo=notion&logoColor=white) |
 ---
 
 ## 🏗 아키텍처
