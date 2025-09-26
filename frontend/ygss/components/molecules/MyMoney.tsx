@@ -56,12 +56,12 @@ export default function MyMoney({
               신입이신가요? {"\n"}보유금액을 기입하세요!
             </Text>
           ) : (
-            <Text style={[styles.amount, { fontSize: fontSize ?? styles.amount.fontSize }]}>
+            <Text style={styles.amount}>
               {toMan(amount)} 만원
             </Text>
           )}
           {from === "mypage" ? (
-            <Text style={styles.desc}>* 수정페이지에서 수정 가능합니다</Text>
+            <Text style={styles.desc}>*내 정보에서 수정 가능합니다</Text>
           ) : (
             <Text style={styles.mypagetext}>&gt; 마이페이지에서 확인하기</Text>
           )}
