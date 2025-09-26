@@ -45,12 +45,17 @@
 | 투자 성향 분석 |  |
 |:--------:|:--------:|
 | <img src="/uploads/714245288c52c23a6af074ab4b17ae8e/analysis.gif" height="400"/> | <img src="/uploads/2b4cc8238c47a2340ab0d0232e28a0c6/analysis.png" height="400"/> |
-#### DC/DB 상품 비교 및 추천
+
+| DC/DB 상품 비교 및 추천 |  |
+|:--------:|:--------:|
 | <img src="/uploads/8c77f185000c72f82253598ca6d427b6/dbdc.gif" height="400"/> | <img src="/uploads/2cb843036810aeec678b8ddc20d91adf/dbdc.png" height="400"/> |
-#### 개인 성향 기반 DC 포트폴리오 추천
+
+| 개인 성향 기반 DC 포트폴리오 추천 |  |
+|:--------:|:--------:|
 | <img src="/uploads/9230827812a8de71787c146a533df4c0/dc.gif" height="400"/> | <img src="/uploads/c1b48afe5d1aeedee6c4579647f09685/dc.png" height="400"/> |
 
-#### RAG 기반 챗봇 상담
+| RAG 기반 챗봇 상담 |  |
+|:--------:|:--------:|
 | <img src="/uploads/a2a717dc2424c2a8950a043750286dc6/chatbot.gif" height="400"/> | <img src="/uploads/88ee8126abc3fc67cf6c45dac8cc9933/chatbot.png" height="400"/> |
 
 
