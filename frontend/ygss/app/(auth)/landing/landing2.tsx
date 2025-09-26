@@ -1,22 +1,23 @@
 // app/(auth)/landing/landing2.tsx
 
-import { useState } from "react";
-import { Stack, Link, useRouter } from "expo-router";
+import SkipImageButton from "@/components/molecules/skipButton";
+import { Colors } from "@/src/theme/colors";
+import { Link, Stack, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
+  Alert,
+  BackHandler,
   Image,
-  Pressable,
-  StatusBar,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Colors } from "@/src/theme/colors";
-import SkipImageButton from "@/components/molecules/skipButton";
 
 export default function Landing2() {
   const [salary, setSalary] = useState<string>("");
@@ -35,6 +36,21 @@ export default function Landing2() {
       params: { salary: clean, pid: "1" }, // pid 기본 1이면 생략 가능
     });
   };
+
+  useEffect(() => {
+    const backAction = () => {
+      // 하드웨어 뒤로가기 눌렀을 때 Landing1로 이동
+      router.push({
+        pathname: "/(auth)/landing/landing1",
+        params: { fromBack: "true" },
+      });
+      return true; // 기본 동작(앱 종료 등) 막음
+    };
+
+    const backHandler = BackHandler.addEventListener("hardwareBackPress", backAction);
+
+    return () => backHandler.remove();
+  }, [router]);
 
   return (
     <>
@@ -88,11 +104,11 @@ export default function Landing2() {
 
             {/* 마스코트 */}
             <View style={styles.mascotBox}>
-                <Image
-                    source={require("@/assets/char/winkAlchi.png")}
-                    style={styles.mascotImg}
-                    resizeMode="contain"
-                />
+              <Image
+                source={require("@/assets/char/winkAlchi.png")}
+                style={styles.mascotImg}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.caption}>알키와 함께 알아 보러가요!</Text>
           </View>
@@ -103,73 +119,73 @@ export default function Landing2() {
 }
 
 const styles = StyleSheet.create({
-    wrap: { flex: 1, backgroundColor: Colors.white },
-    topBar: {
-      width: "100%",
-      alignItems: "flex-end",
-    },
-    skip: {
-      fontSize: 16,
-      fontFamily: "BasicMedium",
-      color: Colors.primary,
-      marginRight: 16,
-    },
-    container: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, paddingHorizontal: 20 },
-  
-    headlineBox: { marginTop: 8, marginBottom: 8, position: "relative", alignSelf: "stretch" },
-    headline: { fontSize: 28, lineHeight: 36, fontFamily: "BasicBold", color: Colors.black },
-  
-    coinImg: { position: "absolute", right: 6, top: -6, width: 70, height: 70 },
-  
-    inputRow: {
-      alignSelf: "stretch",
-      marginTop: 16,
-    },
-    inputWrap: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: Colors.base,
-      borderRadius: 16,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      shadowColor: "#000",
-      shadowOpacity: 0.08,
-      shadowRadius: 16,
-      shadowOffset: { width: 0, height: 8 },
-      elevation: 3,
-    },
-    input: {
-      flex: 1, // ✅ 입력창이 왼쪽에서 최대 채우기
-      fontFamily: "BasicMedium",
-      fontSize: 18,
-      color: Colors.black,
-      padding: 0, // iOS 기본 padding 제거
-    },
-    inputSuffix: {
-      marginLeft: 6,
-      fontSize: 16,
-      fontFamily: "BasicMedium",
-      color: Colors.black,
-    },
-  
-    primaryBtn: {
-      marginTop: 4,
-      backgroundColor: Colors.primary,
-      paddingVertical: 16,
-      borderRadius: 16,
-      alignItems: "center",
-      justifyContent: "center",
-      alignSelf: "stretch",
-      shadowColor: "#000",
-      shadowOpacity: 0.15,
-      shadowRadius: 12,
-      shadowOffset: { width: 0, height: 8 },
-      elevation: 4,
-    },
-    primaryText: { color: Colors.white, fontSize: 18, fontFamily: "BasicMedium" },
-  
-    mascotBox: { width: "100%", alignItems: "center", marginTop: 24, overflow: "visible" },
-    mascotImg: { width: "60%", height: 200 },
-  
-    caption: { textAlign: "center", marginTop: 2, fontSize: 14, fontFamily: "BasicMedium", color: Colors.black },
-  });
+  wrap: { flex: 1, backgroundColor: Colors.white },
+  topBar: {
+    width: "100%",
+    alignItems: "flex-end",
+  },
+  skip: {
+    fontSize: 16,
+    fontFamily: "BasicMedium",
+    color: Colors.primary,
+    marginRight: 16,
+  },
+  container: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, paddingHorizontal: 20 },
+
+  headlineBox: { marginTop: 8, marginBottom: 8, position: "relative", alignSelf: "stretch" },
+  headline: { fontSize: 28, lineHeight: 36, fontFamily: "BasicBold", color: Colors.black },
+
+  coinImg: { position: "absolute", right: 6, top: -6, width: 70, height: 70 },
+
+  inputRow: {
+    alignSelf: "stretch",
+    marginTop: 16,
+  },
+  inputWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.base,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 3,
+  },
+  input: {
+    flex: 1, // ✅ 입력창이 왼쪽에서 최대 채우기
+    fontFamily: "BasicMedium",
+    fontSize: 18,
+    color: Colors.black,
+    padding: 0, // iOS 기본 padding 제거
+  },
+  inputSuffix: {
+    marginLeft: 6,
+    fontSize: 16,
+    fontFamily: "BasicMedium",
+    color: Colors.black,
+  },
+
+  primaryBtn: {
+    marginTop: 4,
+    backgroundColor: Colors.primary,
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "stretch",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
+  },
+  primaryText: { color: Colors.white, fontSize: 18, fontFamily: "BasicMedium" },
+
+  mascotBox: { width: "100%", alignItems: "center", marginTop: 24, overflow: "visible" },
+  mascotImg: { width: "60%", height: 200 },
+
+  caption: { textAlign: "center", marginTop: 2, fontSize: 14, fontFamily: "BasicMedium", color: Colors.black },
+});
