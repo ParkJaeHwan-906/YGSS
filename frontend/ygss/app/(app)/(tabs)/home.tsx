@@ -62,7 +62,7 @@ export default function Home() {
   useEffect(() => {
     if (!accessToken) return; // 로그인 안됐으면 스킵(원하면 로그인 유도 메시지 표시 가능)
 
-    (async () => {
+    const fetchData = async () => {
       try {
         setLoadingPlan(true);
         setPlanError(null);
@@ -75,8 +75,13 @@ export default function Home() {
       } finally {
         setLoadingPlan(false);
       }
-    })();
-  }, [accessToken]);
+    };
+
+    fetchData();
+
+    // cleanup 필요 없으면 생략 가능
+    return () => { };
+  }, [accessToken])
 
   useEffect(() => {
     const id = setInterval(() => {

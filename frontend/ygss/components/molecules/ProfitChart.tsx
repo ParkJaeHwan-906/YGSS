@@ -6,9 +6,7 @@ import { LineChart } from "react-native-gifted-charts";
 
 type PriceData = {
     date: string;
-    initPrice: number;
     finalPrice: number;
-    dailyRate: number;
 };
 
 type RangeType = "3M" | "6M" | "1Y" | "YTD";
@@ -18,6 +16,48 @@ const RANGE_LABELS: Record<RangeType, string> = {
     "1Y": "1년",
     "YTD": "연초 이후",
 };
+
+// === 예쁜 눈금 생성 ===
+function niceTicks(min: number, max: number, maxTicks = 6) {
+    if (!isFinite(min) || !isFinite(max)) {
+        return { ticks: [0], niceMin: 0, niceMax: 0, step: 1 };
+    }
+
+    if (min === max) {
+        if (min === 0) {
+            min = -1;
+            max = 1;
+        } else {
+            min *= 0.9;
+            max *= 1.1;
+        }
+    }
+
+    const range = max - min;
+    const rawStep = range / Math.max(1, maxTicks - 1);
+    const pow10 = Math.pow(10, Math.floor(Math.log10(Math.abs(rawStep))));
+    const norm = rawStep / pow10;
+
+    let stepNorm: number;
+    if (norm <= 1) stepNorm = 1;
+    else if (norm <= 2) stepNorm = 2;
+    else if (norm <= 5) stepNorm = 5;
+    else stepNorm = 10;
+
+    const step = stepNorm * pow10;
+
+    const niceMin = Math.floor(min / step) * step;
+    const niceMax = Math.ceil(max / step) * step;
+
+    const ticks: number[] = [];
+    for (let v = niceMin; v <= niceMax + 1e-9; v += step) {
+        ticks.push(Number(v.toFixed(6))); // 부동소수 오차 방지
+    }
+
+    return { ticks, niceMin, niceMax, step };
+}
+
+const INITIAL_SPACING = 30;
 
 export default function ProfitChart({ data }: { data: PriceData[] }) {
     const [month, setMonth] = useState<RangeType>("3M");
@@ -32,139 +72,103 @@ export default function ProfitChart({ data }: { data: PriceData[] }) {
         );
     }
 
-    const baseDate = data[data.length - 1].date; //마지막 데이터 기준일
+    // 마지막 인덱스가 기준일 (가장 최신 날짜를 기준으로)
+    const baseDate = data[data.length - 1].date;
 
-    // 기간별 데이터 필터링
+    // 기간 필터
     const filteredData = useMemo(() => {
-        const end = new Date(baseDate);
-        const start = new Date(end);
-
+        const end = new Date(baseDate); // 마지막 날짜
+        const start = new Date(end); // 시작 날짜
         switch (month) {
-            // case "1M":
-            //     start.setMonth(end.getMonth() - 1);
-            //     break;
-            case "3M":
-                start.setMonth(end.getMonth() - 3);
-                break;
-            case "6M":
-                start.setMonth(end.getMonth() - 6);
-                break;
-            case "1Y":
-                start.setFullYear(end.getFullYear() - 1);
-                break;
-            case "YTD":
-                start.setMonth(0);
-                start.setDate(1);
-                break;
+            case "3M": start.setMonth(end.getMonth() - 3); break;
+            case "6M": start.setMonth(end.getMonth() - 6); break;
+            case "1Y": start.setFullYear(end.getFullYear() - 1); break;
+            case "YTD": start.setMonth(0); start.setDate(1); break;
         }
-
         return data.filter((d) => {
-            const current = new Date(d.date);
-            return current >= start && current <= end;
+            const cur = new Date(d.date); // 현재 날짜
+            return cur >= start && cur <= end;
         });
-    }, [data, month]);
+    }, [data, month, baseDate]);
 
-    // 기준 initPrice (첫날)
-    const basePrice = useMemo(() => {
-        return filteredData.length > 0
-            ? filteredData[0].initPrice
-            : data[0].initPrice;
-    }, [filteredData, data]);
+    if (!filteredData || filteredData.length < 2) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.empty}>해당 기간의 그래프 데이터가 부족합니다</Text>
+            </View>
+        );
+    }
 
-    // 누적 수익률 (첫 점은 항상 0)
+    // === 누적 수익률 계산 ===
     const chartData = useMemo(() => {
+        if (filteredData.length === 0) return [];
+        // 첫 달의 종가
+        const baseFinal = filteredData[0].finalPrice;
+
         return filteredData.map((d, idx) => {
-            const cumReturn =
-                idx === 0 ? 0 : ((d.initPrice - basePrice) / basePrice) * 100;
+            let pct = 0; // 첫 달은 0. 점 값
+            if (idx > 0) {
+                pct = ((d.finalPrice / baseFinal) - 1) * 100;
+            }
             return {
-                value: Number(cumReturn.toFixed(2)),
+                value: Number(pct.toFixed(2)), // 첫 달은 0, 점값. 소수점 둘째자리 까지
                 date: d.date,
-                initPrice: d.initPrice,
+                finalPrice: d.finalPrice,
                 index: idx,
             };
         });
-    }, [filteredData, basePrice]);
+    }, [filteredData]);
 
-    // x축 라벨: 점과 점 사이에 표시
+    // X축: 달이 바뀌는 첫 포인트만 라벨
     const xAxisLabels = useMemo(() => {
-        return filteredData.map((d) => {
-            const date = new Date(d.date);
-            return `${date.getMonth() + 1}월`;
+        return filteredData.map((d, i, arr) => {
+            const cur = new Date(d.date);
+            if (i === 0) return `${cur.getMonth() + 1}월`;
+            const prev = new Date(arr[i - 1].date);
+            return (prev.getMonth() !== cur.getMonth()) ? `${cur.getMonth() + 1}월` : "";
         });
     }, [filteredData]);
 
-    // y축 스케일링
-    const yValues = chartData.map((d) => d.value);
-    let minY = Math.min(...yValues);
-    let maxY = Math.max(...yValues);
-    minY = Math.min(minY, 0);
-    maxY = Math.max(maxY, 0);
+    // Y축 범위 계산
+    const vals = chartData.map(d => d.value);
+    let low = Math.min(...vals);
+    let high = Math.max(...vals);
 
-    const rangeY = maxY - minY;
-    let step = 1;
-    if (rangeY <= 0.5) step = 0.1;       // 아주 좁은 구간
-    else if (rangeY <= 1) step = 0.2;    // 좁은 구간
-    else if (rangeY <= 5) step = 0.5;    // 소수점 단위
-    else if (rangeY <= 10) step = 1;
-    else if (rangeY <= 30) step = 2;
-    else if (rangeY <= 50) step = 5;
-    else step = 10;
+    // y축 표시 눈금(실제 데이터 값이 아닌 정제된 값. 17.89 -> 18)  
+    const { ticks, niceMin, niceMax, step } = niceTicks(low, high, 6);
+    const yAxisLabelTexts = [...ticks]
+        .sort((a, b) => b - a) // 내림차순 정렬
+        .map(v => `${v.toFixed(1)}%`);
 
-    minY = Math.floor(minY / step) * step;
-    maxY = Math.ceil(maxY / step) * step;
-
-    const yAxisLabelTexts: string[] = [];
-    for (let y = minY; y <= maxY; y += step) {
-        yAxisLabelTexts.push(y.toFixed(1)); // 소수점 1자리 고정
-    }
-
-    // spacing 계산
+    // spacing & 툴팁 좌표
     const screenWidth = Dimensions.get("window").width;
     const spacing = useMemo(() => {
-        return chartData.length > 1
-            ? screenWidth / (chartData.length - 1)
-            : screenWidth;
+        return chartData.length > 1 ? screenWidth / (chartData.length - 1) : screenWidth;
     }, [chartData.length, screenWidth]);
 
-    const focusedPoint =
-        focusedIndex !== null ? chartData[focusedIndex] : null;
+    const focusedPoint = focusedIndex !== null ? chartData[focusedIndex] : null;
+    // const showZero = niceMin <= 0 && 0 <= niceMax; // 0이 범위 안에 있을 때만 0% 기준선
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>누적 수익률</Text>
 
-            {/* 탭 버튼 */}
+            {/* 탭 */}
             <View style={styles.tabContainer}>
                 {(Object.keys(RANGE_LABELS) as RangeType[]).map((key) => (
                     <TouchableOpacity
                         key={key}
-                        style={[
-                            styles.tabButton,
-                            month === key && styles.tabButtonActive,
-                        ]}
+                        style={[styles.tabButton, month === key && styles.tabButtonActive]}
                         onPress={() => setMonth(key)}
                     >
-                        <Text
-                            style={[
-                                styles.tabText,
-                                month === key && styles.tabTextActive,
-                            ]}
-                        >
+                        <Text style={[styles.tabText, month === key && styles.tabTextActive]}>
                             {RANGE_LABELS[key]}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
-            <Text
-                style={{
-                    fontFamily: "BasicMedium",
-                    fontSize: 10,
-                    color: Colors.black,
-                    marginRight: 10,
-                    alignSelf: "flex-end",
-                }}
-            >
+            <Text style={{ fontFamily: "BasicMedium", fontSize: 10, color: Colors.black, marginRight: 10, alignSelf: "flex-end" }}>
                 기준일 : {baseDate}
             </Text>
 
@@ -176,24 +180,44 @@ export default function ProfitChart({ data }: { data: PriceData[] }) {
             >
                 <LineChart
                     data={chartData}
-                    curved
+                    curved={false}                 // overshoot 방지 (필요시 켤 수 있음)
                     thickness={2}
                     color={"#e74c3c"}
                     areaChart
                     height={200}
-                    startFillColor={"rgba(231,76,60,0.25)"}
-                    endFillColor={"rgba(231,76,60,0.05)"}
+                    startFillColor={"rgba(231, 148, 148, 0.25)"}
+                    endFillColor={"rgba(255, 87, 71, 0.05)"}
                     startOpacity={0.8}
                     endOpacity={0.05}
                     hideDataPoints
-                    xAxisLabelTexts={xAxisLabels} // 구간 라벨 반영
-                    xAxisLabelTextStyle={{ color: Colors.black, fontSize: 10 }}
+
+                    // === Y축: 수동 강제(라벨·스케일 동기화). suffix 사용 안 함.
+                    // yAxisLabelTexts={yAxisLabelTexts} // 라벨 텍스트
+                    noOfSections={yAxisLabelTexts.length - 1} // 눈금 개수
                     yAxisTextStyle={{ color: Colors.black, fontSize: 10 }}
-                    yAxisLabelWidth={40}
-                    yAxisLabelTexts={yAxisLabelTexts}
+                    yAxisLabelWidth={44}
+                    yAxisLabelSuffix="%"
+                    minValue={niceMin}            // v1.4.64: min/max 사용
+                    maxValue={niceMax}
+
+                    // X축 라벨
+                    xAxisLabelTexts={xAxisLabels}
+                    xAxisLabelTextStyle={{ color: Colors.black, fontSize: 10 }}
+
                     hideRules={false}
                     rulesColor="#eee"
                     rulesType="solid"
+
+                    // 0% 기준선(범위 안에 있을 때만)
+                    showReferenceLine1={niceMin <= 0 && 0 <= niceMax}
+                    referenceLine1Position={0}
+                    referenceLine1Config={{ color: Colors.black, thickness: 1 }}
+
+                    // 가로 스크롤과 충돌 방지: adjustToWidth 미사용
+                    initialSpacing={INITIAL_SPACING}
+                    width={chartData.length * spacing}
+                    spacing={spacing}
+
                     focusEnabled
                     showDataPointOnFocus
                     showStripOnFocus
@@ -201,15 +225,7 @@ export default function ProfitChart({ data }: { data: PriceData[] }) {
                     stripWidth={1}
                     stripOpacity={1}
                     stripHeight={200}
-                    showReferenceLine1
-                    referenceLine1Position={0}
-                    referenceLine1Config={{ color: Colors.black, thickness: 1 }}
-                    adjustToWidth
-                    width={chartData.length * spacing}
-                    spacing={spacing}
-                    onFocus={(item: any) => {
-                        setFocusedIndex(item.index);
-                    }}
+                    onFocus={(item: any) => setFocusedIndex(item.index)}
                 />
             </ScrollView>
 
@@ -219,10 +235,7 @@ export default function ProfitChart({ data }: { data: PriceData[] }) {
                         styles.tooltip,
                         {
                             left: Math.min(
-                                Math.max(
-                                    0,
-                                    30 + focusedPoint.index * spacing - 50 - scrollX
-                                ),
+                                Math.max(0, INITIAL_SPACING + focusedPoint.index * spacing - 50 - scrollX),
                                 screenWidth - 100
                             ),
                             top: 150,
@@ -231,7 +244,7 @@ export default function ProfitChart({ data }: { data: PriceData[] }) {
                 >
                     <Text style={styles.tooltipText}>{focusedPoint.date}</Text>
                     <Text style={styles.tooltipText}>
-                        시장가: {focusedPoint.initPrice.toLocaleString()} KRW
+                        종가: {focusedPoint.finalPrice.toLocaleString()} KRW
                     </Text>
                 </View>
             )}

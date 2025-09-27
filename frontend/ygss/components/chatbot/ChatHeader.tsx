@@ -10,10 +10,10 @@ interface ChatHeaderProps {
   title?: string;
 }
 
-const ChatHeader: React.FC<ChatHeaderProps> = ({ 
-  onClose, 
+const ChatHeader: React.FC<ChatHeaderProps> = ({
+  onClose,
   onSearchPress,
-  title = "알키 상담 봇" 
+  title = "퇴직연금 알려드림"
 }) => {
   return (
     <View style={styles.header}>
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: Colors.white,
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: "BasicMedium",
     textAlign: 'center',
     marginHorizontal: 16,
   },

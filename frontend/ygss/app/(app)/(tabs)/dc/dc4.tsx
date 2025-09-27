@@ -320,6 +320,7 @@ export default function Dc4() {
               <Text style={styles.headerTitle1}>년 후,</Text>
             </View>
             {/* 2줄: '나의 퇴직연금은?' */}
+            <Text style={[styles.headerTitle2, { color: Colors.primary }]}>"{user?.riskGrade}"</Text>
             <Text style={styles.headerTitle2}>나의 퇴직연금은?</Text>
           </View>
 

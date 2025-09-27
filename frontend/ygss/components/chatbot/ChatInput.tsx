@@ -11,9 +11,9 @@ interface ChatInputProps {
   placeholder?: string;
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ 
-  value, 
-  onChangeText, 
+const ChatInput: React.FC<ChatInputProps> = ({
+  value,
+  onChangeText,
   onSend,
   placeholder = "퇴직연금에 대해 궁금한 점을 물어보세요..."
 }) => {
@@ -27,15 +27,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
         multiline
         onSubmitEditing={onSend}
       />
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.sendButton, !value.trim() && styles.sendButtonDisabled]}
         onPress={onSend}
         disabled={!value.trim()}
       >
-        <Ionicons 
-          name="send" 
-          size={20} 
-          color={!value.trim() ? '#999' : Colors.primary} 
+        <Ionicons
+          name="send"
+          size={20}
+          color={!value.trim() ? '#999' : Colors.primary}
         />
       </TouchableOpacity>
     </View>
@@ -60,7 +60,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginRight: 8,
     maxHeight: 100,
-    fontSize: 16,
+    fontSize: 12,
+    fontFamily: "BasicLight",
   },
   sendButton: {
     width: 40,

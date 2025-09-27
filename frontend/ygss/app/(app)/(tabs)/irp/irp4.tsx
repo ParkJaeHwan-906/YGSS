@@ -295,6 +295,7 @@ export default function Irp4() {
                                 <Text style={styles.headerTitle1}>년 후,</Text>
                             </View>
                             {/* 2줄: '나의 퇴직연금은?' */}
+                            <Text style={[styles.headerTitle2, { color: Colors.primary }]}>"{user?.riskGrade}"</Text>
                             <Text style={styles.headerTitle2}>나의 퇴직연금은?</Text>
                         </View>
 
@@ -397,8 +398,8 @@ export default function Irp4() {
                                         color={Colors.red}
                                         thickness={2}
                                         areaChart
-                                        startFillColor={Colors.red}
-                                        endFillColor={Colors.red}
+                                        startFillColor="#FF359A"
+                                        endFillColor="#FF359A"
                                         startOpacity={0.4}
                                         endOpacity={0.05}
                                         data={toLineSeries(cmp?.dcCalculateGraph)}

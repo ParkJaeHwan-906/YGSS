@@ -4,7 +4,7 @@ import MyMoney from "@/components/molecules/MyMoney";
 import ImageList, { ImageListData } from "@/components/organisms/ImageList";
 import PasswordConfirmModal from "@/components/organisms/PasswordConfirmModal";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { signOut } from "@/src/store/slices/authSlice";
+import { setUser, signOut } from "@/src/store/slices/authSlice";
 import { Colors } from "@/src/theme/colors";
 import { deleteRefreshToken } from "@/src/utils/secureStore";
 import { Ionicons } from "@expo/vector-icons";
@@ -39,6 +39,27 @@ export default function Mypage() {
             router.replace("/(auth)/login"); // 3) 마지막에 이동
         }
     }, [dispatch, router]);
+
+    // 페이지 진입 시 유저 정보 다시 불러오기
+    useFocusEffect(
+        useCallback(() => {
+            const fetchUser = async () => {
+                try {
+                    const { data } = await axios.get(`${API_URL}/user/load/detail`, {
+                        headers: { Authorization: `A103 ${accessToken}` },
+                    });
+                    dispatch(setUser(data));
+                } catch (err) {
+                    console.error("유저 정보 갱신 실패", err);
+                }
+            };
+
+            if (accessToken) fetchUser();
+
+            // 포커스 빠질 때 cleanup 필요하면 return에 넣기
+            return () => { };
+        }, [accessToken])
+    );
 
     //  찜한 상품 불러오기 함수
     const fetchLiked = useCallback(

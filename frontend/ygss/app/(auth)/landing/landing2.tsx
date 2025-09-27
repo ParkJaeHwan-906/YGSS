@@ -40,7 +40,7 @@ export default function Landing2() {
   useEffect(() => {
     const backAction = () => {
       // 하드웨어 뒤로가기 눌렀을 때 Landing1로 이동
-      router.push({
+      router.replace({
         pathname: "/(auth)/landing/landing1",
         params: { fromBack: "true" },
       });

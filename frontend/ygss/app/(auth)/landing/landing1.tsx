@@ -1,34 +1,42 @@
+import { useAppSelector } from "@/src/store/hooks";
 import { Colors } from "@/src/theme/colors";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect } from "react";
 import {
-  Image, SafeAreaView, StatusBar, StyleSheet, Text, View
+  Image,
+  InteractionManager,
+  SafeAreaView, StatusBar, StyleSheet, Text, View
 } from "react-native";
-
 
 export default function Landing1() {
   const router = useRouter()
+  const token = useAppSelector((s) => s.auth.accessToken);
 
-  // landing2로 자동 이동
+  // 토큰 있으면 home. 없으면 landing2로 자동 이동
   useEffect(() => {
-    const timer = setTimeout(() => {
-      router.push("/landing/landing2")
-    }, 3800);
-    return () => clearTimeout(timer)
-  }, [router])
+    const interaction = InteractionManager.runAfterInteractions(() => {
+      const timer = setTimeout(() => {
+        if (token) {
+          router.replace("/(app)/(tabs)/home");
+        } else {
+          router.push("/landing/landing2");
+        }
+      }, 3500);
+      return () => clearTimeout(timer);
+    });
+
+    return () => interaction.cancel();
+  }, [token, router]);
 
   const { fromBack } = useLocalSearchParams<{ fromBack?: string }>();
 
   useEffect(() => {
-    // 뒤로가기로 들어온 경우에만 3초 뒤 landing2로
-    if (fromBack === "true") {
+    // 뒤로가기로 들어온 경우에만 3초 뒤 landing2로 
+    if (fromBack === "true" && !token) {
       const timer = setTimeout(() => {
         router.replace("/(auth)/landing/landing2");
-      }, 3000);
+      }, 3500);
       return () => clearTimeout(timer);
-    } else {
-      // 앱 첫 진입일 땐 바로 landing2
-      router.replace("/(auth)/landing/landing2");
     }
   }, [fromBack, router]);
 
