@@ -35,18 +35,18 @@ public class ChatBotServiceImpl implements ChatBotService{
             List<AnswerDto> candidateList = getCandidateAnswerList(vectorRepository.searchAllPrefixes(gmsApiClient.getEmbeddingArr(jsonResult), 10));
             // Cross-Encoder
             List<AnswerDto> accurateList = getAccurateList(request.getMessage(), candidateList);
-//            String answer = gmsApiClient.getGptAnswerText(gmsApiClient.getGptAnswer(new Gpt5MiniRequestDto(
-//                    request.getMessage(),
-//                    termDictionaryService.makeTermMap(accurateList),
-//                    accurateList.stream().map(AnswerDto::getAnswer).toList(),
-//                    getChatLogsBySid(sid)
-//            )));
-            String answer = gmsApiClient.getGeminiAnswerText(gmsApiClient.getGeminiAnswer(new Gpt5MiniRequestDto(
+            String answer = gmsApiClient.getGptAnswerText(gmsApiClient.getGptAnswer(new Gpt5MiniRequestDto(
                     request.getMessage(),
                     termDictionaryService.makeTermMap(accurateList),
                     accurateList.stream().map(AnswerDto::getAnswer).toList(),
                     getChatLogsBySid(sid)
             )));
+//            String answer = gmsApiClient.getGeminiAnswerText(gmsApiClient.getGeminiAnswer(new Gpt5MiniRequestDto(
+//                    request.getMessage(),
+//                    termDictionaryService.makeTermMap(accurateList),
+//                    accurateList.stream().map(AnswerDto::getAnswer).toList(),
+//                    getChatLogsBySid(sid)
+//            )));
             if(!answer.replaceAll("[^가-힣a-zA-Z0-9]", "").equals("잘 모르겠어요. 조금 더 자세히 질문해주세요.".replaceAll("[^가-힣a-zA-Z0-9]", ""))) chatLogsRepository.insertChatLog(sid, request.getMessage(), answer);
             return ChatBotResponseDto.builder()
                     .sid(sid)
