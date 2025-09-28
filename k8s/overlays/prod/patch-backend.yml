@@ -7,11 +7,6 @@ spec:
     spec:
       containers:
         - name: backend
-          env:
-            - name: SPRING_PROFILES_ACTIVE
-              value: "prod"
-            - name: FASTAPI_BASE_URL
-              value: "https://j13a103.p.ssafy.io/ai"
           resources:
             requests:
               cpu: "200m"

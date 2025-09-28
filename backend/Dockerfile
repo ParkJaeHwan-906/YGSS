@@ -1,4 +1,10 @@
-FROM eclipse-temurin:17-jre
+
+# 추천: Amazon Corretto (JDK만 있지만 실행에는 문제없음)
+FROM public.ecr.aws/amazoncorretto/amazoncorretto:17
+
+# 더 가벼운 JRE가 필요하면 Microsoft 사용
+# FROM mcr.microsoft.com/openjdk/jre:17-ubuntu
+
 WORKDIR /app
 COPY build/libs/backend-0.0.1-SNAPSHOT.jar app.jar
 
