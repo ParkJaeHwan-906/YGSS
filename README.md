@@ -74,7 +74,7 @@
 
 ## 🏗 아키텍처
 
-![Architecture](./docs/architecture.png)
+![Architecture](/uploads/bff6956ed3b59508e79c7b71612d12ea/KakaoTalk_20250928_144947189.png)
 
 ---
 
