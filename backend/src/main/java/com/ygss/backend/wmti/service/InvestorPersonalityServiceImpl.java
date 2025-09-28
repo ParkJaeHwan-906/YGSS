@@ -64,10 +64,10 @@ public class InvestorPersonalityServiceImpl implements InvestorPersonalityServic
 //    }
 
     private Long calcRiskGrade(Integer score) {
-        if (score >= 15) return 5L;
-        if (score >= 12) return 4L;
-        if (score >= 10) return 3L;
-        if (score >= 7) return 2L;
-        return 1L;
+        if (score >= 12) return 5L; // 최고 등급
+        if (score >= 9) return 4L;
+        if (score >= 7) return 3L;
+        if (score >= 4) return 2L;
+        return 1L; // 최저 등급
     }
 }
