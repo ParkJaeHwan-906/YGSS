@@ -58,7 +58,7 @@ public class PersonalRecommendProductResopnseDto {
         productTypes.put("ETF", 0);
         // 추가상품
         for(RetirePensionProductResponseDto product : list) {
-            if(productTypes.get(product.getProductType()) >= 3) continue;
+            if(productTypes.get(product.getProductType()) >= 5) continue;
 
             productTypes.put(product.getProductType(), productTypes.get(product.getProductType()) + 1);
             this.productList.add(product);
