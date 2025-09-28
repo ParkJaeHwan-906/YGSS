@@ -54,6 +54,8 @@ public class PersonalRecommendProductResopnseDto {
             if (this.top3.size() > 3) break;
         }
         productTypes.put("BOND", 0);
+        productTypes.put("펀드", 0);
+        productTypes.put("ETF", 0);
         // 추가상품
         for(RetirePensionProductResponseDto product : list) {
             if(productTypes.get(product.getProductType()) >= 3) continue;
