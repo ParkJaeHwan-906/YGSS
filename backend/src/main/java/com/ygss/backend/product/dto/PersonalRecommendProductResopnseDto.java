@@ -24,15 +24,36 @@ public class PersonalRecommendProductResopnseDto {
         Map<String, Integer> productTypes = new HashMap<>();
         // top3 뽑기
         Iterator<RetirePensionProductResponseDto> iterator = list.iterator();
-        while(iterator.hasNext()) {
+//        while(iterator.hasNext()) {
+//            RetirePensionProductResponseDto product = iterator.next();
+//            if (productTypes.containsKey(product.getProductType())) continue;
+//
+//            productTypes.put(product.getProductType(), 0);
+//            this.top3.add(product);
+//            iterator.remove();
+//        }
+        /**
+         * 시연용
+         * 채권 제외하고, 나머지 상품 중 하나 채워넣기
+         */
+        this.top3.clear();
+        while (iterator.hasNext()) {
             RetirePensionProductResponseDto product = iterator.next();
-            if (productTypes.containsKey(product.getProductType())) continue;
+            String productType = product.getProductType();
 
-            productTypes.put(product.getProductType(), 0);
-            this.top3.add(product);
-            iterator.remove();
+            if ("BOND".equalsIgnoreCase(productType)) continue;
+
+            int count = productTypes.getOrDefault(productType, 0);
+
+            if (count < 2) {
+                this.top3.add(product);
+                productTypes.put(productType, count + 1);
+                iterator.remove();
+            }
+
+            if (this.top3.size() > 3) break;
         }
-
+        productTypes.put("BOND", 0);
         // 추가상품
         for(RetirePensionProductResponseDto product : list) {
             if(productTypes.get(product.getProductType()) >= 3) continue;
