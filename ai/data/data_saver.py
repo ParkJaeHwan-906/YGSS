@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 
 # API 모듈 import
 try:
-    from load_data_api import load_data
+    from load_data_api import load_data, get_market_data
     API_AVAILABLE = True
 except ImportError:
     API_AVAILABLE = False
@@ -240,38 +240,12 @@ class FundDataLoader(BaseDataLoader):
         return pd.DataFrame(performance)
 
 
-# 사용 예시 - 기존 코드와 동일한 패턴
 if __name__ == "__main__":
-    # import pickle
+    market_data_list = get_market_data()
+    market_data = pd.DataFrame(market_data_list)
+    market_data.to_pickle('market_data.pkl')
     
-    # logging.basicConfig(level=logging.INFO)
     
-    # # ETF 데이터 API 호출
-    # etf_loader = ETFDataLoader()
-    # etf_data = etf_loader.get_data()
-    
-    # with open('etf_data.pkl', 'wb') as f:
-    #     pickle.dump(etf_data, f)
-    # with open('etf_data.pkl', 'rb') as f:
-    #     etf_data = pickle.load(f)
-    
-    # # 펀드 데이터 API 호출
-    # fund_loader = FundDataLoader()
-    # fund_data = fund_loader.get_data()
-    
-    # with open('fund_data.pkl', 'wb') as f:
-    #     pickle.dump(fund_data, f)
-    # with open('fund_data.pkl', 'rb') as f:
-    #     fund_data = pickle.load(f)
-    
-    # # 분석 결과
-    # if not etf_data.empty:
-    #     print("ETF 요약:")
-    #     print(etf_loader.get_summary())
-    
-    # if not fund_data.empty:
-    #     print("\n펀드 성과:")
-    #     print(fund_loader.get_performance())
     etf_data = load_data("etf")
     
     import pickle
@@ -288,3 +262,5 @@ if __name__ == "__main__":
     # 나중에 불러오기
     with open('fund_data.pkl', 'rb') as f:
         fund_data = pickle.load(f)
+    
+    # 시장 데이터

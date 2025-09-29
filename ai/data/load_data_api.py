@@ -12,6 +12,31 @@ base_api_path = os.getenv("BASE_API_PATH", "")
 product_base_api_path = f"{base_api_path}/product/dc"
 # TIME_SERIES_BASE_API_PATH = f"{BASE_API_PATH}/pension/product/time-line"
 
+def get_market_data():
+    url = f"{base_api_path}/market"
+    print(f"get market data {url}")
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    data = response.json()
+    print("market data done")
+
+    return [
+        {
+            'date': item['date'],
+            # 'open_price' : item['initPrice'],
+            # 'close_price' : item['finalPrice'],
+            'kospi': item['kospi'],
+            'oil_price': item['oilPrice'],
+            'interest_pate': item['interestRate'],
+            'price_index': item['priceIndex'],
+            'cny_krw': item['cnyRate'],
+            'usd_krw': item['usdRate'],
+            'jpy_krw': item['jpyRate'],
+        }
+        for item in data
+    ]
+
+
 def get_product_list(product_type):
     url = f"{product_base_api_path}/{product_type}"
     print(f"{product_type} get list {url}")
@@ -27,7 +52,7 @@ def get_product_list(product_type):
             'company': item['company'],
             'product_type': item['productType'],
             'profit_prediction': item['profitPrediction'],
-            'risk_grade': item['riskGradeId']
+            'risk_grade_id': item['riskGradeId']
         }
         for item in data
     ]
@@ -78,7 +103,7 @@ if __name__ == "__main__":
     data_df = load_data(args.product_type)
 
     # csv 혹은 pickle로 저장
-    data_df.to_csv(f'{args.product_type}_time_series.csv', index=False, encoding='utf-8')
+    # data_df.to_csv(f'{args.product_type}_time_series.csv', index=False, encoding='utf-8')
     data_df.to_pickle(f'{args.product_type}_time_series.pkl')
 
     print("모든 데이터를 성공적으로 불러와 저장했습니다.")

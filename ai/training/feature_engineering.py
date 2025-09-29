@@ -35,6 +35,47 @@ def create_sequences(data: pd.DataFrame, seq_len: int, target_column: str = 'ret
     return np.array(xs), np.array(ys)
 
 
+def create_sequences_with_ids(data: pd.DataFrame, seq_len: int, target_column: str = 'return', id_column: str = 'id') -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Create time series sequences for LSTM input, preserving ID boundaries.
+
+    - For each unique ID, build sequences within that ID without crossing boundaries
+    - Returns sequence_ids to support ID-aware splitting later
+
+    Args:
+        data (pd.DataFrame): Input data containing features, target, and id column
+        seq_len (int): Sequence length
+        target_column (str): Target column name
+        id_column (str): ID column name
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray, np.ndarray]: X sequences, y sequences, sequence_ids
+    """
+    if id_column not in data.columns:
+        X, y = create_sequences(data, seq_len, target_column)
+        # If no IDs, return dummy ids (e.g., all zeros)
+        return X, y, np.zeros(len(y), dtype=object)
+
+    xs, ys, sids = [], [], []
+    for uid in data[id_column].dropna().unique():
+        df_id = data[data[id_column] == uid]
+        # ensure chronological order if a date/time index exists; otherwise assume current order
+        # if 'date' in df_id.columns: df_id = df_id.sort_values('date')
+        if len(df_id) <= seq_len:
+            continue
+        for i in range(len(df_id) - seq_len):
+            window = df_id.iloc[i:(i + seq_len)].values
+            target = df_id.iloc[i + seq_len][target_column]
+            xs.append(window)
+            ys.append(target)
+            sids.append(uid)
+
+    if len(xs) == 0:
+        return np.empty((0, seq_len, data.shape[1])), np.empty((0,)), np.empty((0,))
+
+    return np.array(xs), np.array(ys), np.array(sids)
+
+
 def create_sequences_for_prediction(data: pd.DataFrame, seq_len: int) -> np.ndarray:
     """
     Create sequences for prediction (no target needed).
@@ -59,7 +100,7 @@ def create_sequences_for_prediction(data: pd.DataFrame, seq_len: int) -> np.ndar
 def scale_features_and_target(features: pd.DataFrame, target: pd.DataFrame, 
                             scaler_type: str = 'minmax') -> Tuple[np.ndarray, np.ndarray, object, object]:
     """
-    Scale features and target variables.
+    Scale features and target variables with robust handling.
     
     Args:
         features (pd.DataFrame): Feature data
@@ -71,19 +112,40 @@ def scale_features_and_target(features: pd.DataFrame, target: pd.DataFrame,
     """
     # Initialize scalers
     if scaler_type == 'minmax':
-        feature_scaler = MinMaxScaler()
-        target_scaler = MinMaxScaler()
+        feature_scaler = MinMaxScaler(feature_range=(0, 1))
+        target_scaler = MinMaxScaler(feature_range=(0, 1))
     elif scaler_type == 'standard':
         feature_scaler = StandardScaler()
         target_scaler = StandardScaler()
     else:
         raise ValueError(f"Unsupported scaler type: {scaler_type}")
     
-    # Fit and transform features
-    scaled_features = feature_scaler.fit_transform(features)
+    # Handle NaN values before scaling
+    features_clean = features.fillna(features.median())
+    target_clean = target.fillna(target.median())
     
-    # Fit and transform target
-    scaled_target = target_scaler.fit_transform(target)
+    # Fit and transform features (numpy array로 변환하여 feature names 경고 방지)
+    features_array = features_clean.values
+    scaled_features = feature_scaler.fit_transform(features_array)
+    
+    # Fit and transform target with additional safety checks
+    target_values = target_clean.values
+    if target_values.ndim == 1:
+        target_values = target_values.reshape(-1, 1)
+    
+    # Check for extreme values in target
+    target_std = np.std(target_values)
+    target_mean = np.mean(target_values)
+    
+    # Clip extreme outliers before scaling
+    if target_std > 0:
+        target_clipped = np.clip(target_values, 
+                               target_mean - 4 * target_std, 
+                               target_mean + 4 * target_std)
+    else:
+        target_clipped = target_values
+    
+    scaled_target = target_scaler.fit_transform(target_clipped)
     
     return scaled_features, scaled_target, feature_scaler, target_scaler
 
@@ -115,11 +177,18 @@ def prepare_lstm_data(data: pd.DataFrame, feature_columns: list, target_column: 
     # Combine scaled features and target for sequence creation
     scaled_data = pd.DataFrame(scaled_features, columns=feature_columns)
     scaled_data[target_column] = scaled_target
-    
-    # Create sequences
-    X_sequences, y_sequences = create_sequences(scaled_data, seq_len, target_column)
-    
-    return {
+
+    # Preserve original IDs if present
+    sequence_ids = None
+    if 'id' in data.columns:
+        scaled_data['id'] = data['id'].values
+        X_sequences, y_sequences, sequence_ids = create_sequences_with_ids(
+            scaled_data, seq_len, target_column=target_column, id_column='id'
+        )
+    else:
+        X_sequences, y_sequences = create_sequences(scaled_data, seq_len, target_column)
+
+    result = {
         'X_sequences': X_sequences,
         'y_sequences': y_sequences,
         'feature_scaler': feature_scaler,
@@ -129,6 +198,11 @@ def prepare_lstm_data(data: pd.DataFrame, feature_columns: list, target_column: 
         'target_column': target_column,
         'seq_len': seq_len
     }
+
+    if sequence_ids is not None:
+        result['sequence_ids'] = sequence_ids
+
+    return result
 
 
 def prepare_prophet_data(data: pd.DataFrame, date_column: str = 'date', 
@@ -175,12 +249,12 @@ def create_prediction_input(data: pd.DataFrame, feature_columns: list, target_co
     if len(data) < seq_len:
         raise ValueError(f"Data length ({len(data)}) is less than sequence length ({seq_len})")
     
-    # Scale features (use DataFrame to maintain feature names)
-    scaled_features = feature_scaler.transform(data[feature_columns])
+    # Scale features (numpy array로 변환하여 feature names 경고 방지)
+    scaled_features = feature_scaler.transform(data[feature_columns].values)
     
     # Scale target (if available)
     if target_column in data.columns:
-        scaled_target = target_scaler.transform(data[[target_column]])
+        scaled_target = target_scaler.transform(data[[target_column]].values)
         # Combine scaled features and target
         scaled_data_combined = np.hstack((scaled_features, scaled_target))
     else:
