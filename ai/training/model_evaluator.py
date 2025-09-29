@@ -60,7 +60,7 @@ def evaluate_predictions(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, fl
     rmse = np.sqrt(mse)
     mae = mean_absolute_error(y_true, y_pred)
     
-    # Calculate R² score (coefficient of determination)
+    # Calculate R2 score (coefficient of determination)
     try:
         r2 = r2_score(y_true, y_pred)
     except:
@@ -104,8 +104,16 @@ def evaluate_lstm_model(model, X_test: np.ndarray, y_test: np.ndarray,
     # Make predictions
     predictions_scaled = model.predict(X_test)
     
+    # 안전한 역정규화 - StandardScaler 사용 시 클리핑 범위 조정
+    if hasattr(target_scaler, 'scale_'):
+        # StandardScaler인 경우
+        predictions_scaled_clipped = np.clip(predictions_scaled, -3, 3)  # 3 표준편차 범위로 클리핑
+    else:
+        # MinMaxScaler인 경우
+        predictions_scaled_clipped = np.clip(predictions_scaled, 0, 1)  # 0-1 범위로 클리핑
+    
     # Inverse transform to original scale
-    predictions = target_scaler.inverse_transform(predictions_scaled)
+    predictions = target_scaler.inverse_transform(predictions_scaled_clipped)
     y_test_original = target_scaler.inverse_transform(y_test.reshape(-1, 1))
     
     # Calculate metrics
@@ -117,7 +125,7 @@ def evaluate_lstm_model(model, X_test: np.ndarray, y_test: np.ndarray,
     print(f"  RMSE: {metrics['RMSE']:.4f}")
     print(f"  MAE: {metrics['MAE']:.4f}")
     if not np.isnan(metrics['R2']):
-        print(f"  R²: {metrics['R2']:.4f}")
+        print(f"  R2: {metrics['R2']:.4f}")
     if not np.isnan(metrics['MAPE']):
         print(f"  MAPE: {metrics['MAPE']:.2f}%")
     
@@ -171,7 +179,7 @@ def evaluate_prophet_model(model, test_dates: pd.Series, y_test: np.ndarray,
     print(f"  RMSE: {metrics['RMSE']:.4f}")
     print(f"  MAE: {metrics['MAE']:.4f}")
     if not np.isnan(metrics['R2']):
-        print(f"  R²: {metrics['R2']:.4f}")
+        print(f"  R2: {metrics['R2']:.4f}")
     if not np.isnan(metrics['MAPE']):
         print(f"  MAPE: {metrics['MAPE']:.2f}%")
     
@@ -203,19 +211,18 @@ def compare_models(results_list: list) -> pd.DataFrame:
             'MSE': metrics['MSE'],
             'RMSE': metrics['RMSE'],
             'MAE': metrics['MAE'],
-            'R²': metrics.get('R2', np.nan),
+            'R2': metrics.get('R2', np.nan),
             'MAPE': metrics.get('MAPE', np.nan)
         })
     
     comparison_df = pd.DataFrame(comparison_data)
-    
     # Print comparison table
     print("\n--- Performance Comparison ---")
-    print("Model         | MSE      | RMSE     | MAE      | R²       | MAPE")
+    print("Model         | MSE      | RMSE     | MAE      | R2       | MAPE")
     print("--------------|----------|----------|----------|----------|----------")
     
     for _, row in comparison_df.iterrows():
-        r2_str = f"{row['R²']:.4f}" if not np.isnan(row['R²']) else "N/A"
+        r2_str = f"{row['R2']:.4f}" if not np.isnan(row['R2']) else "N/A"
         mape_str = f"{row['MAPE']:.2f}%" if not np.isnan(row['MAPE']) else "N/A"
         print(f"{row['Model']:<13} | {row['MSE']:.4f} | {row['RMSE']:.4f} | {row['MAE']:.4f} | {r2_str:<8} | {mape_str}")
     
@@ -270,7 +277,7 @@ def plot_predictions(results_list: list, figsize: Tuple[int, int] = (15, 10),
         metrics = result['metrics']
         metrics_text = f"RMSE: {metrics['RMSE']:.4f}\nMAE: {metrics['MAE']:.4f}"
         if not np.isnan(metrics.get('R2', np.nan)):
-            metrics_text += f"\nR²: {metrics['R2']:.4f}"
+            metrics_text += f"\nR2: {metrics['R2']:.4f}"
         
         ax.text(0.05, 0.95, metrics_text, transform=ax.transAxes, 
                 verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
@@ -404,7 +411,7 @@ def generate_evaluation_report(results_list: list, save_path: Optional[str] = No
         report += f"MAE (평균 절대 오차): {metrics['MAE']:.6f}\n"
         
         if not np.isnan(metrics.get('R2', np.nan)):
-            report += f"R² (결정 계수): {metrics['R2']:.6f}\n"
+            report += f"R2 (결정 계수): {metrics['R2']:.6f}\n"
         if not np.isnan(metrics.get('MAPE', np.nan)):
             report += f"MAPE (평균 절대 백분율 오차): {metrics['MAPE']:.2f}%\n"
         
