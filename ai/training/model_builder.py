@@ -243,7 +243,6 @@ def configure_gpu():
     import os
     
     # GPU 설정 (TESLA GPU 사용)
-    os.environ['CUDA_DEVICE_ORDER'] = "PCI_BUS_ID"
     os.environ['CUDA_VISIBLE_DEVICES'] = '1'  # GPU 1 (할당된 번호) 사용
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # TensorFlow 로그 레벨 조정
     

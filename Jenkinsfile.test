@@ -1,0 +1,325 @@
+pipeline {
+  agent any
+
+  environment {
+    DOCKER_IMAGE  = 'ygss-backend'
+    AI_IMAGE      = 'ygss-ai' 
+    DOCKER_TAG    = "refactor-${BUILD_NUMBER}"
+    AI_TAG        = "refactor-${BUILD_NUMBER}"
+    K8S_NAMESPACE = 'ygss-infra'
+    KUBECONFIG    = '/etc/rancher/k3s/k3s.yaml'
+
+    MYSQL_PASSWORD = credentials('mysql-password')
+    JWT_SECRET     = credentials('jwt-secret')
+    GMS_SECRET_KEY = credentials('gms-secret-key')
+    REDIS_PASSWORD = credentials('redis-password')
+
+  }
+
+  options {
+    buildDiscarder(logRotator(numToKeepStr: '5'))
+    timeout(time: 30, unit: 'MINUTES')
+    timestamps()
+    disableConcurrentBuilds()
+  }
+
+  stages {
+    stage('체크아웃 & 변경 분석') {
+      steps {
+        git branch: 'infra/swandkim/internal/infra-refactor',
+            url: 'https://lab.ssafy.com/s13-bigdata-recom-sub1/S13P21A103.git',
+            credentialsId: 'gitlab-git-token'
+
+        script {
+          env.GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+          
+          def lastCommit = sh(script: "cat /tmp/jenkins-infra-last-commit 2>/dev/null || echo 'NONE'", returnStdout: true).trim()
+          
+          if (lastCommit == env.GIT_COMMIT) {
+            echo "동일한 커밋 감지 - 전체 빌드 스킵"
+            env.SKIP_BUILD = 'true'
+            return
+          }
+          
+          def changedFiles = ""
+          if (lastCommit != 'NONE') {
+            changedFiles = sh(script: "git diff --name-only ${lastCommit} ${env.GIT_COMMIT} || echo 'backend/ ai/'", returnStdout: true).trim()
+          } else {
+            changedFiles = "backend/ ai/"
+          }
+          
+          env.BUILD_BACKEND = changedFiles.contains('backend/') ? 'true' : 'false'
+          env.BUILD_AI = changedFiles.contains('ai/') ? 'true' : 'false'
+          
+          echo """
+변경사항 분석:
+• Backend 빌드: ${env.BUILD_BACKEND}
+• AI 빌드: ${env.BUILD_AI}
+• 변경 파일: ${changedFiles}
+"""
+        }
+      }
+    }
+
+    stage('백엔드 빌드') {
+      when {
+        not { environment name: 'SKIP_BUILD', value: 'true' }
+        environment name: 'BUILD_BACKEND', value: 'true'
+      }
+      steps {
+        dir('backend') {
+          sh '''
+            chmod +x ./gradlew
+            ./gradlew clean build -x test --no-daemon
+            docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+            docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:infra-latest
+            echo "Backend 빌드 완료: $DOCKER_TAG + infra-latest"
+          '''
+        }
+      }
+    }
+
+    stage('백엔드 캐시 재사용') {
+      when {
+        not { environment name: 'SKIP_BUILD', value: 'true' }
+        environment name: 'BUILD_BACKEND', value: 'false'
+      }
+      steps {
+        script {
+          echo "Backend 변경 없음 - 기존 이미지 재활용"
+          def latestExists = sh(script: 'docker images -q ygss-backend:infra-latest 2>/dev/null || echo ""', returnStdout: true).trim()
+          
+          if (latestExists) {
+            sh '''
+              docker tag $DOCKER_IMAGE:infra-latest $DOCKER_IMAGE:$DOCKER_TAG
+              echo "Backend 이미지 재활용: infra-latest → $DOCKER_TAG"
+            '''
+          } else {
+            echo "infra-latest 이미지 없음 - 강제 빌드 실행"
+            env.BUILD_BACKEND = 'true'
+            
+            dir('backend') {
+              sh '''
+                chmod +x ./gradlew
+                ./gradlew clean build -x test --no-daemon
+                docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+                docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:infra-latest
+              '''
+            }
+          }
+        }
+      }
+    }
+
+    stage('AI 빌드') {
+      when {
+        not { environment name: 'SKIP_BUILD', value: 'true' }
+        environment name: 'BUILD_AI', value: 'true'
+      }
+      steps {
+        script {
+          def baseExists = sh(script: 'docker images -q ygss-ai-base:latest 2>/dev/null || echo ""', returnStdout: true).trim()
+          if (!baseExists) {
+            dir('ai') {
+              sh 'docker build -f Dockerfile.base -t ygss-ai-base:latest .'
+            }
+          }
+        }
+        
+        dir('ai') {
+          sh '''
+            docker build -t $AI_IMAGE:$AI_TAG .
+            docker tag $AI_IMAGE:$AI_TAG $AI_IMAGE:infra-latest
+            echo "AI 빌드 완료: $AI_TAG + infra-latest"
+          '''
+        }
+      }
+    }
+
+    stage('AI 캐시 재사용') {
+      when {
+        not { environment name: 'SKIP_BUILD', value: 'true' }
+        environment name: 'BUILD_AI', value: 'false'
+      }
+      steps {
+        script {
+          echo "AI 변경 없음 - 기존 이미지 재활용"
+          def latestExists = sh(script: 'docker images -q ygss-ai:infra-latest 2>/dev/null || echo ""', returnStdout: true).trim()
+          
+          if (latestExists) {
+            sh '''
+              docker tag $AI_IMAGE:infra-latest $AI_IMAGE:$AI_TAG
+              echo "AI 이미지 재활용: infra-latest → $AI_TAG"
+            '''
+          } else {
+            echo "infra-latest 이미지 없음 - 강제 빌드 실행"
+            env.BUILD_AI = 'true'
+            
+            def baseExists = sh(script: 'docker images -q ygss-ai-base:latest 2>/dev/null || echo ""', returnStdout: true).trim()
+            if (!baseExists) {
+              dir('ai') {
+                sh 'docker build -f Dockerfile.base -t ygss-ai-base:latest .'
+              }
+            }
+            
+            dir('ai') {
+              sh '''
+                docker build -t $AI_IMAGE:$AI_TAG .
+                docker tag $AI_IMAGE:$AI_TAG $AI_IMAGE:infra-latest
+              '''
+            }
+          }
+        }
+      }
+    }
+
+    stage('이미지 Import') {
+      when {
+        not { environment name: 'SKIP_BUILD', value: 'true' }
+        anyOf {
+          environment name: 'BUILD_BACKEND', value: 'true'
+          environment name: 'BUILD_AI', value: 'true'
+        }
+      }
+      steps {
+        script {
+          if (env.BUILD_BACKEND == 'true') {
+            sh '''
+              echo "Backend 이미지 k3s import"
+              docker save $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:infra-latest -o /tmp/backend.tar
+              sudo k3s ctr images import /tmp/backend.tar
+              rm /tmp/backend.tar
+            '''
+          }
+          
+          if (env.BUILD_AI == 'true') {
+            sh '''
+              echo "AI 이미지 k3s import"
+              docker save $AI_IMAGE:$AI_TAG $AI_IMAGE:infra-latest -o /tmp/ai.tar
+              sudo k3s ctr images import /tmp/ai.tar
+              rm /tmp/ai.tar
+            '''
+          }
+        }
+      }
+    }
+
+    stage('Secret 생성') {
+      when {
+        not { environment name: 'SKIP_BUILD', value: 'true' }
+      }
+      steps {
+        sh '''
+          kubectl create namespace $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n $K8S_NAMESPACE create secret generic backend-secrets \
+            --from-literal=MYSQL_PASSWORD="$MYSQL_PASSWORD" \
+            --from-literal=JWT_SECRET="$JWT_SECRET" \
+            --from-literal=GMS_SECRET_KEY="$GMS_SECRET_KEY" \
+            --from-literal=REDIS_PASSWORD="$REDIS_PASSWORD" \
+            --dry-run=client -o yaml | kubectl apply -f -
+        '''
+      }
+    }
+
+    stage('배포') {
+      when {
+        not { environment name: 'SKIP_BUILD', value: 'true' }
+      }
+      steps {
+        sh '''
+          cd k8s/overlays/infra-refactor
+          kubectl apply -k .
+        '''
+        
+        script {
+          if (env.BUILD_BACKEND == 'true') {
+            sh 'kubectl -n $K8S_NAMESPACE rollout restart deployment/backend'
+            sh 'kubectl -n $K8S_NAMESPACE rollout status deployment/backend --timeout=300s'
+          }
+          
+          if (env.BUILD_AI == 'true') {
+            sh 'kubectl -n $K8S_NAMESPACE rollout restart deployment/ai'
+            sh 'kubectl -n $K8S_NAMESPACE rollout status deployment/ai --timeout=300s'
+          }
+        }
+      }
+    }
+
+    stage('헬스체크') {
+      when {
+        not { environment name: 'SKIP_BUILD', value: 'true' }
+      }
+      steps {
+        sleep(time: 10, unit: 'SECONDS')
+        script {
+          if (env.BUILD_BACKEND == 'true' || env.BUILD_AI == 'true') {
+            timeout(time: 2, unit: 'MINUTES') {
+              waitUntil {
+                script {
+                  def backendOk = true
+                  def aiOk = true
+                  
+                  if (env.BUILD_BACKEND == 'true') {
+                    def code = sh(script: 'curl -s -o /dev/null -w "%{http_code}" https://j13a103.p.ssafy.io/api-infra/infra || echo 000', returnStdout: true).trim()
+                    backendOk = (code == '200')
+                  }
+                  
+                  if (env.BUILD_AI == 'true') {
+                    def code = sh(script: 'curl -s -o /dev/null -w "%{http_code}" https://j13a103.p.ssafy.io/ai-infra/health/ || echo 000', returnStdout: true).trim()
+                    aiOk = (code == '200')
+                  }
+                  
+                  return backendOk && aiOk
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    stage('정리') {
+      steps {
+        sh '''
+          # 버전 태그만 정리 (infra-latest는 유지)
+          for image in ygss-backend ygss-ai; do
+            OLD_TAGS=$(docker images $image --format '{{.Tag}}' | grep -E '^refactor-[0-9]+' | sort -V -r | tail -n +4)
+            for tag in $OLD_TAGS; do
+              docker rmi "$image:$tag" 2>/dev/null || true
+            done
+          done
+          docker system prune -f
+        '''
+      }
+    }
+  }
+
+  post {
+    success {
+      script {
+        if (env.SKIP_BUILD != 'true') {
+          sh "echo '${env.GIT_COMMIT}' > /tmp/jenkins-infra-last-commit"
+        }
+      }
+      echo """
+인프라 테스트 배포 완료!
+• 커밋: ${env.GIT_COMMIT}  
+• Backend: ${env.BUILD_BACKEND} (${env.DOCKER_TAG})
+• AI: ${env.BUILD_AI} (${env.AI_TAG})
+• 엔드포인트: https://j13a103.p.ssafy.io/api-infra/infra
+"""
+    }
+    
+    failure {
+      sh '''
+        kubectl -n $K8S_NAMESPACE get pods || true
+        kubectl -n $K8S_NAMESPACE logs -l app=backend --tail=10 || true
+        kubectl -n $K8S_NAMESPACE logs -l app=ai --tail=10 || true
+      '''
+    }
+    
+    always {
+      cleanWs()
+    }
+  }
+}

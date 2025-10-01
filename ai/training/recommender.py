@@ -252,7 +252,7 @@ def generate_recommendation_report(user_portfolio: List[str],
         allocation_df = allocation['allocation']
         
         for idx, row in allocation_df.iterrows():
-            report += f"{row['name']} (ID: {row['id']}): {row['allocation_pct']:.1f}%\n"
+            report += f"{row['id']}: {row['allocation_pct']:.1f}%\n"
         
         report += f"\n포트폴리오 예상 수익률: {allocation['portfolio_expected_return']:.4f}\n"
         report += f"위험 허용도: {allocation['risk_tolerance']:.2f}\n\n"
@@ -292,7 +292,7 @@ def visualize_recommendations(recommendations: pd.DataFrame,
         # Recommendations bar chart
         ax1.barh(range(len(recommendations)), recommendations['predicted_return'])
         ax1.set_yticks(range(len(recommendations)))
-        ax1.set_yticklabels([f"{row.get('name', row['id'])}" for _, row in recommendations.iterrows()])
+        ax1.set_yticklabels([f"{row['id']}" for _, row in recommendations.iterrows()])
         ax1.set_xlabel('예상 수익률')
         ax1.set_title('추천 상품별 예상 수익률')
         ax1.grid(True, alpha=0.3)
@@ -300,7 +300,7 @@ def visualize_recommendations(recommendations: pd.DataFrame,
         # Portfolio allocation pie chart
         allocation_df = allocation['allocation']
         ax2.pie(allocation_df['allocation_pct'], 
-               labels=[f"{row['name']}\n({row['allocation_pct']:.1f}%)" 
+               labels=[f"{row['id']}\n({row['allocation_pct']:.1f}%)" 
                       for _, row in allocation_df.iterrows()],
                autopct='', startangle=90)
         ax2.set_title('포트폴리오 배분 추천')
@@ -311,7 +311,7 @@ def visualize_recommendations(recommendations: pd.DataFrame,
         # Recommendations bar chart
         ax.barh(range(len(recommendations)), recommendations['predicted_return'])
         ax.set_yticks(range(len(recommendations)))
-        ax.set_yticklabels([f"{row.get('name', row['id'])}" for _, row in recommendations.iterrows()])
+        ax.set_yticklabels([f"{row['id']}" for _, row in recommendations.iterrows()])
         ax.set_xlabel('예상 수익률')
         ax.set_title('추천 상품별 예상 수익률')
         ax.grid(True, alpha=0.3)

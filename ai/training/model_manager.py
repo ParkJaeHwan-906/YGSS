@@ -19,7 +19,7 @@ from prophet import Prophet
 class ModelManager:
     """Manages model saving, loading, and versioning."""
     
-    def __init__(self, base_path: str = None):
+    def __init__(self, base_path: str = None, asset_type: Optional[str] = None):
         """
         Initialize ModelManager.
         
@@ -27,20 +27,30 @@ class ModelManager:
             base_path (str): Base directory for model storage
         """
         if base_path is None:
-            # Use the saved_models directory
+            # Use the saved_models directory relative to the project root
             current_dir = Path(__file__).parent.parent.parent
-            base_path = current_dir / "saved_models"
-        
+            base_root = current_dir / "saved_models"
+            # base_root = current_dir / "test_models"
+        else:
+            base_root = Path(base_path)
+
+        # If asset_type provided, nest under that subdirectory (e.g., saved_models/etf or saved_models/fund)
+        if asset_type:
+            base_path = base_root / asset_type.lower()
+        else:
+            base_path = base_root
+            
         self.base_path = Path(base_path)
         self.base_path.mkdir(parents=True, exist_ok=True)
         
         # Create subdirectories
         self.lstm_path = self.base_path / "lstm_models"
         self.prophet_path = self.base_path / "prophet_models"
+        self.ensemble_path = self.base_path / "ensemble_models"
         self.scalers_path = self.base_path / "scalers"
         self.metadata_path = self.base_path / "metadata"
         
-        for path in [self.lstm_path, self.prophet_path, self.scalers_path, self.metadata_path]:
+        for path in [self.lstm_path, self.prophet_path, self.ensemble_path, self.scalers_path, self.metadata_path]:
             path.mkdir(exist_ok=True)
     
     def _generate_model_hash(self, data_config: Dict[str, Any]) -> str:
@@ -58,7 +68,7 @@ class ModelManager:
             'metadata': self.metadata_path / f"metadata_{model_hash}.json"
         }
     
-    def save_models(self, models: Dict[str, Any], data_config: Dict[str, Any]) -> str:
+    def save_models(self, models: Dict[str, Any], data_config: Dict[str, Any], best_model_name: str) -> str:
         """
         Save trained models and associated data.
         
@@ -72,35 +82,52 @@ class ModelManager:
         model_hash = self._generate_model_hash(data_config)
         paths = self._get_model_paths(model_hash)
         
+        for path in paths.values():
+            if path.parent and not path.parent.exists():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                print(f"디렉터리 생성: {path.parent}")
+        
+        metadata_files = {} # Add this line to store file info
+        
         try:
             # Save LSTM model
             if 'lstm_model' in models and models['lstm_model'] is not None:
                 models['lstm_model'].save(paths['lstm_model'])
-            
+                # 'relative_path' 정보 추가
+                metadata_files['lstm_model'] = {'file_name': paths['lstm_model'].name, 'relative_path': 'lstm_models'}
+    
             # Save Prophet model
             if 'prophet_model' in models and models['prophet_model'] is not None:
                 with open(paths['prophet_model'], 'wb') as f:
                     pickle.dump(models['prophet_model'], f)
-            
+                # 'relative_path' 정보 추가
+                metadata_files['prophet_model'] = {'file_name': paths['prophet_model'].name, 'relative_path': 'prophet_models'}
+    
             # Save scalers
             if 'feature_scaler' in models and models['feature_scaler'] is not None:
                 with open(paths['feature_scaler'], 'wb') as f:
                     pickle.dump(models['feature_scaler'], f)
-            
+                # 'relative_path' 정보 추가
+                metadata_files['feature_scaler'] = {'file_name': paths['feature_scaler'].name, 'relative_path': 'scalers'}
+    
             if 'target_scaler' in models and models['target_scaler'] is not None:
                 with open(paths['target_scaler'], 'wb') as f:
                     pickle.dump(models['target_scaler'], f)
-            
+                # 'relative_path' 정보 추가
+                metadata_files['target_scaler'] = {'file_name': paths['target_scaler'].name, 'relative_path': 'scalers'}
+    
             # Save metadata
             metadata = {
                 'model_hash': model_hash,
                 'created_at': datetime.now().isoformat(),
                 'data_config': data_config,
+                'files': metadata_files, # Crucial change: add the file names here
                 'model_info': {
                     'has_lstm': 'lstm_model' in models and models['lstm_model'] is not None,
                     'has_prophet': 'prophet_model' in models and models['prophet_model'] is not None,
                     'has_feature_scaler': 'feature_scaler' in models and models['feature_scaler'] is not None,
-                    'has_target_scaler': 'target_scaler' in models and models['target_scaler'] is not None
+                    'has_target_scaler': 'target_scaler' in models and models['target_scaler'] is not None,
+                    'best_model_name': best_model_name.lower() or 'lstm'
                 }
             }
             
@@ -212,7 +239,7 @@ class ModelManager:
 
 
 def create_data_config(regression_group: list, sequence_length: int, 
-                      data_shape: tuple, data_hash: str = None) -> Dict[str, Any]:
+                       data_shape: tuple, data_hash: str = None) -> Dict[str, Any]:
     """
     Create a configuration dictionary for model identification.
     
@@ -242,3 +269,70 @@ def get_data_hash(data: pd.DataFrame) -> str:
     # Convert to string and hash
     data_str = sample_data.to_string()
     return hashlib.md5(data_str.encode()).hexdigest()[:8]
+
+
+def save_models_for_fastapi(models: Dict[str, Any], data_config: Dict[str, Any], 
+                            base_path: str = None, asset_type: Optional[str] = None) -> str:
+    """
+    FastAPI upload endpoint와 호환되는 모델 저장 함수.
+    
+    Args:
+        models (dict): Dictionary containing trained models and scalers
+        data_config (dict): Configuration used for training
+        base_path (str): Base directory for model storage
+        asset_type (str): Asset type (ETF, Fund 등)
+    
+    Returns:
+        str: Model hash for future loading
+    """
+    manager = ModelManager(base_path=base_path, asset_type=asset_type)
+    return manager.save_models(models, data_config)
+
+
+def load_models_from_fastapi(model_hash: str, base_path: str = None, 
+                             asset_type: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """
+    FastAPI에서 저장된 모델을 로딩하는 함수.
+    
+    Args:
+        model_hash (str): Hash of the model to load
+        base_path (str): Base directory for model storage
+        asset_type (str): Asset type (ETF, Fund 등)
+    
+    Returns:
+        dict: Dictionary containing loaded models and scalers
+    """
+    manager = ModelManager(base_path=base_path, asset_type=asset_type)
+    return manager.load_models(model_hash)
+
+
+def list_models_from_fastapi(base_path: str = None, asset_type: Optional[str] = None) -> list:
+    """
+    FastAPI에서 저장된 모델 목록을 조회하는 함수.
+    
+    Args:
+        base_path (str): Base directory for model storage
+        asset_type (str): Asset type (ETF, Fund 등)
+    
+    Returns:
+        list: List of model metadata
+    """
+    manager = ModelManager(base_path=base_path, asset_type=asset_type)
+    return manager.list_models()
+
+
+def delete_model_from_fastapi(model_hash: str, base_path: str = None, 
+                              asset_type: Optional[str] = None) -> bool:
+    """
+    FastAPI에서 저장된 모델을 삭제하는 함수.
+    
+    Args:
+        model_hash (str): Hash of the model to delete
+        base_path (str): Base directory for model storage
+        asset_type (str): Asset type (ETF, Fund 등)
+    
+    Returns:
+        bool: True if deletion successful
+    """
+    manager = ModelManager(base_path=base_path, asset_type=asset_type)
+    return manager.delete_model(model_hash)

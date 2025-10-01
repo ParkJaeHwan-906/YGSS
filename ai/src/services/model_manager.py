@@ -13,7 +13,8 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 import pandas as pd
 import numpy as np
-from utils.data_utils import clean_etf_data, aggregate_monthly_data
+from prophet import Prophet
+
 
 class ModelManager:
     """Manages model saving, loading, and versioning."""
@@ -27,8 +28,9 @@ class ModelManager:
         """
         if base_path is None:
             # Use the saved_models directory relative to the project root
-            current_dir = Path(__file__).parent.parent
+            current_dir = Path(__file__).parent.parent.parent
             base_root = current_dir / "saved_models"
+            # base_root = current_dir / "test_models"
         else:
             base_root = Path(base_path)
 
@@ -61,93 +63,85 @@ class ModelManager:
         return {
             'lstm_model': self.lstm_path / f"lstm_{model_hash}.h5",
             'prophet_model': self.prophet_path / f"prophet_{model_hash}.pkl",
-            'ensemble_model': self.ensemble_path / f"ensemble_{model_hash}.pkl",
             'feature_scaler': self.scalers_path / f"feature_scaler_{model_hash}.pkl",
             'target_scaler': self.scalers_path / f"target_scaler_{model_hash}.pkl",
             'metadata': self.metadata_path / f"metadata_{model_hash}.json"
         }
     
-    def save_models(self, models: Dict[str, Any], data_config: Dict[str, Any]) -> str:
+    def save_models(self, models: Dict[str, Any], data_config: Dict[str, Any], best_model_name: str) -> str:
         """
         Save trained models and associated data.
+        
+        Args:
+            models (dict): Dictionary containing trained models and scalers
+            data_config (dict): Configuration used for training
+        
+        Returns:
+            str: Model hash for future loading
         """
         model_hash = self._generate_model_hash(data_config)
         paths = self._get_model_paths(model_hash)
-    
-        metadata_files = {}
-    
+        
+        for path in paths.values():
+            if path.parent and not path.parent.exists():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                print(f"디렉터리 생성: {path.parent}")
+        
+        metadata_files = {} # Add this line to store file info
+        
         try:
             # Save LSTM model
             if 'lstm_model' in models and models['lstm_model'] is not None:
                 models['lstm_model'].save(paths['lstm_model'])
-                metadata_files['lstm_model'] = {
-                    'file_name': paths['lstm_model'].name,
-                    'relative_path': 'lstm_models'
-                }
+                # 'relative_path' 정보 추가
+                metadata_files['lstm_model'] = {'file_name': paths['lstm_model'].name, 'relative_path': 'lstm_models'}
     
             # Save Prophet model
             if 'prophet_model' in models and models['prophet_model'] is not None:
                 with open(paths['prophet_model'], 'wb') as f:
                     pickle.dump(models['prophet_model'], f)
-                metadata_files['prophet_model'] = {
-                    'file_name': paths['prophet_model'].name,
-                    'relative_path': 'prophet_models'
-                }
-    
-            # Save Ensemble model
-            if 'ensemble_model' in models and models['ensemble_model'] is not None:
-                with open(paths['ensemble_model'], 'wb') as f:
-                    pickle.dump(models['ensemble_model'], f)
-                metadata_files['ensemble_model'] = {
-                    'file_name': paths['ensemble_model'].name,
-                    'relative_path': 'ensemble_models'
-                }
+                # 'relative_path' 정보 추가
+                metadata_files['prophet_model'] = {'file_name': paths['prophet_model'].name, 'relative_path': 'prophet_models'}
     
             # Save scalers
             if 'feature_scaler' in models and models['feature_scaler'] is not None:
                 with open(paths['feature_scaler'], 'wb') as f:
                     pickle.dump(models['feature_scaler'], f)
-                metadata_files['feature_scaler'] = {
-                    'file_name': paths['feature_scaler'].name,
-                    'relative_path': 'scalers'
-                }
+                # 'relative_path' 정보 추가
+                metadata_files['feature_scaler'] = {'file_name': paths['feature_scaler'].name, 'relative_path': 'scalers'}
     
             if 'target_scaler' in models and models['target_scaler'] is not None:
                 with open(paths['target_scaler'], 'wb') as f:
                     pickle.dump(models['target_scaler'], f)
-                metadata_files['target_scaler'] = {
-                    'file_name': paths['target_scaler'].name,
-                    'relative_path': 'scalers'
-                }
+                # 'relative_path' 정보 추가
+                metadata_files['target_scaler'] = {'file_name': paths['target_scaler'].name, 'relative_path': 'scalers'}
     
             # Save metadata
             metadata = {
                 'model_hash': model_hash,
                 'created_at': datetime.now().isoformat(),
                 'data_config': data_config,
-                'files': metadata_files,
+                'files': metadata_files, # Crucial change: add the file names here
                 'model_info': {
                     'has_lstm': 'lstm_model' in models and models['lstm_model'] is not None,
                     'has_prophet': 'prophet_model' in models and models['prophet_model'] is not None,
-                    'has_ensemble': 'ensemble_model' in models and models['ensemble_model'] is not None,
                     'has_feature_scaler': 'feature_scaler' in models and models['feature_scaler'] is not None,
-                    'has_target_scaler': 'target_scaler' in models and models['target_scaler'] is not None
+                    'has_target_scaler': 'target_scaler' in models and models['target_scaler'] is not None,
+                    'best_model_name': best_model_name.lower() or 'lstm'
                 }
             }
-    
+            
             with open(paths['metadata'], 'w', encoding='utf-8') as f:
                 json.dump(metadata, f, indent=2, ensure_ascii=False)
-    
+            
             print(f"모델 저장 완료: {model_hash}")
             return model_hash
-    
+            
         except Exception as e:
             print(f"모델 저장 실패: {e}")
             return None
-
-
     
-    def load_models(self, asset_type: str, model_hash: str, best_model_name: str) -> Optional[Dict[str, Any]]:
+    def load_models(self, model_hash: str) -> Optional[Dict[str, Any]]:
         """
         Load trained models and associated data.
         
@@ -180,11 +174,6 @@ class ModelManager:
             if paths['prophet_model'].exists():
                 with open(paths['prophet_model'], 'rb') as f:
                     models['prophet_model'] = pickle.load(f)
-
-            # Load Ensemble model (may be a config dict or estimator)
-            if paths.get('ensemble_model') and paths['ensemble_model'].exists():
-                with open(paths['ensemble_model'], 'rb') as f:
-                    models['ensemble_model'] = pickle.load(f)
             
             # Load scalers
             if paths['feature_scaler'].exists():
