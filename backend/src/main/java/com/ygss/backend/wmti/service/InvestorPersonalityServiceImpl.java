@@ -33,7 +33,7 @@ public class InvestorPersonalityServiceImpl implements InvestorPersonalityServic
         });
         Collections.sort(questionList, (a,b) -> Integer.compare(a.getNo(), b.getNo()));
         // 시연용 -> 3가지 질문만 ㄱㄱ
-        return questionList.subList(0,3);
+        return questionList;
     }
 
     @Override
@@ -55,19 +55,11 @@ public class InvestorPersonalityServiceImpl implements InvestorPersonalityServic
         return investorPersonerlityList;
     }
 
-//    private Long calcRiskGrade(Integer score) {
-//        if (score >= 34) return 5L;
-//        if (score >= 28) return 4L;
-//        if (score >= 22) return 3L;
-//        if (score >= 16) return 2L;
-//        return 1L;
-//    }
-
     private Long calcRiskGrade(Integer score) {
-        if (score >= 12) return 5L; // 최고 등급
-        if (score >= 9) return 4L;
-        if (score >= 7) return 3L;
-        if (score >= 4) return 2L;
-        return 1L; // 최저 등급
+        if (score >= 34) return 5L;
+        if (score >= 28) return 4L;
+        if (score >= 22) return 3L;
+        if (score >= 16) return 2L;
+        return 1L;
     }
 }
