@@ -32,7 +32,6 @@ public class InvestorPersonalityServiceImpl implements InvestorPersonalityServic
             Collections.sort(question.getOptions(), (a,b) -> Integer.compare(a.getNo(), b.getNo()));
         });
         Collections.sort(questionList, (a,b) -> Integer.compare(a.getNo(), b.getNo()));
-        // 시연용 -> 3가지 질문만 ㄱㄱ
         return questionList;
     }
 
