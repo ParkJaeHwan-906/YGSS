@@ -222,8 +222,7 @@ public class PensionProductController {
     @PutMapping("/update-profit")
     public ResponseEntity<?> updateNextYearProfitRate(@RequestBody List<UpdateProfitRequest> request){
         try{
-//            return ResponseEntity.ok(pensionProductService.updateProfit(request));
-            return ResponseEntity.ok(true);
+            return ResponseEntity.ok(pensionProductService.updateProfit(request));
         }catch (RuntimeException e){
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
