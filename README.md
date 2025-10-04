@@ -6,7 +6,7 @@
 
 ## 🚀 서비스 소개
 
-[<img src="/uploads/816e5d23198beb8a48fab10a275152e3/thumbnail2.gif" height="500"/>](https://youtu.be/LKBqwPa_WyM)
+[<img src="/uploads/thumbnail2.gif" height="500"/>](https://youtu.be/LKBqwPa_WyM)
 ### 서비스 배경 
 
 정책 변화로 퇴직연금 가입이 의무화될 전망입니다.
@@ -38,25 +38,25 @@
 ### 2. 회원가입 및 로그인
 | 회원가입 |  |
 |:--------:|:--------:|
-| <img src="/uploads/7b7e1b303f6c7d95aaae53f8a433e28d/regist.gif" height="400"/> | <img src="/uploads/20b7ee80f6a328087a592e42230e49b5/signup.png" height="400"/> |
+| <img src="/uploads/regist.gif" height="400"/> | <img src="/uploads/signup.png" height="400"/> |
 ### 3. 주요 기능 이용 가이드
 
 
 | 투자 성향 분석 |  |
 |:--------:|:--------:|
-| <img src="/uploads/714245288c52c23a6af074ab4b17ae8e/analysis.gif" height="400"/> | <img src="/uploads/2b4cc8238c47a2340ab0d0232e28a0c6/analysis.png" height="400"/> |
+| <img src="/uploads/analysis.gif" height="400"/> | <img src="/uploads/analysis.png" height="400"/> |
 
 | DC/DB 상품 비교 및 추천 |  |
 |:--------:|:--------:|
-| <img src="/uploads/8c77f185000c72f82253598ca6d427b6/dbdc.gif" height="400"/> | <img src="/uploads/2cb843036810aeec678b8ddc20d91adf/dbdc.png" height="400"/> |
+| <img src="/uploads/dbdc.gif" height="400"/> | <img src="/uploads/dbdc.png" height="400"/> |
 
 | 성향 기반 DC 포트폴리오 추천 |  |
 |:--------:|:--------:|
-| <img src="/uploads/9230827812a8de71787c146a533df4c0/dc.gif" height="400"/> | <img src="/uploads/c1b48afe5d1aeedee6c4579647f09685/dc.png" height="400"/> |
+| <img src="/uploads/dc.gif" height="400"/> | <img src="/uploads/dc.png" height="400"/> |
 
 | RAG 기반 챗봇 상담 |  |
 |:--------:|:--------:|
-| <img src="/uploads/a2a717dc2424c2a8950a043750286dc6/chatbot.gif" height="400"/> | <img src="/uploads/88ee8126abc3fc67cf6c45dac8cc9933/chatbot.png" height="400"/> |
+| <img src="/uploads/chatbot.gif" height="400"/> | <img src="/uploads/chatbot.png" height="400"/> |
 
 
 ---
@@ -98,5 +98,5 @@ Team HMH
 
 | **👑[BE]박재환** | **[BE]김은재** | **[FE]이채연** | **[FE]최유진** | **[AI]구하린** | **[INFRA]김서원** |
 | :------: | :------: | :------: | :------: | :------: | :------: |
-| <img src="/uploads/f886e60377aeeeb468116a73b7f0b48a/character_grapefruit.png" height=150><br/>[@Hwannee00](https://github.com/ParkJaeHwan-906) | <img src="/uploads/eadfcf524af6150c1533514ecfaad82d/drink_character_milk_pack.png" height=150><br/>[@EUNJAE1012](https://github.com/EUNJAE1012) | <img src="/uploads/7434eeeb9dc0148b938bfcd9560e0480/character_pudding.png" height=150><br/>[@amy010510](https://github.com/amy010510) | <img src="/uploads/9a903b8607f4491d4894530c1d2bc8c0/character_sweets_chiffon_cake.png" height=150><br/>[@jinnyujinchoi](https://github.com/jinnyujinchoi) | <img src="/uploads/e687785078f24d3b23d4a9af5187fdec/character_kaki.png" height=150><br/>[@rinkoko](https://github.com/gaaona) | <img src="/uploads/87c17687e7e2269cdb939c2c62f17e88/food_character_tofu.png" height=150><br/>[@Hemeiron](https://github.com/hemeiron0) |
+| <img src="/uploads/character_grapefruit.png" height=150><br/>[@Hwannee00](https://github.com/ParkJaeHwan-906) | <img src="/uploads/drink_character_milk_pack.png" height=150><br/>[@EUNJAE1012](https://github.com/EUNJAE1012) | <img src="/uploads/character_pudding.png" height=150><br/>[@amy010510](https://github.com/amy010510) | <img src="/uploads/character_sweets_chiffon_cake.png" height=150><br/>[@jinnyujinchoi](https://github.com/jinnyujinchoi) | <img src="/uploads/character_kaki.png" height=150><br/>[@rinkoko](https://github.com/gaaona) | <img src="/uploads/food_character_tofu.png" height=150><br/>[@Hemeiron](https://github.com/hemeiron0) |
 
