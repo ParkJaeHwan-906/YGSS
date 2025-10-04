@@ -74,13 +74,13 @@
 
 ## 🏗 아키텍처
 
-![Architecture](/uploads/bff6956ed3b59508e79c7b71612d12ea/KakaoTalk_20250928_144947189.png)
+![Architecture](/uploads/KakaoTalk_20250928_144947189.png)
 
 ---
 
 ## 🗂 ERD
 
-![ERD](/uploads/e5357944950e234c16dd9c325f48106e/erd.png)
+![ERD](/uploads/erd.png)
 
 ---
 
