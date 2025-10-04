@@ -6,7 +6,7 @@
 
 ## 🚀 서비스 소개
 
-[<img src="/uploads/816e5d23198beb8a48fab10a275152e3/thumbnail2.gif" height="500"/>](https://naver.com)
+[<img src="/uploads/816e5d23198beb8a48fab10a275152e3/thumbnail2.gif" height="500"/>](https://youtu.be/LKBqwPa_WyM)
 ### 서비스 배경 
 
 정책 변화로 퇴직연금 가입이 의무화될 전망입니다.
