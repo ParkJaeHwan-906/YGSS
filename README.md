@@ -32,8 +32,8 @@
 
 ### 1. 설치 및 실행
 
-![QR 코드](/uploads/b61ed2059f654a498c54a6533ce2657f/qr.png)
-![설치 방법](/uploads/84e61293e003fc10fd54c7992b3e6804/install.png)
+![QR 코드](/uploads/qr.png)
+![설치 방법](/uploads/install.png)
 
 ### 2. 회원가입 및 로그인
 | 회원가입 |  |
